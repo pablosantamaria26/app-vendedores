@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- ==========================
-       LOGIN
-  =========================== -->
+  <!-- LOGIN -->
   <div id="login" class="login">
     <h2>🔐 Ingresá tu clave</h2>
     <input type="password" id="clave" maxlength="4" placeholder="4 dígitos" />
@@ -17,9 +15,7 @@
     <p id="error" class="error"></p>
   </div>
 
-  <!-- ==========================
-       APP PRINCIPAL
-  =========================== -->
+  <!-- APP PRINCIPAL -->
   <div id="app" class="oculto">
     <header>
       <h1 id="titulo"></h1>
@@ -47,12 +43,9 @@
 
   <script src="app.js"></script>
 
-  <!-- ==========================
-       JS DE CONTROL INTERFAZ
-  =========================== -->
   <script>
     /* ================================
-       CAMBIO ENTRE SECCIONES
+       CONTROL DE SECCIONES
     ================================ */
     function mostrarSeccion(seccion) {
       const rutaBtn = document.getElementById("btnRuta");
@@ -71,12 +64,10 @@
         rutaBtn.classList.add("activo");
         rutaSec.classList.add("visible");
         rutaSec.classList.remove("oculto");
-        rutaSec.scrollTo(0, 0);
       } else {
         calBtn.classList.add("activo");
         calSec.classList.add("visible");
         calSec.classList.remove("oculto");
-        calSec.scrollTo(0, 0);
         cargarCalendario();
       }
     }
@@ -99,7 +90,6 @@
       try {
         const resp = await fetch(url);
         const data = await resp.json();
-
         if (!data || data.length === 0) {
           cont.innerHTML = "📭 No hay visitas programadas.";
           return;
@@ -108,8 +98,11 @@
         let html = `
           <table>
             <thead>
-              <tr><th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th></tr>
-            </thead><tbody>
+              <tr>
+                <th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th>
+              </tr>
+            </thead>
+            <tbody>
         `;
 
         data.forEach(fila => {
@@ -145,7 +138,6 @@
     }
     window.alternarModo = alternarModo;
 
-    // Aplicar modo guardado o automático
     (function initModo() {
       const guardado = localStorage.getItem("modoOscuro");
       if (guardado) {
@@ -166,23 +158,6 @@
       location.reload();
     }
     window.logout = logout;
-
-    /* ================================
-       SWIPE ENTRE SECCIONES (mobile UX)
-    ================================ */
-    let startX = 0;
-    const main = document.querySelector("main");
-    main.addEventListener("touchstart", e => {
-      startX = e.touches[0].clientX;
-    });
-    main.addEventListener("touchend", e => {
-      const endX = e.changedTouches[0].clientX;
-      const diff = endX - startX;
-      if (Math.abs(diff) < 60) return;
-      const activeRuta = document.getElementById("seccion-ruta").classList.contains("visible");
-      if (diff < 0 && activeRuta) mostrarSeccion("calendario");
-      else if (diff > 0 && !activeRuta) mostrarSeccion("ruta");
-    });
   </script>
 </body>
 </html>
