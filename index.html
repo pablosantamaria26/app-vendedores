@@ -8,15 +8,56 @@
 </head>
 
 <body>
-  <!-- ==========================
-       LOGIN
-  =========================== -->
-  <div id="login" class="login">
-    <h2>🔐 Ingresá tu clave</h2>
-    <input type="password" id="clave" maxlength="4" placeholder="4 dígitos" />
-    <button onclick="login()">Entrar</button>
+<!-- ==========================
+     LOGIN FULLSCREEN
+=========================== -->
+<div id="login" class="login pantalla-login">
+  <div class="login-card">
+    <h1>🧠 App de Vendedores</h1>
+    <h2>🔐 Ingresá tu código</h2>
+
+    <input
+      type="password"
+      id="clave"
+      maxlength="4"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      placeholder="••••"
+      autocomplete="off"
+      autofocus
+    />
+
+    <div class="teclado-numerico">
+      <button onclick="agregarDigito('1')">1</button>
+      <button onclick="agregarDigito('2')">2</button>
+      <button onclick="agregarDigito('3')">3</button>
+      <button onclick="agregarDigito('4')">4</button>
+      <button onclick="agregarDigito('5')">5</button>
+      <button onclick="agregarDigito('6')">6</button>
+      <button onclick="agregarDigito('7')">7</button>
+      <button onclick="agregarDigito('8')">8</button>
+      <button onclick="agregarDigito('9')">9</button>
+      <button onclick="borrarDigito()">⌫</button>
+      <button onclick="agregarDigito('0')">0</button>
+      <button onclick="login()">✔️</button>
+    </div>
+
     <p id="error" class="error"></p>
   </div>
+</div>
+
+<script>
+  function agregarDigito(n) {
+    const input = document.getElementById("clave");
+    if (input.value.length < 4) input.value += n;
+  }
+
+  function borrarDigito() {
+    const input = document.getElementById("clave");
+    input.value = input.value.slice(0, -1);
+  }
+</script>
+
 
   <!-- ==========================
        APP PRINCIPAL
