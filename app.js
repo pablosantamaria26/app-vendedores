@@ -7,6 +7,7 @@ const vendedores = {
   "0003": "Mercado Limpio"
 };
 
+// ⚙️ URL del Apps Script desplegado (tu endpoint)
 const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
 
 /* ================================
@@ -47,19 +48,23 @@ window.onload = mostrarApp;
    CARGA DE DATOS DEL VENDEDOR
 ================================ */
 function cargarDatosVendedor(clave, nombre) {
-  const urlRuta = `${URL_API_BASE}?accion=getClientesDelDia&vendedor=${clave}`;
+  // 🔹 Usa el nuevo endpoint de la ruta del día
+  const urlRuta = `${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`;
   const urlPred = `${URL_API_BASE}`;
 
   Promise.all([fetch(urlRuta), fetch(urlPred)])
     .then(async ([r1, r2]) => [await r1.json(), await r2.json()])
     .then(([clientes, pred]) => {
-      document.getElementById("estado").textContent = `Clientes del día (${clientes.length}) — Última actualización: ${new Date(pred.fechaActualizacion).toLocaleString()}`;
+      const ahora = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
+      document.getElementById("estado").textContent =
+        `Ruta del día cargada (${clientes.length} clientes) — Última actualización: ${ahora}`;
+
       mostrarRutaDia(clientes);
       mostrarPredicciones(pred.datos);
     })
     .catch(err => {
-      console.error(err);
-      document.getElementById("estado").textContent = "❌ Error al cargar datos";
+      console.error("Error al cargar datos:", err);
+      document.getElementById("estado").textContent = "❌ Error al cargar datos.";
     });
 }
 
@@ -108,16 +113,19 @@ function mostrarPredicciones(pedidos) {
 
   const proximos = resultados.filter(c => c.diasRestantes >= 0 && c.diasRestantes <= 7);
   const atrasados = resultados.filter(c => c.diasRestantes < 0);
-  const promedioFrecuencia = Math.round(resultados.reduce((a, b) => a + b.frecuenciaPromedio, 0) / resultados.length);
+  const promedioFrecuencia = Math.round(
+    resultados.reduce((a, b) => a + b.frecuenciaPromedio, 0) / resultados.length
+  );
 
   const resumen = document.createElement("section");
   resumen.className = "resumen";
   resumen.innerHTML = `
     <h2>📊 Predicciones Inteligentes</h2>
-    <p>⏳ Promedio entre pedidos: <b>${promedioFrecuencia} días</b></p>
+    <p>⏳ Promedio de frecuencia entre pedidos: <b>${promedioFrecuencia} días</b></p>
     <p>📅 Clientes que deberían comprar esta semana: <b>${proximos.length}</b></p>
     <p>⚠️ Clientes atrasados: <b>${atrasados.length}</b></p>
   `;
+
   const cont = document.getElementById("contenedor");
   cont.prepend(resumen);
 }
@@ -128,17 +136,30 @@ function mostrarPredicciones(pedidos) {
 function mostrarRutaDia(clientes) {
   const cont = document.getElementById("contenedor");
 
+  const tituloRuta = document.createElement("h2");
+  tituloRuta.textContent = "🗺️ Ruta del Día";
+  tituloRuta.className = "titulo-seccion";
+  cont.appendChild(tituloRuta);
+
   const btnRuta = document.createElement("button");
-  btnRuta.textContent = "🗺️ Ver ruta completa";
+  btnRuta.textContent = "📍 Ver ruta completa en Google Maps";
+  btnRuta.className = "btn-mapa";
   btnRuta.onclick = () => abrirRutaEnMapa(clientes);
   cont.appendChild(btnRuta);
+
+  if (clientes.length === 0) {
+    const vacio = document.createElement("p");
+    vacio.textContent = "📭 No hay clientes asignados para hoy.";
+    cont.appendChild(vacio);
+    return;
+  }
 
   clientes.forEach(c => {
     const div = document.createElement("div");
     div.className = "cliente";
     div.innerHTML = `
       <h3>${c.nombre}</h3>
-      <p>${c.direccion}, ${c.localidad}</p>
+      <p>📍 ${c.direccion}, ${c.localidad}</p>
       <p>
         <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
         <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
@@ -151,8 +172,13 @@ function mostrarRutaDia(clientes) {
 }
 
 function abrirRutaEnMapa(clientes) {
-  const direcciones = clientes.map(c => `${c.direccion}, ${c.localidad}`).join("|");
-  const url = `https://www.google.com/maps/dir/?api=1&travelmode=driving&waypoints=${encodeURIComponent(direcciones)}`;
+  const direcciones = clientes
+    .map(c => `${c.direccion}, ${c.localidad}`)
+    .filter(Boolean)
+    .join("|");
+  const url = `https://www.google.com/maps/dir/?api=1&travelmode=driving&waypoints=${encodeURIComponent(
+    direcciones
+  )}`;
   window.open(url, "_blank");
 }
 
@@ -174,6 +200,6 @@ function registrarVisita(cliente) {
 
   fetch(`${URL_API_BASE}?${params.toString()}`)
     .then(r => r.json())
-    .then(res => alert(`✅ ${res.estado || "Guardado"}`))
-    .catch(() => alert("❌ Error al registrar visita"));
+    .then(res => alert(`✅ ${res.estado || "Guardado correctamente"}`))
+    .catch(() => alert("❌ Error al registrar la visita"));
 }
