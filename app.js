@@ -12,7 +12,7 @@ const URL_API_BASE =
   "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
 
 /* ================================
-   🔐 LOGIN Y SESIÓN
+   LOGIN Y SESIÓN
 ================================ */
 function login() {
   const clave = document.getElementById("clave").value.trim();
@@ -23,36 +23,58 @@ function login() {
     return;
   }
 
+  // Guardar la clave y cargar la app
   localStorage.setItem("vendedorClave", clave);
   mostrarApp();
 }
 
 function logout() {
   localStorage.removeItem("vendedorClave");
-  location.reload();
+  document.getElementById("app").classList.remove("visible");
+  document.getElementById("login").style.display = "flex";
+  document.getElementById("login").classList.remove("oculto");
 }
 
 function mostrarApp() {
   const clave = localStorage.getItem("vendedorClave");
-  if (!clave) return;
+  if (!clave || !vendedores[clave]) {
+    // No hay sesión: mostrar login
+    document.getElementById("login").style.display = "flex";
+    document.getElementById("login").classList.remove("oculto");
+    document.getElementById("app").classList.remove("visible");
+    return;
+  }
 
+  // Hay sesión: mostrar la app
   const loginDiv = document.getElementById("login");
   const appDiv = document.getElementById("app");
-
   loginDiv.classList.add("oculto");
 
   setTimeout(() => {
     loginDiv.style.display = "none";
     appDiv.classList.add("visible");
-  }, 600);
+  }, 500);
 
   const nombre = vendedores[clave];
   document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
-  cargarDatosVendedor(clave);
+
+  // Cargar información general
+  cargarDatosVendedor(clave, nombre);
+  cargarResumenVendedor(clave);
 }
 
-/* Cargar automáticamente si hay sesión activa */
-window.onload = mostrarApp;
+/* ================================
+   AUTOEJECUCIÓN DE SESIÓN
+================================ */
+window.addEventListener("load", () => {
+  const claveGuardada = localStorage.getItem("vendedorClave");
+  if (claveGuardada && vendedores[claveGuardada]) {
+    mostrarApp();
+  } else {
+    document.getElementById("login").style.display = "flex";
+  }
+});
+
 
 /* ================================
    🚗 CARGA DE DATOS PRINCIPALES
