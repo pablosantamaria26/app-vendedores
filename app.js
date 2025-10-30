@@ -6,52 +6,106 @@ fetch(URL_API)
   .then(r => r.json())
   .then(data => {
     estado.textContent = `Datos cargados (${data.total} registros - última actualización: ${new Date(data.fechaActualizacion).toLocaleString()})`;
-    mostrarResumen(data.datos);
-    mostrarPedidos(data.datos);
+    const analisis = analizarFrecuencias(data.datos);
+    mostrarResumen(analisis);
+    mostrarClientesPrediccion(analisis);
   })
   .catch(err => {
     estado.textContent = "❌ Error al cargar los datos";
     console.error(err);
   });
 
-function mostrarResumen(pedidos) {
-  const totalPedidos = pedidos.length;
-  const vendedores = {};
-  const clientes = new Set();
-  const pedidosPorDia = {};
+/** ===========================
+ *  ANALÍTICA Y PREDICCIONES
+ *  =========================== */
+function analizarFrecuencias(pedidos) {
+  const clientes = {};
 
   pedidos.forEach(p => {
-    clientes.add(p.cliente);
-    vendedores[p.vendedor] = (vendedores[p.vendedor] || 0) + 1;
-    const fecha = p.fecha.split("T")[0];
-    pedidosPorDia[fecha] = (pedidosPorDia[fecha] || 0) + 1;
+    const id = p.cliente;
+    const fecha = new Date(p.fecha);
+    if (!clientes[id]) clientes[id] = { vendedor: p.vendedor, fechas: [] };
+    clientes[id].fechas.push(fecha);
   });
 
-  const topVendedor = Object.entries(vendedores).sort((a, b) => b[1] - a[1])[0];
-  const ultimosDias = Object.keys(pedidosPorDia).slice(-7);
-  const promedioPorDia = Math.round(Object.values(pedidosPorDia).reduce((a, b) => a + b, 0) / ultimosDias.length);
+  const hoy = new Date();
+  const resultado = [];
+
+  for (let id in clientes) {
+    const { vendedor, fechas } = clientes[id];
+    fechas.sort((a, b) => a - b);
+
+    if (fechas.length < 2) continue;
+
+    const diferencias = [];
+    for (let i = 1; i < fechas.length; i++) {
+      const dias = (fechas[i] - fechas[i - 1]) / (1000 * 60 * 60 * 24);
+      diferencias.push(dias);
+    }
+
+    const promedio = diferencias.reduce((a, b) => a + b, 0) / diferencias.length;
+    const ultimaFecha = fechas.at(-1);
+    const proximaFecha = new Date(ultimaFecha);
+    proximaFecha.setDate(proximaFecha.getDate() + promedio);
+
+    const diasRestantes = Math.round((proximaFecha - hoy) / (1000 * 60 * 60 * 24));
+
+    resultado.push({
+      cliente: id,
+      vendedor,
+      ultima: ultimaFecha,
+      proxima: proximaFecha,
+      diasRestantes: diasRestantes,
+      frecuenciaPromedio: Math.round(promedio)
+    });
+  }
+
+  return resultado.sort((a, b) => a.diasRestantes - b.diasRestantes);
+}
+
+/** ===========================
+ *  MOSTRAR RESUMEN GLOBAL
+ *  =========================== */
+function mostrarResumen(clientes) {
+  const proximos = clientes.filter(c => c.diasRestantes >= 0 && c.diasRestantes <= 7);
+  const atrasados = clientes.filter(c => c.diasRestantes < 0);
+  const promedioFrecuencia = Math.round(clientes.reduce((a, b) => a + b.frecuenciaPromedio, 0) / clientes.length);
 
   const resumen = document.createElement("section");
   resumen.className = "resumen";
   resumen.innerHTML = `
-    <h2>📈 Resumen Inteligente</h2>
-    <p><strong>Total pedidos:</strong> ${totalPedidos}</p>
-    <p><strong>Total clientes:</strong> ${clientes.size}</p>
-    <p><strong>Top vendedor:</strong> ${topVendedor ? topVendedor[0] + " (" + topVendedor[1] + " pedidos)" : "—"}</p>
-    <p><strong>Promedio pedidos/día:</strong> ${promedioPorDia}</p>
+    <h2>📊 Predicciones Inteligentes</h2>
+    <p>⏳ Promedio de frecuencia entre pedidos: <b>${promedioFrecuencia} días</b></p>
+    <p>📅 Clientes que deberían comprar esta semana: <b>${proximos.length}</b></p>
+    <p>⚠️ Clientes atrasados: <b>${atrasados.length}</b></p>
   `;
   contenedor.prepend(resumen);
 }
 
-function mostrarPedidos(pedidos) {
-  pedidos.slice(-20).reverse().forEach(p => {
+/** ===========================
+ *  MOSTRAR CLIENTES POR PRIORIDAD
+ *  =========================== */
+function mostrarClientesPrediccion(clientes) {
+  const lista = document.createElement("div");
+  lista.className = "lista-clientes";
+
+  clientes.slice(0, 50).forEach(c => {
     const div = document.createElement("div");
-    div.className = "pedido";
+    div.className = "cliente";
+
+    let estado = "🟢 Al día";
+    if (c.diasRestantes < 0) estado = "🔴 Atrasado";
+    else if (c.diasRestantes <= 7) estado = "🟠 Comprar pronto";
+
     div.innerHTML = `
-      <h3>🧾 ${p.vendedor} → Cliente ${p.cliente}</h3>
-      <p><strong>Fecha:</strong> ${p.fecha}</p>
-      <p><strong>Texto Pedido:</strong><br>${p.texto}</p>
+      <h3>👤 Cliente ${c.cliente}</h3>
+      <p><b>Vendedor:</b> ${c.vendedor}</p>
+      <p><b>Último pedido:</b> ${new Date(c.ultima).toLocaleDateString()}</p>
+      <p><b>Próxima compra estimada:</b> ${new Date(c.proxima).toLocaleDateString()}</p>
+      <p><b>Días restantes:</b> ${c.diasRestantes} — ${estado}</p>
     `;
-    contenedor.appendChild(div);
+    lista.appendChild(div);
   });
+
+  contenedor.appendChild(lista);
 }
