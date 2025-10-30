@@ -43,121 +43,53 @@
 
   <script src="app.js"></script>
 
-  <script>
-    /* ================================
-       CONTROL DE SECCIONES
-    ================================ */
-    function mostrarSeccion(seccion) {
-      const rutaBtn = document.getElementById("btnRuta");
-      const calBtn = document.getElementById("btnCalendario");
-      const rutaSec = document.getElementById("seccion-ruta");
-      const calSec = document.getElementById("seccion-calendario");
+<script>
+/* ================================
+   🔄 MANEJO DE SECCIONES / MODO OSCURO
+================================ */
+function mostrarSeccion(seccion) {
+  const btnRuta = document.getElementById("btnRuta");
+  const btnCalendario = document.getElementById("btnCalendario");
+  const seccionRuta = document.getElementById("seccion-ruta");
+  const seccionCalendario = document.getElementById("seccion-calendario");
 
-      rutaBtn.classList.remove("activo");
-      calBtn.classList.remove("activo");
-      rutaSec.classList.add("oculto");
-      calSec.classList.add("oculto");
-      rutaSec.classList.remove("visible");
-      calSec.classList.remove("visible");
+  // Reset
+  btnRuta.classList.remove("activo");
+  btnCalendario.classList.remove("activo");
+  seccionRuta.classList.add("oculto");
+  seccionCalendario.classList.add("oculto");
 
-      if (seccion === "ruta") {
-        rutaBtn.classList.add("activo");
-        rutaSec.classList.add("visible");
-        rutaSec.classList.remove("oculto");
-      } else {
-        calBtn.classList.add("activo");
-        calSec.classList.add("visible");
-        calSec.classList.remove("oculto");
-        cargarCalendario();
-      }
-    }
-    window.mostrarSeccion = mostrarSeccion;
+  if (seccion === "ruta") {
+    btnRuta.classList.add("activo");
+    seccionRuta.classList.remove("oculto");
+  } else {
+    btnCalendario.classList.add("activo");
+    seccionCalendario.classList.remove("oculto");
+    cargarCalendario();
+  }
+}
 
-    /* ================================
-       CALENDARIO
-    ================================ */
-    async function cargarCalendario() {
-      const clave = localStorage.getItem("vendedorClave");
-      const cont = document.getElementById("contenedorCalendario");
-      if (!clave) {
-        cont.innerHTML = "⚠️ Debes iniciar sesión primero.";
-        return;
-      }
+/* ================================
+   🌙 / ☀️ MODO OSCURO
+================================ */
+function alternarModo() {
+  const body = document.body;
+  const actual = body.dataset.dark === "true";
+  body.dataset.dark = !actual;
+  localStorage.setItem("modoOscuro", body.dataset.dark);
+  document.getElementById("modoToggle").textContent = actual ? "🌙" : "☀️";
+}
 
-      cont.innerHTML = "⏳ Cargando calendario...";
-      const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
+// Restaurar modo guardado
+window.addEventListener("load", () => {
+  const guardado = localStorage.getItem("modoOscuro");
+  if (guardado) {
+    document.body.dataset.dark = guardado;
+    document.getElementById("modoToggle").textContent =
+      guardado === "true" ? "☀️" : "🌙";
+  }
+});
+</script>
 
-      try {
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data || data.length === 0) {
-          cont.innerHTML = "📭 No hay visitas programadas.";
-          return;
-        }
-
-        let html = `
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-
-        data.forEach(fila => {
-          html += `
-            <tr>
-              <td>${fila.fecha}</td>
-              <td>${fila.dia}</td>
-              <td>${fila.localidad}</td>
-              <td>${fila.ultimaVisita || "-"}</td>
-              <td>${fila.compro ? "✅" : "❌"}</td>
-            </tr>`;
-        });
-
-        html += "</tbody></table>";
-        cont.innerHTML = html;
-      } catch (e) {
-        console.error("Error al cargar calendario:", e);
-        cont.innerHTML = "❌ Error al cargar calendario.";
-      }
-    }
-    window.cargarCalendario = cargarCalendario;
-
-    /* ================================
-       MODO OSCURO 🌙 / ☀️
-    ================================ */
-    function alternarModo() {
-      const body = document.body;
-      const icono = document.getElementById("modoToggle");
-      const esOscuro = body.dataset.dark === "true";
-      body.dataset.dark = esOscuro ? "false" : "true";
-      localStorage.setItem("modoOscuro", body.dataset.dark);
-      icono.textContent = esOscuro ? "🌙" : "☀️";
-    }
-    window.alternarModo = alternarModo;
-
-    (function initModo() {
-      const guardado = localStorage.getItem("modoOscuro");
-      if (guardado) {
-        document.body.dataset.dark = guardado;
-        document.getElementById("modoToggle").textContent =
-          guardado === "true" ? "☀️" : "🌙";
-      } else {
-        const hora = new Date().getHours();
-        document.body.dataset.dark = hora >= 19 || hora < 7 ? "true" : "false";
-      }
-    })();
-
-    /* ================================
-       LOGOUT
-    ================================ */
-    function logout() {
-      localStorage.removeItem("vendedorClave");
-      location.reload();
-    }
-    window.logout = logout;
-  </script>
 </body>
 </html>
