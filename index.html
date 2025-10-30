@@ -52,21 +52,33 @@
   =========================== -->
   <script>
     function mostrarSeccion(seccion) {
-      document.getElementById("btnRuta").classList.remove("activo");
-      document.getElementById("btnCalendario").classList.remove("activo");
+  const rutaBtn = document.getElementById("btnRuta");
+  const calBtn = document.getElementById("btnCalendario");
+  const rutaSec = document.getElementById("seccion-ruta");
+  const calSec = document.getElementById("seccion-calendario");
 
-      document.getElementById("seccion-ruta").classList.add("oculto");
-      document.getElementById("seccion-calendario").classList.add("oculto");
+  // limpiar estados
+  rutaBtn.classList.remove("activo");
+  calBtn.classList.remove("activo");
+  rutaSec.classList.remove("visible");
+  calSec.classList.remove("visible");
+  rutaSec.classList.add("oculto");
+  calSec.classList.add("oculto");
 
-      if (seccion === "ruta") {
-        document.getElementById("btnRuta").classList.add("activo");
-        document.getElementById("seccion-ruta").classList.remove("oculto");
-      } else {
-        document.getElementById("btnCalendario").classList.add("activo");
-        document.getElementById("seccion-calendario").classList.remove("oculto");
-        cargarCalendario();
-      }
-    }
+  if (seccion === "ruta") {
+    rutaBtn.classList.add("activo");
+    rutaSec.classList.add("visible");
+    rutaSec.classList.remove("oculto");
+    rutaSec.scrollTo(0, 0); // reset scroll
+  } else {
+    calBtn.classList.add("activo");
+    calSec.classList.add("visible");
+    calSec.classList.remove("oculto");
+    calSec.scrollTo(0, 0);
+    cargarCalendario();
+  }
+}
+
 
     async function cargarCalendario() {
       const clave = localStorage.getItem("vendedorClave");
