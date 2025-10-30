@@ -6,8 +6,11 @@
   <title>App de Vendedores Inteligente</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <!-- LOGIN -->
+  <!-- ==========================
+       LOGIN
+  =========================== -->
   <div id="login" class="login">
     <h2>🔐 Ingresá tu clave</h2>
     <input type="password" id="clave" maxlength="4" placeholder="4 dígitos" />
@@ -15,7 +18,9 @@
     <p id="error" class="error"></p>
   </div>
 
-  <!-- APP PRINCIPAL -->
+  <!-- ==========================
+       APP PRINCIPAL
+  =========================== -->
   <div id="app" class="oculto">
     <header>
       <h1 id="titulo"></h1>
@@ -24,72 +29,123 @@
       <div class="menu">
         <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta del Día</button>
         <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅 Calendario</button>
+        <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈 Resumen</button>
         <button id="btnLogout" onclick="logout()">🚪 Salir</button>
       </div>
       <p id="estado"></p>
     </header>
 
     <main>
+      <!-- 🗺️ Ruta del día -->
       <section id="seccion-ruta" class="seccion visible">
         <div id="contenedor"></div>
       </section>
 
+      <!-- 📅 Calendario -->
       <section id="seccion-calendario" class="seccion oculto">
         <h2>📅 Calendario de Visitas</h2>
         <div id="contenedorCalendario" class="tabla-calendario"></div>
       </section>
+
+      <!-- 📈 Resumen Inteligente -->
+      <section id="seccion-resumen" class="seccion oculto">
+        <h2>📊 Desempeño y Predicciones</h2>
+        <div id="contenedorResumen" class="panel-resumen">
+          <p>⏳ Cargando información...</p>
+        </div>
+      </section>
     </main>
   </div>
 
+  <!-- ==========================
+       JS PRINCIPAL
+  =========================== -->
   <script src="app.js"></script>
 
-<script>
-/* ================================
-   🔄 MANEJO DE SECCIONES / MODO OSCURO
-================================ */
-function mostrarSeccion(seccion) {
-  const btnRuta = document.getElementById("btnRuta");
-  const btnCalendario = document.getElementById("btnCalendario");
-  const seccionRuta = document.getElementById("seccion-ruta");
-  const seccionCalendario = document.getElementById("seccion-calendario");
+  <!-- ==========================
+       CONTROL DE SECCIONES / MODO
+  =========================== -->
+  <script>
+    function mostrarSeccion(seccion) {
+      const secciones = ["ruta", "calendario", "resumen"];
+      secciones.forEach(s => {
+        document.getElementById("btn" + s.charAt(0).toUpperCase() + s.slice(1))?.classList.remove("activo");
+        document.getElementById("seccion-" + s)?.classList.add("oculto");
+      });
 
-  // Reset
-  btnRuta.classList.remove("activo");
-  btnCalendario.classList.remove("activo");
-  seccionRuta.classList.add("oculto");
-  seccionCalendario.classList.add("oculto");
+      const btn = document.getElementById("btn" + seccion.charAt(0).toUpperCase() + seccion.slice(1));
+      const sec = document.getElementById("seccion-" + seccion);
 
-  if (seccion === "ruta") {
-    btnRuta.classList.add("activo");
-    seccionRuta.classList.remove("oculto");
-  } else {
-    btnCalendario.classList.add("activo");
-    seccionCalendario.classList.remove("oculto");
-    cargarCalendario();
-  }
-}
+      btn?.classList.add("activo");
+      sec?.classList.remove("oculto");
 
-/* ================================
-   🌙 / ☀️ MODO OSCURO
-================================ */
-function alternarModo() {
-  const body = document.body;
-  const actual = body.dataset.dark === "true";
-  body.dataset.dark = !actual;
-  localStorage.setItem("modoOscuro", body.dataset.dark);
-  document.getElementById("modoToggle").textContent = actual ? "🌙" : "☀️";
-}
+      if (seccion === "calendario") cargarCalendario();
+      if (seccion === "resumen") cargarResumenInteligente();
+    }
 
-// Restaurar modo guardado
-window.addEventListener("load", () => {
-  const guardado = localStorage.getItem("modoOscuro");
-  if (guardado) {
-    document.body.dataset.dark = guardado;
-    document.getElementById("modoToggle").textContent =
-      guardado === "true" ? "☀️" : "🌙";
-  }
-});
-</script>
+    function alternarModo() {
+      const body = document.body;
+      const actual = body.dataset.dark === "true";
+      body.dataset.dark = !actual;
+      localStorage.setItem("modoOscuro", body.dataset.dark);
+      document.getElementById("modoToggle").textContent = actual ? "🌙" : "☀️";
+    }
 
+    window.addEventListener("load", () => {
+      const guardado = localStorage.getItem("modoOscuro");
+      if (guardado) {
+        document.body.dataset.dark = guardado;
+        document.getElementById("modoToggle").textContent =
+          guardado === "true" ? "☀️" : "🌙";
+      }
+    });
+
+    /* ================================
+       🧠 CARGAR RESUMEN INTELIGENTE
+    ================================ */
+    async function cargarResumenInteligente() {
+      const clave = localStorage.getItem("vendedorClave");
+      const cont = document.getElementById("contenedorResumen");
+      if (!clave) {
+        cont.innerHTML = "<p>⚠️ Debes iniciar sesión primero.</p>";
+        return;
+      }
+
+      cont.innerHTML = "⏳ Analizando tus datos...";
+
+      try {
+        const resumenURL = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`;
+        const predURL = `${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`;
+        const [r1, r2] = await Promise.all([fetch(resumenURL), fetch(predURL)]);
+        const resumen = await r1.json();
+        const pred = await r2.json();
+
+        if (resumen.error) {
+          cont.innerHTML = `<p>❌ ${resumen.error}</p>`;
+          return;
+        }
+
+        cont.innerHTML = `
+          <div class="tarjeta-resumen">
+            <h3>📅 Fecha: ${resumen.fecha}</h3>
+            <p>🧍‍♂️ Clientes visitados: <strong>${resumen.totalHoy}</strong></p>
+            <p>🛒 Compraron hoy: <strong>${resumen.compraronHoy}</strong></p>
+            <p>📈 Tasa de conversión: <strong>${resumen.tasa}%</strong></p>
+            <p>⏱️ Frecuencia promedio de compra: 
+              <strong>${resumen.frecuenciaProm ? resumen.frecuenciaProm + " días" : "Sin datos"}</strong>
+            </p>
+          </div>
+
+          <div class="tarjeta-prediccion">
+            <h3>🤖 Recomendación Inteligente</h3>
+            <p>${pred.mensaje}</p>
+          </div>
+        `;
+      } catch (e) {
+        cont.innerHTML = "❌ Error al cargar resumen inteligente.";
+        console.error("Error en cargarResumenInteligente:", e);
+      }
+    }
+  </script>
 </body>
 </html>
