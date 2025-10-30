@@ -1,6 +1,3 @@
-/* ================================
-   VARIABLES DE COLOR BASE
-================================ */
 :root {
   --azul: #004aad;
   --azul-oscuro: #002b73;
@@ -12,9 +9,6 @@
   --texto: #222;
 }
 
-/* ================================
-   MODO OSCURO AUTOMÁTICO
-================================ */
 @media (prefers-color-scheme: dark) {
   :root {
     --azul: #58a6ff;
@@ -28,22 +22,7 @@
   }
 }
 
-@media (prefers-color-scheme: light) {
-  body[data-dark='true'] {
-    --azul: #58a6ff;
-    --azul-oscuro: #1f6feb;
-    --celeste: #1c2128;
-    --blanco: #0d1117;
-    --gris-claro: #010409;
-    --sombra: rgba(255, 255, 255, 0.08);
-    --gradiente: linear-gradient(135deg, #1f6feb, #58a6ff);
-    --texto: #e6edf3;
-  }
-}
-
-/* ================================
-   ESTILOS GENERALES
-================================ */
+/* Body general */
 body {
   font-family: 'Segoe UI', Roboto, sans-serif;
   background: var(--gris-claro);
@@ -51,49 +30,71 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  height: 100vh;
   transition: background 0.6s ease, color 0.6s ease;
 }
 
+/* Login a pantalla completa */
+#login {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: var(--gradiente);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+#login.oculto {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.97);
+}
+
+/* App principal visible */
 #app.oculto {
-  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+#app.visible {
+  opacity: 1;
+  transition: opacity 0.8s ease;
 }
 
-/* ================================
-   HEADER Y MENÚ
-================================ */
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
+/* Header */
 header {
-  background: linear-gradient(270deg, #004aad, #0079ff, #00c8ff);
-  background-size: 600% 600%;
-  animation: gradientMove 12s ease infinite;
+  background: var(--gradiente);
   color: var(--blanco);
   padding: 1em;
   text-align: center;
+  box-shadow: 0 3px 8px var(--sombra);
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 3px 8px var(--sombra);
-  backdrop-filter: blur(6px);
-  transition: all 0.4s ease;
 }
 
-header h1 {
-  margin: 0.3em 0;
-  font-size: 1.8em;
-  letter-spacing: 0.5px;
-  text-shadow: 0 0 8px rgba(255,255,255,0.3);
+/* Toggle modo */
+.modo-toggle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 1.5em;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.modo-toggle:hover {
+  transform: rotate(20deg);
 }
 
 .menu {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  margin-top: 0.5em;
   gap: 0.5em;
 }
 
@@ -102,158 +103,59 @@ header h1 {
   color: var(--blanco);
   border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 30px;
-  padding: 0.5em 1.1em;
+  padding: 0.5em 1em;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
-  backdrop-filter: blur(5px);
 }
 
 .menu button:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
 }
-
 .menu button.activo {
   background: var(--blanco);
   color: var(--azul);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-/* ================================
-   LOGIN
-================================ */
-.login {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  text-align: center;
-  animation: fadeIn 0.8s ease-in-out;
-  background: var(--gradiente);
-  background-attachment: fixed;
-  background-size: cover;
-}
-
-body[data-dark="true"] .login {
-  background: linear-gradient(135deg, #0d1117, #001f4d);
-}
-
-.login h2 {
-  color: var(--blanco);
-  font-size: 1.7em;
-  margin-bottom: 0.5em;
-  text-shadow: 0 0 10px rgba(255,255,255,0.3);
-}
-
-.login input {
-  font-size: 1.3em;
-  padding: 0.5em 0.8em;
-  text-align: center;
-  margin: 0.5em;
-  border-radius: 10px;
-  border: 2px solid #ccc;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.login input:focus {
-  border-color: var(--azul);
-  box-shadow: 0 0 10px rgba(0,74,173,0.3);
-}
-
-.login button {
-  background: var(--blanco);
-  color: var(--azul);
-  border: none;
-  border-radius: 50px;
-  padding: 0.7em 2em;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1em;
-  margin-top: 0.3em;
-  transition: all 0.3s ease;
-}
-
-.login button:hover {
-  transform: scale(1.07);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
-}
-
-.error {
-  color: #ff5555;
-  margin-top: 0.5em;
-  background: rgba(255,255,255,0.1);
-  padding: 0.4em 1em;
-  border-radius: 6px;
-}
-
-/* ================================
-   ELEMENTOS DE CONTENIDO
-================================ */
-.resumen, .cliente {
-  transition: all 0.3s ease;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px var(--sombra);
-}
-
-.resumen {
-  background: rgba(255, 255, 255, 0.8);
-  border-left: 6px solid var(--azul);
-  padding: 1em 1.3em;
-  margin: 1.2em auto;
-  width: 90%;
-  max-width: 700px;
-  backdrop-filter: blur(6px);
-}
-
-.cliente {
-  background: var(--blanco);
-  border-left: 6px solid var(--azul);
-  padding: 1em;
-  margin: 1em auto;
-  width: 90%;
-  max-width: 620px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.cliente:hover {
-  transform: scale(1.02);
-  box-shadow: 0 6px 16px rgba(0,74,173,0.3);
-}
-
-/* ================================
-   TABLA DE CALENDARIO
-================================ */
+/* Tabla calendario */
 .tabla-calendario table {
   width: 100%;
   border-collapse: collapse;
   border-radius: 10px;
-  overflow: hidden;
   background: var(--blanco);
-  color: var(--texto);
-  transition: all 0.4s ease;
+  overflow: hidden;
 }
-
 .tabla-calendario th {
   background: var(--gradiente);
   color: var(--blanco);
   padding: 0.9em;
 }
-
 .tabla-calendario td {
   padding: 0.7em;
   border-bottom: 1px solid #ddd;
 }
-
 .tabla-calendario tr:hover td {
   background: var(--celeste);
 }
 
-/* ================================
-   BOTONES GENERALES
-================================ */
+/* Clientes */
+.cliente {
+  background: var(--blanco);
+  border-left: 6px solid var(--azul);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px var(--sombra);
+  margin: 1em auto;
+  padding: 1em;
+  width: 90%;
+  max-width: 620px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.cliente:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 74, 173, 0.3);
+}
+
+/* Botones generales */
 button {
   background: var(--gradiente);
   color: white;
@@ -265,67 +167,7 @@ button {
   font-weight: 600;
   transition: all 0.3s ease;
 }
-
 button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(0,74,173,0.4);
-}
-
-/* ================================
-   BOTÓN MODO OSCURO 🌙 / ☀️
-================================ */
-.modo-toggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 1.6em;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(6px);
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-body[data-dark="true"] .modo-toggle {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5f7ff;
-  box-shadow: 0 0 10px rgba(88,166,255,0.5);
-}
-
-.modo-toggle:hover {
-  transform: scale(1.1) rotate(10deg);
-}
-
-/* ================================
-   ANIMACIONES
-================================ */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ================================
-   DETALLES EXTRA
-================================ */
-::selection {
-  background: var(--azul);
-  color: white;
-}
-
-::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--azul);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--azul-oscuro);
 }
