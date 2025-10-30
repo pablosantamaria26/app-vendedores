@@ -494,4 +494,13 @@ button:hover {
   border-left: 8px solid var(--azul);
 }
 
-
+/* ================================
+   📱 RESPONSIVE (MÓVILES)
+================================ */
+@media (max-width: 600px) {
+  header h1 { font-size: 1.3em; }
+  .menu button { font-size: 0.9em; padding: 0.4em 1em; }
+  .tarjeta-resumen, .tarjeta-prediccion { padding: 1em; }
+  .grafico-container { width: 120px; height: 120px; }
+  .grafico-texto { font-size: 1.5em; }
+}
