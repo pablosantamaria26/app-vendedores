@@ -312,12 +312,19 @@
       cargarResumen(clave);
     }
 
-    function mostrarSeccion(seccion) {
-      document.querySelectorAll(".seccion").forEach(s => s.classList.add("oculto"));
-      document.getElementById("seccion-" + seccion).classList.remove("oculto");
-      document.querySelectorAll(".menu button").forEach(b => b.classList.remove("activo"));
-      document.getElementById("btn" + seccion.charAt(0).toUpperCase() + seccion.slice(1)).classList.add("activo");
-    }
+  function mostrarSeccion(seccion) {
+  // Oculta todas las secciones
+  document.querySelectorAll(".seccion").forEach(s => s.classList.add("oculto"));
+
+  // Muestra la que corresponde
+  document.getElementById("seccion-" + seccion).classList.remove("oculto");
+
+  // Actualiza los botones
+  document.querySelectorAll(".menu button").forEach(b => b.classList.remove("activo"));
+  const botonActivo = document.querySelector(`[onclick="mostrarSeccion('${seccion}')"]`);
+  if (botonActivo) botonActivo.classList.add("activo");
+}
+
 
     async function cargarRuta(clave) {
       const cont = document.getElementById("contenedor");
