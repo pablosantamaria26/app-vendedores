@@ -8,7 +8,8 @@ const vendedores = {
 };
 
 // ⚙️ URL del Apps Script desplegado (tu endpoint)
-const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
+const URL_API_BASE =
+  "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
 
 /* ================================
    LOGIN Y SESIÓN
@@ -16,10 +17,12 @@ const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUs
 function login() {
   const clave = document.getElementById("clave").value.trim();
   const error = document.getElementById("error");
+
   if (!vendedores[clave]) {
     error.textContent = "❌ Clave incorrecta";
     return;
   }
+
   localStorage.setItem("vendedorClave", clave);
   mostrarApp();
 }
@@ -39,6 +42,9 @@ function mostrarApp() {
 
   const nombre = vendedores[clave];
   document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
+
+  // 🔹 Cargar resumen y datos principales
+  cargarResumenVendedor(clave);
   cargarDatosVendedor(clave, nombre);
 }
 
@@ -48,85 +54,49 @@ window.onload = mostrarApp;
    CARGA DE DATOS DEL VENDEDOR
 ================================ */
 function cargarDatosVendedor(clave, nombre) {
-  // 🔹 Usa el nuevo endpoint de la ruta del día
   const urlRuta = `${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`;
-  const urlPred = `${URL_API_BASE}`;
+  const urlPred = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`; // 🔹 Usamos resumen real, no datos inexistentes
 
   Promise.all([fetch(urlRuta), fetch(urlPred)])
     .then(async ([r1, r2]) => [await r1.json(), await r2.json()])
     .then(([clientes, pred]) => {
-      const ahora = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
-      document.getElementById("estado").textContent =
-        `Ruta del día cargada (${clientes.length} clientes) — Última actualización: ${ahora}`;
+      const ahora = new Date().toLocaleString("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+      });
+      document.getElementById(
+        "estado"
+      ).textContent = `Ruta del día cargada (${clientes.length} clientes) — Última actualización: ${ahora}`;
 
       mostrarRutaDia(clientes);
-      mostrarPredicciones(pred.datos);
+
+      // ✅ Evita errores si no hay datos
+      if (pred && pred.tasa !== undefined) {
+        mostrarPredicciones(pred);
+      } else {
+        console.warn("⚠️ No hay datos de predicciones disponibles.");
+      }
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error al cargar datos:", err);
       document.getElementById("estado").textContent = "❌ Error al cargar datos.";
     });
 }
 
 /* ================================
-   PREDICCIONES INTELIGENTES
+   PREDICCIONES / ESTADÍSTICAS
 ================================ */
-function mostrarPredicciones(pedidos) {
-  const clientes = {};
-
-  pedidos.forEach(p => {
-    const id = p.cliente;
-    const fecha = new Date(p.fecha);
-    if (!clientes[id]) clientes[id] = { vendedor: p.vendedor, fechas: [] };
-    clientes[id].fechas.push(fecha);
-  });
-
-  const hoy = new Date();
-  const resultados = [];
-
-  for (let id in clientes) {
-    const { vendedor, fechas } = clientes[id];
-    fechas.sort((a, b) => a - b);
-    if (fechas.length < 2) continue;
-
-    const diferencias = [];
-    for (let i = 1; i < fechas.length; i++) {
-      const dias = (fechas[i] - fechas[i - 1]) / (1000 * 60 * 60 * 24);
-      diferencias.push(dias);
-    }
-
-    const promedio = diferencias.reduce((a, b) => a + b, 0) / diferencias.length;
-    const ultimaFecha = fechas.at(-1);
-    const proximaFecha = new Date(ultimaFecha);
-    proximaFecha.setDate(proximaFecha.getDate() + promedio);
-    const diasRestantes = Math.round((proximaFecha - hoy) / (1000 * 60 * 60 * 24));
-
-    resultados.push({
-      cliente: id,
-      vendedor,
-      ultima: ultimaFecha,
-      proxima: proximaFecha,
-      diasRestantes,
-      frecuenciaPromedio: Math.round(promedio)
-    });
-  }
-
-  const proximos = resultados.filter(c => c.diasRestantes >= 0 && c.diasRestantes <= 7);
-  const atrasados = resultados.filter(c => c.diasRestantes < 0);
-  const promedioFrecuencia = Math.round(
-    resultados.reduce((a, b) => a + b.frecuenciaPromedio, 0) / resultados.length
-  );
+function mostrarPredicciones(pred) {
+  const cont = document.getElementById("contenedor");
 
   const resumen = document.createElement("section");
   resumen.className = "resumen";
   resumen.innerHTML = `
     <h2>📊 Predicciones Inteligentes</h2>
-    <p>⏳ Promedio de frecuencia entre pedidos: <b>${promedioFrecuencia} días</b></p>
-    <p>📅 Clientes que deberían comprar esta semana: <b>${proximos.length}</b></p>
-    <p>⚠️ Clientes atrasados: <b>${atrasados.length}</b></p>
+    <p>🎯 Tasa de conversión actual: <b>${pred.tasa}%</b></p>
+    <p>💰 Clientes que compraron hoy: <b>${pred.compraronHoy}</b></p>
+    <p>🚗 Clientes visitados hoy: <b>${pred.totalHoy}</b></p>
+    <p>⏳ Frecuencia promedio de compra: <b>${pred.frecuenciaProm || "N/A"} días</b></p>
   `;
-
-  const cont = document.getElementById("contenedor");
   cont.prepend(resumen);
 }
 
@@ -135,6 +105,7 @@ function mostrarPredicciones(pedidos) {
 ================================ */
 function mostrarRutaDia(clientes) {
   const cont = document.getElementById("contenedor");
+  cont.innerHTML = ""; // 🔹 Limpia antes de volver a renderizar
 
   const tituloRuta = document.createElement("h2");
   tituloRuta.textContent = "🗺️ Ruta del Día";
@@ -147,14 +118,14 @@ function mostrarRutaDia(clientes) {
   btnRuta.onclick = () => abrirRutaEnMapa(clientes);
   cont.appendChild(btnRuta);
 
-  if (clientes.length === 0) {
+  if (!clientes || clientes.length === 0) {
     const vacio = document.createElement("p");
     vacio.textContent = "📭 No hay clientes asignados para hoy.";
     cont.appendChild(vacio);
     return;
   }
 
-  clientes.forEach(c => {
+  clientes.forEach((c) => {
     const div = document.createElement("div");
     div.className = "cliente";
     div.innerHTML = `
@@ -165,7 +136,9 @@ function mostrarRutaDia(clientes) {
         <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
       </p>
       <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
-      <button onclick='registrarVisita(${JSON.stringify(c)})'>💾 Guardar visita</button>
+      <button onclick='registrarVisita(${JSON.stringify(
+        c
+      )})'>💾 Guardar visita</button>
     `;
     cont.appendChild(div);
   });
@@ -173,7 +146,7 @@ function mostrarRutaDia(clientes) {
 
 function abrirRutaEnMapa(clientes) {
   const direcciones = clientes
-    .map(c => `${c.direccion}, ${c.localidad}`)
+    .map((c) => `${c.direccion}, ${c.localidad}`)
     .filter(Boolean)
     .join("|");
   const url = `https://www.google.com/maps/dir/?api=1&travelmode=driving&waypoints=${encodeURIComponent(
@@ -185,8 +158,10 @@ function abrirRutaEnMapa(clientes) {
 function registrarVisita(cliente) {
   const visitado = document.getElementById(`visitado-${cliente.numero}`).checked;
   const compro = document.getElementById(`compro-${cliente.numero}`).checked;
-  const comentario = document.getElementById(`coment-${cliente.numero}`).value.trim();
-  const vendedor = localStorage.getItem("vendedorClave"); // 🔹 Clave activa del vendedor
+  const comentario = document
+    .getElementById(`coment-${cliente.numero}`)
+    .value.trim();
+  const vendedor = localStorage.getItem("vendedorClave");
 
   const params = new URLSearchParams({
     accion: "registrarVisita",
@@ -197,21 +172,22 @@ function registrarVisita(cliente) {
     visitado,
     compro,
     comentario,
-    vendedor
+    vendedor,
   });
 
   fetch(`${URL_API_BASE}?${params.toString()}`)
-    .then(r => r.json())
-    .then(res => alert(res.estado || "Guardado"))
+    .then((r) => r.json())
+    .then((res) => alert(res.estado || "Guardado"))
     .catch(() => alert("❌ Error al registrar visita"));
 }
-/**
- * 🔹 Cargar y mostrar el panel de estadísticas del vendedor
- */
+
+/* ================================
+   PANEL DE ESTADÍSTICAS DEL VENDEDOR
+================================ */
 function cargarResumenVendedor(clave) {
   fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`)
-    .then(r => r.json())
-    .then(res => {
+    .then((r) => r.json())
+    .then((res) => {
       if (!res || !res.fecha) return;
 
       const panel = document.createElement("section");
@@ -228,6 +204,5 @@ function cargarResumenVendedor(clave) {
       const cont = document.getElementById("contenedor");
       cont.prepend(panel);
     })
-    .catch(err => console.error("Error cargando resumen:", err));
+    .catch((err) => console.error("Error cargando resumen:", err));
 }
-
