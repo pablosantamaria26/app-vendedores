@@ -1,3 +1,6 @@
+/* ================================
+   VARIABLES DE COLOR BASE
+================================ */
 :root {
   --azul: #004aad;
   --azul-oscuro: #002b73;
@@ -22,7 +25,9 @@
   }
 }
 
-/* Body general */
+/* ================================
+   BODY GENERAL
+================================ */
 body {
   font-family: 'Segoe UI', Roboto, sans-serif;
   background: var(--gris-claro);
@@ -34,7 +39,9 @@ body {
   transition: background 0.6s ease, color 0.6s ease;
 }
 
-/* Login a pantalla completa */
+/* ================================
+   LOGIN FULLSCREEN
+================================ */
 #login {
   position: fixed;
   top: 0;
@@ -46,8 +53,48 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
   z-index: 1000;
   transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+#login h2 {
+  color: var(--blanco);
+  font-size: 1.7em;
+  margin-bottom: 0.8em;
+}
+
+#login input {
+  font-size: 1.3em;
+  padding: 0.6em 1em;
+  text-align: center;
+  margin: 0.5em;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  outline: none;
+  width: 220px;
+  transition: all 0.3s ease;
+}
+
+#login input:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 12px rgba(0, 74, 173, 0.4);
+}
+
+#login button {
+  background: var(--blanco);
+  color: var(--azul);
+  border: none;
+  border-radius: 40px;
+  padding: 0.6em 1.6em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#login button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
 }
 
 #login.oculto {
@@ -56,17 +103,22 @@ body {
   transform: scale(0.97);
 }
 
-/* App principal visible */
+/* ================================
+   APP PRINCIPAL
+================================ */
 #app.oculto {
   opacity: 0;
   pointer-events: none;
 }
+
 #app.visible {
   opacity: 1;
   transition: opacity 0.8s ease;
 }
 
-/* Header */
+/* ================================
+   HEADER
+================================ */
 header {
   background: var(--gradiente);
   color: var(--blanco);
@@ -76,9 +128,17 @@ header {
   position: sticky;
   top: 0;
   z-index: 10;
+  min-height: 140px;
 }
 
-/* Toggle modo */
+header h1 {
+  margin: 0.3em 0 0.6em;
+  font-size: 1.6em;
+}
+
+/* ================================
+   TOGGLE MODO OSCURO
+================================ */
 .modo-toggle {
   position: absolute;
   top: 15px;
@@ -91,6 +151,9 @@ header {
   transform: rotate(20deg);
 }
 
+/* ================================
+   MENÚ DE NAVEGACIÓN
+================================ */
 .menu {
   display: flex;
   justify-content: center;
@@ -103,7 +166,7 @@ header {
   color: var(--blanco);
   border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 30px;
-  padding: 0.5em 1em;
+  padding: 0.5em 1.2em;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -112,64 +175,11 @@ header {
 .menu button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
 .menu button.activo {
   background: var(--blanco);
   color: var(--azul);
-}
-
-/* Tabla calendario */
-.tabla-calendario table {
-  width: 100%;
-  border-collapse: collapse;
-  border-radius: 10px;
-  background: var(--blanco);
-  overflow: hidden;
-}
-.tabla-calendario th {
-  background: var(--gradiente);
-  color: var(--blanco);
-  padding: 0.9em;
-}
-.tabla-calendario td {
-  padding: 0.7em;
-  border-bottom: 1px solid #ddd;
-}
-.tabla-calendario tr:hover td {
-  background: var(--celeste);
-}
-
-/* Clientes */
-.cliente {
-  background: var(--blanco);
-  border-left: 6px solid var(--azul);
-  border-radius: 12px;
-  box-shadow: 0 4px 10px var(--sombra);
-  margin: 1em auto;
-  padding: 1em;
-  width: 90%;
-  max-width: 620px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.cliente:hover {
-  transform: scale(1.02);
-  box-shadow: 0 6px 16px rgba(0, 74, 173, 0.3);
-}
-
-/* Botones generales */
-button {
-  background: var(--gradiente);
-  color: white;
-  border: none;
-  border-radius: 40px;
-  padding: 0.6em 1.4em;
-  margin: 0.3em;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(0,74,173,0.4);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 /* ================================
@@ -191,6 +201,7 @@ main {
   overflow-y: auto;
   background: var(--gris-claro);
   transition: transform 0.5s ease, opacity 0.4s ease;
+  padding-bottom: 2em;
 }
 
 .seccion.oculto {
@@ -205,3 +216,90 @@ main {
   pointer-events: all;
 }
 
+/* ================================
+   TABLA CALENDARIO
+================================ */
+.tabla-calendario {
+  width: 100%;
+  max-width: 900px;
+  margin: 1.5em auto;
+  overflow-x: auto;
+}
+
+.tabla-calendario table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  background: var(--blanco);
+  overflow: hidden;
+}
+
+.tabla-calendario th {
+  background: var(--gradiente);
+  color: var(--blanco);
+  padding: 0.9em;
+  text-align: left;
+}
+
+.tabla-calendario td {
+  padding: 0.7em;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabla-calendario tr:hover td {
+  background: var(--celeste);
+}
+
+/* ================================
+   TARJETAS DE CLIENTES
+================================ */
+.cliente {
+  background: var(--blanco);
+  border-left: 6px solid var(--azul);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px var(--sombra);
+  margin: 1em auto;
+  padding: 1em;
+  width: 90%;
+  max-width: 620px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cliente:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 74, 173, 0.3);
+}
+
+/* ================================
+   BOTONES GENERALES
+================================ */
+button {
+  background: var(--gradiente);
+  color: white;
+  border: none;
+  border-radius: 40px;
+  padding: 0.6em 1.4em;
+  margin: 0.3em;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0,74,173,0.4);
+}
+
+/* ================================
+   SCROLLBAR
+================================ */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--azul);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--azul-oscuro);
+}
