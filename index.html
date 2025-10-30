@@ -8,56 +8,55 @@
 </head>
 
 <body>
-<!-- ==========================
-     LOGIN FULLSCREEN
-=========================== -->
-<div id="login" class="login pantalla-login">
-  <div class="login-card">
-    <h1>🧠 App de Vendedores</h1>
-    <h2>🔐 Ingresá tu código</h2>
+  <!-- ==========================
+       LOGIN FULLSCREEN
+  =========================== -->
+  <div id="login" class="login pantalla-login">
+    <div class="login-card">
+      <h1>🧠 App de Vendedores</h1>
+      <h2>🔐 Ingresá tu código</h2>
 
-    <input
-      type="password"
-      id="clave"
-      maxlength="4"
-      inputmode="numeric"
-      pattern="[0-9]*"
-      placeholder="••••"
-      autocomplete="off"
-      autofocus
-    />
+      <input
+        type="tel"
+        id="clave"
+        maxlength="4"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        placeholder="••••"
+        autocomplete="off"
+        autofocus
+      />
 
-    <div class="teclado-numerico">
-      <button onclick="agregarDigito('1')">1</button>
-      <button onclick="agregarDigito('2')">2</button>
-      <button onclick="agregarDigito('3')">3</button>
-      <button onclick="agregarDigito('4')">4</button>
-      <button onclick="agregarDigito('5')">5</button>
-      <button onclick="agregarDigito('6')">6</button>
-      <button onclick="agregarDigito('7')">7</button>
-      <button onclick="agregarDigito('8')">8</button>
-      <button onclick="agregarDigito('9')">9</button>
-      <button onclick="borrarDigito()">⌫</button>
-      <button onclick="agregarDigito('0')">0</button>
-      <button onclick="login()">✔️</button>
+      <div class="teclado-numerico">
+        <button onclick="agregarDigito('1')">1</button>
+        <button onclick="agregarDigito('2')">2</button>
+        <button onclick="agregarDigito('3')">3</button>
+        <button onclick="agregarDigito('4')">4</button>
+        <button onclick="agregarDigito('5')">5</button>
+        <button onclick="agregarDigito('6')">6</button>
+        <button onclick="agregarDigito('7')">7</button>
+        <button onclick="agregarDigito('8')">8</button>
+        <button onclick="agregarDigito('9')">9</button>
+        <button onclick="borrarDigito()">⌫</button>
+        <button onclick="agregarDigito('0')">0</button>
+        <button onclick="login()">✔️</button>
+      </div>
+
+      <p id="error" class="error"></p>
     </div>
-
-    <p id="error" class="error"></p>
   </div>
-</div>
 
-<script>
-  function agregarDigito(n) {
-    const input = document.getElementById("clave");
-    if (input.value.length < 4) input.value += n;
-  }
+  <script>
+    function agregarDigito(n) {
+      const input = document.getElementById("clave");
+      if (input.value.length < 4) input.value += n;
+    }
 
-  function borrarDigito() {
-    const input = document.getElementById("clave");
-    input.value = input.value.slice(0, -1);
-  }
-</script>
-
+    function borrarDigito() {
+      const input = document.getElementById("clave");
+      input.value = input.value.slice(0, -1);
+    }
+  </script>
 
   <!-- ==========================
        APP PRINCIPAL
@@ -68,17 +67,14 @@
       <div class="modo-toggle" id="modoToggle" onclick="alternarModo()">🌙</div>
 
       <div class="menu">
-        <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta del Día</button>
+        <button id="btnRuta" onclick="mostrarSeccion('ruta')">🗺️ Ruta del Día</button>
         <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅 Calendario</button>
-        <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈 Resumen</button>
+        <button id="btnResumen" class="activo" onclick="mostrarSeccion('resumen')">📈 Resumen</button>
         <button id="btnLogout" onclick="logout()">🚪 Salir</button>
       </div>
       <p id="estado"></p>
     </header>
 
-    <!-- ==========================
-         CONTENIDO PRINCIPAL
-    =========================== -->
     <main>
       <!-- 🗺️ Ruta del Día -->
       <section id="seccion-ruta" class="seccion oculto pantalla">
@@ -110,28 +106,31 @@
        CONTROL DE SECCIONES / MODO OSCURO / RESUMEN
   =========================== -->
   <script>
+    // Ocultar login brevemente para evitar parpadeo
+    document.getElementById("login").style.display = "none";
+
     /* ================================
        🔄 CONTROL DE SECCIONES
     ================================ */
     function mostrarSeccion(seccion) {
       const secciones = ["ruta", "calendario", "resumen"];
-
       secciones.forEach((s) => {
-        document.getElementById("btn" + s.charAt(0).toUpperCase() + s.slice(1))?.classList.remove("activo");
-        document.getElementById("seccion-" + s)?.classList.add("oculto");
+        const sec = document.getElementById("seccion-" + s);
+        const btn = document.getElementById("btn" + s.charAt(0).toUpperCase() + s.slice(1));
+        sec.classList.add("oculto");
+        sec.classList.remove("visible");
+        btn.classList.remove("activo");
       });
 
-      const btn = document.getElementById("btn" + seccion.charAt(0).toUpperCase() + seccion.slice(1));
-      const sec = document.getElementById("seccion-" + seccion);
+      const secActiva = document.getElementById("seccion-" + seccion);
+      const btnActivo = document.getElementById("btn" + seccion.charAt(0).toUpperCase() + seccion.slice(1));
+      secActiva.classList.add("visible");
+      secActiva.classList.remove("oculto");
+      btnActivo.classList.add("activo");
 
-      btn?.classList.add("activo");
-      sec?.classList.remove("oculto");
-
-      // Cargar contenido dinámico según la sección
       if (seccion === "calendario") cargarCalendario();
       if (seccion === "resumen") cargarResumenInteligente();
 
-      // Scroll al inicio
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -152,6 +151,10 @@
         document.body.dataset.dark = guardado;
         document.getElementById("modoToggle").textContent =
           guardado === "true" ? "☀️" : "🌙";
+      }
+      // Mostrar login si no hay sesión guardada
+      if (!localStorage.getItem("vendedorClave")) {
+        document.getElementById("login").style.display = "flex";
       }
     });
 
