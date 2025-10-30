@@ -327,3 +327,224 @@ function mensajeMotivacional(tasa) {
   if (tasa >= 40) return "💪 Buen desempeño, ¡vamos por más!";
   return "💡 No te desanimes, cada cliente cuenta. ¡Dale con todo!";
 }
+
+/* =====================================================
+ 🧠 APP DE VENDEDORES INTELIGENTE - EXTENSIÓN AVANZADA
+ Versión: Final Octubre 2025
+ Compatible con index_final.html
+===================================================== */
+
+/* ============================
+   🕒 NOTIFICACIÓN DIARIA
+   (Recuerda la ruta al iniciar el día)
+============================ */
+function notificacionDiaria() {
+  if (!("Notification" in window)) return;
+
+  Notification.requestPermission().then((perm) => {
+    if (perm === "granted") {
+      const clave = localStorage.getItem("vendedorClave");
+      if (!clave) return;
+
+      const nombre = vendedores[clave];
+      const notif = new Notification("🚗 Ruta del día disponible", {
+        body: `Hola ${nombre}, ya podés consultar tu ruta actualizada.`,
+        icon: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+      });
+
+      notif.onclick = () => window.focus();
+    }
+  });
+}
+
+// Ejecutar al cargar si es la primera visita del día
+const ultimaNotif = localStorage.getItem("notificacionHoy");
+const hoy = new Date().toLocaleDateString("es-AR");
+if (ultimaNotif !== hoy) {
+  notificacionDiaria();
+  localStorage.setItem("notificacionHoy", hoy);
+}
+
+/* ============================
+   📆 CALENDARIO AVANZADO
+============================ */
+async function cargarCalendario() {
+  const clave = localStorage.getItem("vendedorClave");
+  const cont = document.getElementById("contenedorCalendario");
+  if (!clave) {
+    cont.innerHTML = "<p>⚠️ Debes iniciar sesión primero.</p>";
+    return;
+  }
+
+  cont.innerHTML = "<p>⏳ Cargando calendario...</p>";
+  const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      cont.innerHTML = "<p>📭 No hay visitas programadas.</p>";
+      return;
+    }
+
+    let html = `<div class="lista-calendario">`;
+    data.forEach((f) => {
+      const estado = f.compro ? "✅" : "❌";
+      html += `
+        <div class="cal-item">
+          <div class="cal-info">
+            <b>${f.fecha}</b> - ${f.dia}<br>
+            <span>📍 ${f.localidad}</span>
+          </div>
+          <div class="cal-estado">${estado}</div>
+        </div>
+      `;
+    });
+    html += "</div>";
+
+    cont.innerHTML = html;
+  } catch (e) {
+    console.error("Error calendario avanzado:", e);
+    cont.innerHTML = "<p>❌ Error al cargar calendario.</p>";
+  }
+}
+
+/* ============================
+   🕒 HISTORIAL DE VISITAS
+============================ */
+async function verHistorial() {
+  const clave = localStorage.getItem("vendedorClave");
+  if (!clave) {
+    alert("⚠️ Primero iniciá sesión.");
+    return;
+  }
+
+  const url = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`;
+  const resp = await fetch(url);
+  const data = await resp.json();
+
+  let historial = document.createElement("div");
+  historial.className = "historial-overlay";
+  historial.innerHTML = `
+    <div class="historial-card">
+      <h3>📜 Historial de visitas recientes</h3>
+      <p>Fecha: ${data.fecha || "N/A"}</p>
+      <p>Total: ${data.totalHoy || 0}</p>
+      <p>Compraron: ${data.compraronHoy || 0}</p>
+      <p>Tasa: ${data.tasa || 0}%</p>
+      <button onclick="cerrarHistorial()">Cerrar</button>
+    </div>
+  `;
+  document.body.appendChild(historial);
+}
+
+function cerrarHistorial() {
+  document.querySelector(".historial-overlay")?.remove();
+}
+
+/* ============================
+   🌍 FILTRAR CLIENTES POR LOCALIDAD
+============================ */
+function filtrarClientesPorLocalidad(localidad) {
+  const cards = document.querySelectorAll(".cliente");
+  cards.forEach((card) => {
+    const texto = card.innerText.toLowerCase();
+    card.style.display = texto.includes(localidad.toLowerCase()) ? "block" : "none";
+  });
+}
+
+function mostrarFiltroLocalidad() {
+  const cont = document.getElementById("contenedor");
+  if (!cont.querySelector("#filtroLocalidad")) {
+    const input = document.createElement("input");
+    input.id = "filtroLocalidad";
+    input.placeholder = "🔍 Filtrar por localidad...";
+    input.style = `
+      width: 90%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    `;
+    input.oninput = () => filtrarClientesPorLocalidad(input.value);
+    cont.prepend(input);
+  }
+}
+
+/* ============================
+   🎨 ANIMACIONES Y EFECTOS
+============================ */
+function animarTarjetas() {
+  const cards = document.querySelectorAll(".cliente");
+  cards.forEach((c, i) => {
+    c.style.opacity = "0";
+    c.style.transform = "translateY(20px)";
+    setTimeout(() => {
+      c.style.transition = "all 0.3s ease";
+      c.style.opacity = "1";
+      c.style.transform = "translateY(0)";
+    }, 100 * i);
+  });
+}
+
+/* ============================
+   ⏳ AUTO REFRESCO DE DATOS
+============================ */
+function activarAutoRefresh(minutos = 15) {
+  setInterval(() => {
+    const clave = localStorage.getItem("vendedorClave");
+    if (clave) {
+      console.log("🔄 Auto-refrescando datos del vendedor...");
+      cargarRuta(clave);
+      cargarResumen(clave);
+    }
+  }, minutos * 60 * 1000);
+}
+
+// Activar refresco cada 15 min
+activarAutoRefresh();
+
+/* ============================
+   🧩 MEJORAS DE MAPA
+============================ */
+function mostrarMapa(puntos) {
+  const mapaDiv = document.getElementById("mapa");
+  mapaDiv.innerHTML = "";
+  const map = L.map("mapa").setView([-34.7, -58.4], 11);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  let group = [];
+  puntos.forEach((p) => {
+    const marker = L.marker([p[0], p[1]]).addTo(map).bindPopup(p[2]);
+    group.push(marker);
+  });
+
+  const groupLayer = L.featureGroup(group);
+  if (group.length) map.fitBounds(groupLayer.getBounds().pad(0.3));
+
+  // 📍 Agregar marcador del vendedor actual
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const marker = L.marker([pos.coords.latitude, pos.coords.longitude], {
+        icon: L.icon({
+          iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+          iconSize: [32, 32],
+        }),
+      })
+        .addTo(map)
+        .bindPopup("📍 Estás aquí");
+    });
+  }
+}
+
+/* ============================
+   🧭 ATENCIÓN A LOS DETALLES
+============================ */
+// Se ejecuta automáticamente cada vez que se carga la ruta
+const observer = new MutationObserver(() => {
+  mostrarFiltroLocalidad();
+  animarTarjetas();
+});
+observer.observe(document.body, { childList: true, subtree: true });
