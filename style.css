@@ -1,6 +1,6 @@
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f7f9fb;
+  background: #f6f8fc;
   color: #333;
   margin: 0;
   padding: 0;
@@ -9,24 +9,40 @@ body {
 header {
   background: #004aad;
   color: white;
+  padding: 1em;
   text-align: center;
-  padding: 1em;
 }
 
-#estado {
-  font-size: 0.9em;
-  opacity: 0.8;
+button {
+  background: #004aad;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  margin: 0.3em;
+  cursor: pointer;
 }
 
-.pedido {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  margin: 1em auto;
-  padding: 1em;
-  width: 90%;
-  max-width: 600px;
+button:hover { background: #00368a; }
+
+.oculto { display: none; }
+
+.login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 120px;
 }
+
+.login input {
+  font-size: 1.5em;
+  padding: 0.5em;
+  text-align: center;
+  margin: 0.5em;
+}
+
+.error { color: red; }
+
 .resumen {
   background: #e7f0ff;
   border-left: 5px solid #004aad;
@@ -37,10 +53,6 @@ header {
   max-width: 600px;
 }
 
-.resumen h2 {
-  color: #004aad;
-  margin-top: 0;
-}
 .cliente {
   background: white;
   border-left: 5px solid #004aad;
@@ -52,42 +64,5 @@ header {
   max-width: 600px;
 }
 
-.cliente h3 {
-  margin-top: 0;
-  color: #004aad;
-}
-
-.cliente p {
-  margin: 0.3em 0;
-}
-
-.lista-clientes {
-  margin-top: 1em;
-}
-.login {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 100px;
-}
-
-.login input {
-  font-size: 1.5em;
-  padding: 0.5em;
-  margin: 0.5em;
-  text-align: center;
-}
-
-button {
-  background: #004aad;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.5em 1em;
-  cursor: pointer;
-  font-size: 1.1em;
-}
-
-.oculto { display: none; }
-.error { color: red; margin-top: 1em; }
-
+.cliente h3 { color: #004aad; margin-top: 0; }
+textarea { width: 100%; resize: none; border-radius: 8px; padding: 0.5em; }
