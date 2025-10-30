@@ -23,11 +23,14 @@
   <div id="app" class="oculto">
     <header>
       <h1 id="titulo"></h1>
+      <div class="modo-toggle" id="modoToggle" onclick="alternarModo()">🌙</div>
+
       <div class="menu">
         <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta del Día</button>
         <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅 Calendario</button>
         <button id="btnLogout" onclick="logout()">🚪 Salir</button>
       </div>
+
       <p id="estado"></p>
     </header>
 
@@ -46,13 +49,16 @@
     </main>
   </div>
 
+  <!-- ==========================
+       JS PRINCIPAL
+  =========================== -->
   <script src="app.js"></script>
-  <script>
-    /* ================================
+
+  <!-- ==========================
        MANEJO DE SECCIONES (Ruta / Calendario)
-    ================================ */
+  =========================== -->
+  <script>
     function mostrarSeccion(seccion) {
-      // alternar botones activos
       document.getElementById("btnRuta").classList.remove("activo");
       document.getElementById("btnCalendario").classList.remove("activo");
 
@@ -69,19 +75,17 @@
       }
     }
 
-    /* ================================
-       CARGA DE CALENDARIO
-    ================================ */
     async function cargarCalendario() {
       const clave = localStorage.getItem("vendedorClave");
+      const cont = document.getElementById("contenedorCalendario");
+
       if (!clave) {
-        document.getElementById("contenedorCalendario").innerHTML = "⚠️ Debes iniciar sesión primero.";
+        cont.innerHTML = "⚠️ Debes iniciar sesión primero.";
         return;
       }
 
-      const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
-      const cont = document.getElementById("contenedorCalendario");
       cont.innerHTML = "⏳ Cargando calendario...";
+      const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
 
       try {
         const resp = await fetch(url);
@@ -92,7 +96,6 @@
           return;
         }
 
-        // Crear tabla de calendario
         let html = `
           <table>
             <thead>
@@ -107,7 +110,7 @@
             <tbody>
         `;
 
-        data.forEach((fila) => {
+        data.forEach(fila => {
           html += `
             <tr>
               <td>${fila.fecha}</td>
@@ -126,6 +129,28 @@
         cont.innerHTML = "❌ Error al cargar calendario.";
       }
     }
+
+    /* ================================
+       🌙 / ☀️ MODO OSCURO / CLARO
+    ================================ */
+    const hora = new Date().getHours();
+    if (hora >= 19 || hora < 7) document.body.dataset.dark = "true";
+
+    function alternarModo() {
+      const esOscuro = document.body.dataset.dark === "true";
+      document.body.dataset.dark = esOscuro ? "false" : "true";
+      localStorage.setItem("modoOscuro", document.body.dataset.dark);
+      document.getElementById("modoToggle").textContent = esOscuro ? "🌙" : "☀️";
+    }
+
+    window.onload = () => {
+      const guardado = localStorage.getItem("modoOscuro");
+      if (guardado) {
+        document.body.dataset.dark = guardado;
+        document.getElementById("modoToggle").textContent =
+          guardado === "true" ? "☀️" : "🌙";
+      }
+    };
   </script>
 </body>
 </html>
