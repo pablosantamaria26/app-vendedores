@@ -1,0 +1,29 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f7f9fb;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  background: #004aad;
+  color: white;
+  text-align: center;
+  padding: 1em;
+}
+
+#estado {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.pedido {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin: 1em auto;
+  padding: 1em;
+  width: 90%;
+  max-width: 600px;
+}
