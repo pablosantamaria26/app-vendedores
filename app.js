@@ -38,14 +38,12 @@ function logout() {
 function mostrarApp() {
   const clave = localStorage.getItem("vendedorClave");
   if (!clave || !vendedores[clave]) {
-    // No hay sesión: mostrar login
     document.getElementById("login").style.display = "flex";
     document.getElementById("login").classList.remove("oculto");
     document.getElementById("app").classList.remove("visible");
     return;
   }
 
-  // Hay sesión: mostrar la app
   const loginDiv = document.getElementById("login");
   const appDiv = document.getElementById("app");
   loginDiv.classList.add("oculto");
@@ -53,15 +51,16 @@ function mostrarApp() {
   setTimeout(() => {
     loginDiv.style.display = "none";
     appDiv.classList.add("visible");
+
+    // 👇 Mostrar resumen al inicio
+    mostrarSeccion("resumen");
   }, 500);
 
   const nombre = vendedores[clave];
   document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
-
-  // Cargar información general
   cargarDatosVendedor(clave, nombre);
-  cargarResumenVendedor(clave);
 }
+
 
 /* ================================
    AUTOEJECUCIÓN DE SESIÓN
