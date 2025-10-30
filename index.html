@@ -48,10 +48,9 @@
   <script src="app.js"></script>
 
   <!-- ==========================
-       CONTROL DE SECCIONES + MODO OSCURO + SWIPE
+       JS DE CONTROL INTERFAZ
   =========================== -->
   <script>
-  document.addEventListener("DOMContentLoaded", () => {
     /* ================================
        CAMBIO ENTRE SECCIONES
     ================================ */
@@ -81,7 +80,7 @@
         cargarCalendario();
       }
     }
-    window.mostrarSeccion = mostrarSeccion; // acceso global
+    window.mostrarSeccion = mostrarSeccion;
 
     /* ================================
        CALENDARIO
@@ -131,32 +130,45 @@
         cont.innerHTML = "❌ Error al cargar calendario.";
       }
     }
-    window.cargarCalendario = cargarCalendario; // global
+    window.cargarCalendario = cargarCalendario;
 
     /* ================================
        MODO OSCURO 🌙 / ☀️
     ================================ */
-    const hora = new Date().getHours();
-    if (hora >= 19 || hora < 7) document.body.dataset.dark = "true";
-
     function alternarModo() {
-      const esOscuro = document.body.dataset.dark === "true";
-      document.body.dataset.dark = esOscuro ? "false" : "true";
-      localStorage.setItem("modoOscuro", document.body.dataset.dark);
-      document.getElementById("modoToggle").textContent = esOscuro ? "🌙" : "☀️";
+      const body = document.body;
+      const icono = document.getElementById("modoToggle");
+      const esOscuro = body.dataset.dark === "true";
+      body.dataset.dark = esOscuro ? "false" : "true";
+      localStorage.setItem("modoOscuro", body.dataset.dark);
+      icono.textContent = esOscuro ? "🌙" : "☀️";
     }
     window.alternarModo = alternarModo;
 
-    // Aplicar modo guardado
-    const guardado = localStorage.getItem("modoOscuro");
-    if (guardado) {
-      document.body.dataset.dark = guardado;
-      document.getElementById("modoToggle").textContent =
-        guardado === "true" ? "☀️" : "🌙";
-    }
+    // Aplicar modo guardado o automático
+    (function initModo() {
+      const guardado = localStorage.getItem("modoOscuro");
+      if (guardado) {
+        document.body.dataset.dark = guardado;
+        document.getElementById("modoToggle").textContent =
+          guardado === "true" ? "☀️" : "🌙";
+      } else {
+        const hora = new Date().getHours();
+        document.body.dataset.dark = hora >= 19 || hora < 7 ? "true" : "false";
+      }
+    })();
 
     /* ================================
-       SWIPE ENTRE SECCIONES (Mobile UX)
+       LOGOUT
+    ================================ */
+    function logout() {
+      localStorage.removeItem("vendedorClave");
+      location.reload();
+    }
+    window.logout = logout;
+
+    /* ================================
+       SWIPE ENTRE SECCIONES (mobile UX)
     ================================ */
     let startX = 0;
     const main = document.querySelector("main");
@@ -166,12 +178,11 @@
     main.addEventListener("touchend", e => {
       const endX = e.changedTouches[0].clientX;
       const diff = endX - startX;
-      if (Math.abs(diff) < 60) return; // umbral
+      if (Math.abs(diff) < 60) return;
       const activeRuta = document.getElementById("seccion-ruta").classList.contains("visible");
       if (diff < 0 && activeRuta) mostrarSeccion("calendario");
       else if (diff > 0 && !activeRuta) mostrarSeccion("ruta");
     });
-  });
   </script>
 </body>
 </html>
