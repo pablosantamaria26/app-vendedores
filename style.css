@@ -1,30 +1,54 @@
 /* ================================
-   ESTILOS GENERALES
+   ESTILOS BASE
 ================================ */
+:root {
+  --azul: #004aad;
+  --azul-oscuro: #002b73;
+  --celeste: #d9e9ff;
+  --blanco: #ffffff;
+  --gris-claro: #f6f8fc;
+  --sombra: rgba(0, 0, 0, 0.15);
+  --gradiente: linear-gradient(135deg, #004aad, #0079ff);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f6f8fc;
+  background: var(--gris-claro);
   color: #333;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 /* ================================
    HEADER Y MENÚ
 ================================ */
 header {
-  background: #004aad;
-  color: white;
+  background: var(--gradiente);
+  color: var(--blanco);
   padding: 1em;
   text-align: center;
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 3px 8px var(--sombra);
+  backdrop-filter: blur(5px);
+  animation: slideDown 0.6s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 header h1 {
   margin: 0.3em 0;
-  font-size: 1.6em;
+  font-size: 1.8em;
+  letter-spacing: 0.5px;
 }
 
 .menu {
@@ -32,34 +56,36 @@ header h1 {
   justify-content: center;
   flex-wrap: wrap;
   margin-top: 0.5em;
+  gap: 0.5em;
 }
 
 .menu button {
-  background: white;
-  color: #004aad;
-  border: 2px solid #004aad;
-  border-radius: 6px;
-  padding: 0.4em 0.9em;
-  margin: 0.3em;
+  background: transparent;
+  color: var(--blanco);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 30px;
+  padding: 0.5em 1.1em;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(5px);
 }
 
 .menu button:hover {
-  background: #004aad;
-  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
 .menu button.activo {
-  background: #004aad;
-  color: white;
+  background: var(--blanco);
+  color: var(--azul);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 #estado {
   font-size: 0.9em;
   margin-top: 0.4em;
-  color: #d7e6ff;
+  color: #e6f0ff;
 }
 
 /* ================================
@@ -71,38 +97,57 @@ header h1 {
   align-items: center;
   margin-top: 120px;
   text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .login h2 {
-  color: #004aad;
+  color: var(--azul);
+  font-size: 1.6em;
 }
 
 .login input {
   font-size: 1.3em;
-  padding: 0.5em;
+  padding: 0.5em 0.8em;
   text-align: center;
   margin: 0.5em;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.login input:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 10px rgba(0, 74, 173, 0.3);
 }
 
 .login button {
-  background: #004aad;
+  background: var(--gradiente);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.6em 1.5em;
+  border-radius: 50px;
+  padding: 0.7em 2em;
   cursor: pointer;
   font-weight: bold;
+  font-size: 1em;
+  margin-top: 0.3em;
+  transition: all 0.3s ease;
 }
 
 .login button:hover {
-  background: #00368a;
+  transform: scale(1.07);
+  box-shadow: 0 4px 12px rgba(0, 74, 173, 0.4);
 }
 
 .error {
   color: red;
-  margin-top: 0.5em;
+  margin-top: 0.6em;
+  font-weight: 500;
 }
 
 /* ================================
@@ -116,32 +161,45 @@ main {
   padding: 1em;
 }
 
-.oculto {
-  display: none;
-}
-
-.visible {
-  display: block;
-}
+.oculto { display: none; }
+.visible { display: block; }
 
 .titulo-seccion {
-  color: #004aad;
+  color: var(--azul);
   text-align: center;
   margin-top: 1em;
+  font-size: 1.5em;
 }
 
 /* ================================
-   RESUMEN DE PREDICCIONES
+   RESUMEN / PREDICCIONES
 ================================ */
 .resumen {
-  background: #e7f0ff;
-  border-left: 5px solid #004aad;
-  border-radius: 10px;
-  padding: 1em;
+  background: rgba(255, 255, 255, 0.7);
+  border-left: 6px solid var(--azul);
+  border-radius: 15px;
+  padding: 1em 1.2em;
   margin: 1.5em auto;
   width: 90%;
   max-width: 700px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 12px rgba(0, 74, 173, 0.1);
+  backdrop-filter: blur(10px);
+  animation: fadeUp 0.6s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.resumen h2 {
+  color: var(--azul);
+  margin-bottom: 0.5em;
+}
+
+.resumen p {
+  margin: 0.4em 0;
+  font-size: 1.05em;
 }
 
 /* ================================
@@ -149,23 +207,26 @@ main {
 ================================ */
 .cliente {
   background: white;
-  border-left: 5px solid #004aad;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-left: 6px solid var(--azul);
+  border-radius: 14px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
   margin: 1em auto;
   padding: 1em;
   width: 90%;
-  max-width: 600px;
+  max-width: 620px;
+  transition: all 0.25s ease;
+}
+
+.cliente:hover {
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(0,74,173,0.2);
 }
 
 .cliente h3 {
-  color: #004aad;
+  color: var(--azul);
   margin-top: 0;
-  margin-bottom: 0.5em;
-}
-
-.cliente p {
-  margin: 0.3em 0;
+  margin-bottom: 0.4em;
+  font-weight: 600;
 }
 
 textarea {
@@ -175,31 +236,39 @@ textarea {
   padding: 0.5em;
   border: 1px solid #ccc;
   margin-top: 0.5em;
+  transition: all 0.2s ease;
+}
+
+textarea:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 8px rgba(0,74,173,0.2);
 }
 
 /* ================================
    BOTONES GENERALES
 ================================ */
 button {
-  background: #004aad;
+  background: var(--gradiente);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.5em 1em;
+  border-radius: 50px;
+  padding: 0.6em 1.4em;
   margin: 0.3em;
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-weight: 600;
+  transition: all 0.25s ease;
 }
 
 button:hover {
-  background: #00368a;
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0,74,173,0.3);
 }
 
 .btn-mapa {
   display: block;
   margin: 1em auto;
   font-size: 1em;
+  letter-spacing: 0.5px;
 }
 
 /* ================================
@@ -207,42 +276,60 @@ button:hover {
 ================================ */
 .tabla-calendario {
   overflow-x: auto;
-  margin: 1em auto;
+  margin: 1.5em auto;
   width: 95%;
-  max-width: 900px;
+  max-width: 950px;
+  animation: fadeIn 0.6s ease;
 }
 
 .tabla-calendario table {
   width: 100%;
   border-collapse: collapse;
   background: white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
 .tabla-calendario th {
-  background: #004aad;
+  background: var(--gradiente);
   color: white;
   text-align: left;
-  padding: 0.8em;
+  padding: 0.9em;
+  font-weight: 600;
+  font-size: 1em;
 }
 
 .tabla-calendario td {
   border-bottom: 1px solid #eee;
   padding: 0.7em;
+  transition: all 0.2s ease;
 }
 
-.tabla-calendario tr:hover {
-  background: #f0f6ff;
-}
-.resumen h2 {
-  color: #004aad;
-  margin-bottom: 0.5em;
+.tabla-calendario tr:hover td {
+  background: var(--celeste);
 }
 
-.resumen p {
-  margin: 0.4em 0;
-  font-size: 1.05em;
+/* ================================
+   DETALLES CANCHEROS EXTRA
+================================ */
+button, .cliente, .resumen, table {
+  transition: all 0.25s ease-in-out;
 }
 
+::selection {
+  background: var(--azul);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--azul);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--azul-oscuro);
+}
