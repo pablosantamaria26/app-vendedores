@@ -352,3 +352,39 @@ button:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--azul-oscuro);
 }
+/* ================================
+   🧠 PANEL INTELIGENTE / GRÁFICO
+================================ */
+.panel-inteligente {
+  width: 90%;
+  max-width: 700px;
+  margin: 2em auto;
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+.grafico-container {
+  position: relative;
+  display: inline-block;
+  width: 140px;
+  height: 140px;
+  margin: 1em auto;
+}
+
+.grafico-texto {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.6em;
+  font-weight: bold;
+  color: var(--azul);
+}
+
+.mensaje-ia {
+  margin-top: 1em;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+}
+
