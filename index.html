@@ -30,18 +30,14 @@
         <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅 Calendario</button>
         <button id="btnLogout" onclick="logout()">🚪 Salir</button>
       </div>
-
       <p id="estado"></p>
     </header>
 
-    <!-- Contenedores -->
     <main>
-      <!-- Ruta del Día -->
       <section id="seccion-ruta" class="seccion visible">
         <div id="contenedor"></div>
       </section>
 
-      <!-- Calendario de Visitas -->
       <section id="seccion-calendario" class="seccion oculto">
         <h2>📅 Calendario de Visitas</h2>
         <div id="contenedorCalendario" class="tabla-calendario"></div>
@@ -49,13 +45,10 @@
     </main>
   </div>
 
-  <!-- ==========================
-       JS PRINCIPAL
-  =========================== -->
   <script src="app.js"></script>
 
   <!-- ==========================
-       MANEJO DE SECCIONES (Ruta / Calendario)
+       MANEJO DE SECCIONES + MODO OSCURO
   =========================== -->
   <script>
     function mostrarSeccion(seccion) {
@@ -78,7 +71,6 @@
     async function cargarCalendario() {
       const clave = localStorage.getItem("vendedorClave");
       const cont = document.getElementById("contenedorCalendario");
-
       if (!clave) {
         cont.innerHTML = "⚠️ Debes iniciar sesión primero.";
         return;
@@ -99,15 +91,8 @@
         let html = `
           <table>
             <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Día</th>
-                <th>Localidades</th>
-                <th>Última visita</th>
-                <th>Compró</th>
-              </tr>
-            </thead>
-            <tbody>
+              <tr><th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th></tr>
+            </thead><tbody>
         `;
 
         data.forEach(fila => {
@@ -118,8 +103,7 @@
               <td>${fila.localidad}</td>
               <td>${fila.ultimaVisita || "-"}</td>
               <td>${fila.compro ? "✅" : "❌"}</td>
-            </tr>
-          `;
+            </tr>`;
         });
 
         html += "</tbody></table>";
@@ -130,9 +114,7 @@
       }
     }
 
-    /* ================================
-       🌙 / ☀️ MODO OSCURO / CLARO
-    ================================ */
+    // 🌙 / ☀️
     const hora = new Date().getHours();
     if (hora >= 19 || hora < 7) document.body.dataset.dark = "true";
 
