@@ -35,20 +35,23 @@
       <p id="estado"></p>
     </header>
 
+    <!-- ==========================
+         CONTENIDO PRINCIPAL
+    =========================== -->
     <main>
-      <!-- 🗺️ Ruta del día -->
-      <section id="seccion-ruta" class="seccion visible">
+      <!-- 🗺️ Ruta del Día -->
+      <section id="seccion-ruta" class="seccion visible pantalla">
         <div id="contenedor"></div>
       </section>
 
       <!-- 📅 Calendario -->
-      <section id="seccion-calendario" class="seccion oculto">
+      <section id="seccion-calendario" class="seccion oculto pantalla">
         <h2>📅 Calendario de Visitas</h2>
         <div id="contenedorCalendario" class="tabla-calendario"></div>
       </section>
 
       <!-- 📈 Resumen Inteligente -->
-      <section id="seccion-resumen" class="seccion oculto">
+      <section id="seccion-resumen" class="seccion oculto pantalla">
         <h2>📊 Desempeño y Predicciones</h2>
         <div id="contenedorResumen" class="panel-resumen">
           <p>⏳ Cargando información...</p>
@@ -63,12 +66,16 @@
   <script src="app.js"></script>
 
   <!-- ==========================
-       CONTROL DE SECCIONES / MODO
+       CONTROL DE SECCIONES / MODO OSCURO / RESUMEN
   =========================== -->
   <script>
+    /* ================================
+       🔄 CONTROL DE SECCIONES
+    ================================ */
     function mostrarSeccion(seccion) {
       const secciones = ["ruta", "calendario", "resumen"];
-      secciones.forEach(s => {
+
+      secciones.forEach((s) => {
         document.getElementById("btn" + s.charAt(0).toUpperCase() + s.slice(1))?.classList.remove("activo");
         document.getElementById("seccion-" + s)?.classList.add("oculto");
       });
@@ -79,16 +86,23 @@
       btn?.classList.add("activo");
       sec?.classList.remove("oculto");
 
+      // Cargar contenido dinámico según la sección
       if (seccion === "calendario") cargarCalendario();
       if (seccion === "resumen") cargarResumenInteligente();
+
+      // Scroll al inicio
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    /* ================================
+       🌙 / ☀️ MODO OSCURO
+    ================================ */
     function alternarModo() {
       const body = document.body;
-      const actual = body.dataset.dark === "true";
-      body.dataset.dark = !actual;
+      const esOscuro = body.dataset.dark === "true";
+      body.dataset.dark = esOscuro ? "false" : "true";
       localStorage.setItem("modoOscuro", body.dataset.dark);
-      document.getElementById("modoToggle").textContent = actual ? "🌙" : "☀️";
+      document.getElementById("modoToggle").textContent = esOscuro ? "🌙" : "☀️";
     }
 
     window.addEventListener("load", () => {
@@ -106,6 +120,7 @@
     async function cargarResumenInteligente() {
       const clave = localStorage.getItem("vendedorClave");
       const cont = document.getElementById("contenedorResumen");
+
       if (!clave) {
         cont.innerHTML = "<p>⚠️ Debes iniciar sesión primero.</p>";
         return;
@@ -116,35 +131,37 @@
       try {
         const resumenURL = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`;
         const predURL = `${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`;
+
         const [r1, r2] = await Promise.all([fetch(resumenURL), fetch(predURL)]);
         const resumen = await r1.json();
         const pred = await r2.json();
 
-        if (resumen.error) {
-          cont.innerHTML = `<p>❌ ${resumen.error}</p>`;
-          return;
-        }
-
         cont.innerHTML = `
-          <div class="tarjeta-resumen">
-            <h3>📅 Fecha: ${resumen.fecha}</h3>
-            <p>🧍‍♂️ Clientes visitados: <strong>${resumen.totalHoy}</strong></p>
-            <p>🛒 Compraron hoy: <strong>${resumen.compraronHoy}</strong></p>
-            <p>📈 Tasa de conversión: <strong>${resumen.tasa}%</strong></p>
-            <p>⏱️ Frecuencia promedio de compra: 
-              <strong>${resumen.frecuenciaProm ? resumen.frecuenciaProm + " días" : "Sin datos"}</strong>
-            </p>
+          <div class="tarjeta-resumen pantalla-tarjeta">
+            <h3>📅 Fecha: ${resumen.fecha || "Sin datos"}</h3>
+            <p>🧍‍♂️ Clientes visitados: <strong>${resumen.totalHoy || 0}</strong></p>
+            <p>🛒 Compraron hoy: <strong>${resumen.compraronHoy || 0}</strong></p>
+            <p>📈 Tasa de conversión: <strong>${resumen.tasa || 0}%</strong></p>
+            <p>⏱️ Frecuencia promedio: <strong>${resumen.frecuenciaProm || "Sin datos"} días</strong></p>
           </div>
 
-          <div class="tarjeta-prediccion">
+          <div class="tarjeta-prediccion pantalla-tarjeta">
             <h3>🤖 Recomendación Inteligente</h3>
-            <p>${pred.mensaje}</p>
+            <p>${pred.mensaje || "No hay registros suficientes para análisis inteligente."}</p>
           </div>
         `;
       } catch (e) {
-        cont.innerHTML = "❌ Error al cargar resumen inteligente.";
         console.error("Error en cargarResumenInteligente:", e);
+        cont.innerHTML = "❌ Error al cargar resumen inteligente.";
       }
+    }
+
+    /* ================================
+       🚪 SALIR
+    ================================ */
+    function logout() {
+      localStorage.removeItem("vendedorClave");
+      location.reload();
     }
   </script>
 </body>
