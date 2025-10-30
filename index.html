@@ -7,13 +7,20 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>📊 Panel del Vendedor Inteligente</h1>
-    <p id="estado">Conectando con los datos...</p>
-  </header>
+  <div id="login" class="login">
+    <h2>🔐 Ingresá tu clave</h2>
+    <input type="password" id="clave" maxlength="4" placeholder="4 dígitos">
+    <button onclick="login()">Entrar</button>
+    <p id="error" class="error"></p>
+  </div>
 
-  <main id="contenedor"></main>
+  <div id="app" class="oculto">
+    <h2 id="titulo"></h2>
+    <p id="estado"></p>
+    <div id="contenedor"></div>
+  </div>
 
   <script src="app.js"></script>
 </body>
+
 </html>
