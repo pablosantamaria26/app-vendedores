@@ -36,17 +36,21 @@ function mostrarApp() {
   const clave = localStorage.getItem("vendedorClave");
   if (!clave) return;
 
-  document.getElementById("login").classList.add("oculto");
+  const login = document.getElementById("login");
   const app = document.getElementById("app");
-  app.classList.remove("oculto");
+
+  login.classList.add("oculto");
+
+  setTimeout(() => {
+    login.style.display = "none";
+    app.classList.add("visible");
+  }, 600);
 
   const nombre = vendedores[clave];
   document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
-
-  // 🔹 Cargar resumen y datos principales
-  cargarResumenVendedor(clave);
   cargarDatosVendedor(clave, nombre);
 }
+
 
 window.onload = mostrarApp;
 
