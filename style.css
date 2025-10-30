@@ -371,3 +371,99 @@ button:hover {
   font-weight: 600;
   color: var(--azul-oscuro);
 }
+
+/* ================================
+   🔐 LOGIN FULLSCREEN MODERNO
+================================ */
+.pantalla-login {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #004aad, #0079ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: fondoAnimado 8s ease-in-out infinite alternate;
+  z-index: 999;
+}
+
+@keyframes fondoAnimado {
+  0% { background: linear-gradient(135deg, #004aad, #0079ff); }
+  100% { background: linear-gradient(135deg, #0079ff, #00bfff); }
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 2.5em 2em;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  animation: fadeIn 0.8s ease;
+}
+
+.login-card h1 {
+  font-size: 1.6em;
+  margin-bottom: 0.3em;
+  font-weight: 700;
+}
+
+.login-card h2 {
+  font-size: 1.2em;
+  margin-bottom: 1em;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.login-card input {
+  font-size: 2em;
+  letter-spacing: 0.3em;
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5em 0;
+  width: 80%;
+  outline: none;
+  margin-bottom: 1em;
+  background: rgba(255, 255, 255, 0.9);
+  color: #004aad;
+  font-weight: bold;
+}
+
+.teclado-numerico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6em;
+  justify-items: center;
+  margin-bottom: 1em;
+}
+
+.teclado-numerico button {
+  background: var(--blanco);
+  color: var(--azul);
+  font-size: 1.4em;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  padding: 0.6em 0;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.teclado-numerico button:hover {
+  background: var(--azul);
+  color: white;
+  transform: scale(1.05);
+}
+
+.error {
+  color: #ffcccc;
+  font-weight: 600;
+  min-height: 1.2em;
+  font-size: 1em;
+  margin-top: 0.5em;
+  animation: fadeIn 0.5s ease;
+}
+
