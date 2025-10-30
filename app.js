@@ -205,4 +205,29 @@ function registrarVisita(cliente) {
     .then(res => alert(res.estado || "Guardado"))
     .catch(() => alert("❌ Error al registrar visita"));
 }
+/**
+ * 🔹 Cargar y mostrar el panel de estadísticas del vendedor
+ */
+function cargarResumenVendedor(clave) {
+  fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`)
+    .then(r => r.json())
+    .then(res => {
+      if (!res || !res.fecha) return;
+
+      const panel = document.createElement("section");
+      panel.className = "resumen";
+      panel.innerHTML = `
+        <h2>📈 Resumen del Día</h2>
+        <p>🗓️ Fecha: <b>${res.fecha}</b></p>
+        <p>🚗 Clientes visitados hoy: <b>${res.totalHoy}</b></p>
+        <p>💰 Compraron: <b>${res.compraronHoy}</b></p>
+        <p>🎯 Tasa de conversión: <b>${res.tasa}%</b></p>
+        <p>⏳ Frecuencia promedio de compra: <b>${res.frecuenciaProm || "N/A"} días</b></p>
+      `;
+
+      const cont = document.getElementById("contenedor");
+      cont.prepend(panel);
+    })
+    .catch(err => console.error("Error cargando resumen:", err));
+}
 
