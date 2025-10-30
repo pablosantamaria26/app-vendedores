@@ -186,6 +186,7 @@ function registrarVisita(cliente) {
   const visitado = document.getElementById(`visitado-${cliente.numero}`).checked;
   const compro = document.getElementById(`compro-${cliente.numero}`).checked;
   const comentario = document.getElementById(`coment-${cliente.numero}`).value.trim();
+  const vendedor = localStorage.getItem("vendedorClave"); // 🔹 Clave activa del vendedor
 
   const params = new URLSearchParams({
     accion: "registrarVisita",
@@ -195,11 +196,13 @@ function registrarVisita(cliente) {
     localidad: cliente.localidad,
     visitado,
     compro,
-    comentario
+    comentario,
+    vendedor
   });
 
   fetch(`${URL_API_BASE}?${params.toString()}`)
     .then(r => r.json())
-    .then(res => alert(`✅ ${res.estado || "Guardado correctamente"}`))
-    .catch(() => alert("❌ Error al registrar la visita"));
+    .then(res => alert(res.estado || "Guardado"))
+    .catch(() => alert("❌ Error al registrar visita"));
 }
+
