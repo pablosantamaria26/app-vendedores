@@ -36,22 +36,25 @@ function mostrarApp() {
   const clave = localStorage.getItem("vendedorClave");
   if (!clave) return;
 
-  const login = document.getElementById("login");
-  const app = document.getElementById("app");
+  const loginDiv = document.getElementById("login");
+  const appDiv = document.getElementById("app");
 
-  login.classList.add("oculto");
+  loginDiv.classList.add("oculto");
 
   setTimeout(() => {
-    login.style.display = "none";
-    app.classList.add("visible");
+    loginDiv.style.display = "none";
+    appDiv.classList.add("visible");
   }, 600);
 
   const nombre = vendedores[clave];
   document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
+
+  // Cargar información general
   cargarDatosVendedor(clave, nombre);
+  cargarResumenVendedor(clave);
 }
 
-
+/* Ejecutar automáticamente si hay sesión */
 window.onload = mostrarApp;
 
 /* ================================
@@ -59,35 +62,34 @@ window.onload = mostrarApp;
 ================================ */
 function cargarDatosVendedor(clave, nombre) {
   const urlRuta = `${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`;
-  const urlPred = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`; // 🔹 Usamos resumen real, no datos inexistentes
+  const urlResumen = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`;
 
-  Promise.all([fetch(urlRuta), fetch(urlPred)])
+  Promise.all([fetch(urlRuta), fetch(urlResumen)])
     .then(async ([r1, r2]) => [await r1.json(), await r2.json()])
-    .then(([clientes, pred]) => {
+    .then(([clientes, resumen]) => {
       const ahora = new Date().toLocaleString("es-AR", {
         timeZone: "America/Argentina/Buenos_Aires",
       });
+
       document.getElementById(
         "estado"
       ).textContent = `Ruta del día cargada (${clientes.length} clientes) — Última actualización: ${ahora}`;
 
       mostrarRutaDia(clientes);
 
-      // ✅ Evita errores si no hay datos
-      if (pred && pred.tasa !== undefined) {
-        mostrarPredicciones(pred);
-      } else {
-        console.warn("⚠️ No hay datos de predicciones disponibles.");
+      if (resumen && resumen.tasa !== undefined) {
+        mostrarPredicciones(resumen);
       }
     })
     .catch((err) => {
       console.error("Error al cargar datos:", err);
-      document.getElementById("estado").textContent = "❌ Error al cargar datos.";
+      document.getElementById("estado").textContent =
+        "❌ Error al cargar datos.";
     });
 }
 
 /* ================================
-   PREDICCIONES / ESTADÍSTICAS
+   PANEL DE PREDICCIONES / ESTADÍSTICAS
 ================================ */
 function mostrarPredicciones(pred) {
   const cont = document.getElementById("contenedor");
@@ -95,12 +97,13 @@ function mostrarPredicciones(pred) {
   const resumen = document.createElement("section");
   resumen.className = "resumen";
   resumen.innerHTML = `
-    <h2>📊 Predicciones Inteligentes</h2>
-    <p>🎯 Tasa de conversión actual: <b>${pred.tasa}%</b></p>
-    <p>💰 Clientes que compraron hoy: <b>${pred.compraronHoy}</b></p>
+    <h2>📊 Resumen del Día</h2>
     <p>🚗 Clientes visitados hoy: <b>${pred.totalHoy}</b></p>
+    <p>💰 Compraron: <b>${pred.compraronHoy}</b></p>
+    <p>🎯 Tasa de conversión: <b>${pred.tasa}%</b></p>
     <p>⏳ Frecuencia promedio de compra: <b>${pred.frecuenciaProm || "N/A"} días</b></p>
   `;
+
   cont.prepend(resumen);
 }
 
@@ -109,7 +112,7 @@ function mostrarPredicciones(pred) {
 ================================ */
 function mostrarRutaDia(clientes) {
   const cont = document.getElementById("contenedor");
-  cont.innerHTML = ""; // 🔹 Limpia antes de volver a renderizar
+  cont.innerHTML = ""; // Limpia antes de volver a renderizar
 
   const tituloRuta = document.createElement("h2");
   tituloRuta.textContent = "🗺️ Ruta del Día";
@@ -153,6 +156,12 @@ function abrirRutaEnMapa(clientes) {
     .map((c) => `${c.direccion}, ${c.localidad}`)
     .filter(Boolean)
     .join("|");
+
+  if (!direcciones) {
+    alert("No hay direcciones válidas para mostrar en el mapa.");
+    return;
+  }
+
   const url = `https://www.google.com/maps/dir/?api=1&travelmode=driving&waypoints=${encodeURIComponent(
     direcciones
   )}`;
@@ -186,6 +195,57 @@ function registrarVisita(cliente) {
 }
 
 /* ================================
+   CALENDARIO DE VISITAS
+================================ */
+async function cargarCalendario() {
+  const clave = localStorage.getItem("vendedorClave");
+  const cont = document.getElementById("contenedorCalendario");
+  if (!clave) {
+    cont.innerHTML = "⚠️ Debes iniciar sesión primero.";
+    return;
+  }
+
+  cont.innerHTML = "⏳ Cargando calendario...";
+  const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
+
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      cont.innerHTML = "📭 No hay visitas programadas.";
+      return;
+    }
+
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th>
+          </tr>
+        </thead><tbody>
+    `;
+
+    data.forEach((fila) => {
+      html += `
+        <tr>
+          <td>${fila.fecha}</td>
+          <td>${fila.dia}</td>
+          <td>${fila.localidad}</td>
+          <td>${fila.ultimaVisita || "-"}</td>
+          <td>${fila.compro ? "✅" : "❌"}</td>
+        </tr>`;
+    });
+
+    html += "</tbody></table>";
+    cont.innerHTML = html;
+  } catch (e) {
+    console.error("Error al cargar calendario:", e);
+    cont.innerHTML = "❌ Error al cargar calendario.";
+  }
+}
+
+/* ================================
    PANEL DE ESTADÍSTICAS DEL VENDEDOR
 ================================ */
 function cargarResumenVendedor(clave) {
@@ -209,4 +269,13 @@ function cargarResumenVendedor(clave) {
       cont.prepend(panel);
     })
     .catch((err) => console.error("Error cargando resumen:", err));
+}
+
+/* ================================
+   UTILIDADES
+================================ */
+function copiarPedido(pedido) {
+  if (!pedido) return alert("Sin pedido disponible.");
+  navigator.clipboard.writeText(pedido);
+  alert("✅ Pedido copiado al portapapeles");
 }
