@@ -9,18 +9,21 @@
 <body>
   <div id="login" class="login">
     <h2>🔐 Ingresá tu clave</h2>
-    <input type="password" id="clave" maxlength="4" placeholder="4 dígitos">
+    <input type="password" id="clave" maxlength="4" placeholder="4 dígitos" />
     <button onclick="login()">Entrar</button>
     <p id="error" class="error"></p>
   </div>
 
   <div id="app" class="oculto">
-    <h2 id="titulo"></h2>
-    <p id="estado"></p>
-    <div id="contenedor"></div>
+    <header>
+      <h1 id="titulo"></h1>
+      <button id="btnLogout" onclick="logout()">Salir</button>
+      <p id="estado"></p>
+    </header>
+
+    <main id="contenedor"></main>
   </div>
 
   <script src="app.js"></script>
 </body>
-
 </html>
