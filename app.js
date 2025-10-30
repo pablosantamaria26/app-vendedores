@@ -217,25 +217,92 @@ async function cargarCalendario() {
 }
 
 /* ================================
-   📈 PANEL DE PREDICCIONES / IA
+   📈 PANEL DE PREDICCIONES / IA + GRÁFICO DE DESEMPEÑO
 ================================ */
 function mostrarPanelPredicciones(pred) {
   const cont = document.getElementById("contenedor");
+
+  // Eliminar panel anterior si existe
+  const viejo = document.querySelector(".panel-inteligente");
+  if (viejo) viejo.remove();
+
   const panel = document.createElement("section");
-  panel.className = "resumen";
+  panel.className = "panel-inteligente";
   panel.innerHTML = `
-    <h2>📊 Resumen Inteligente</h2>
-    <p>🗓️ Frecuencia promedio: <b>${pred.frecuencia || "Sin datos"} días</b></p>
-    <p>🎯 ${pred.mensaje}</p>
+    <div class="tarjeta-resumen">
+      <h2>📊 Resumen Inteligente</h2>
+      <div class="grafico-container">
+        <canvas id="graficoTasa" width="140" height="140"></canvas>
+        <div class="grafico-texto" id="porcentajeTasa">0%</div>
+      </div>
+
+      <p>🚗 Visitados hoy: <b>${pred.totalHoy || 0}</b></p>
+      <p>💰 Compraron: <b>${pred.compraronHoy || 0}</b></p>
+      <p>⏱️ Frecuencia promedio: <b>${pred.frecuencia || "Sin datos"} días</b></p>
+      <p>🎯 <b>${pred.tasa || 0}%</b> tasa de conversión</p>
+      <p class="mensaje-ia">${mensajeMotivacional(pred.tasa || 0)}</p>
+    </div>
+
+    <div class="tarjeta-prediccion">
+      <h3>🤖 Sugerencia Inteligente</h3>
+      <p>${pred.mensaje}</p>
+    </div>
   `;
+
   cont.prepend(panel);
+
+  // Animar el gráfico circular
+  setTimeout(() => animarGrafico(pred.tasa || 0), 300);
 }
 
 /* ================================
-   🧩 UTILIDADES
+   🔵 ANIMACIÓN GRÁFICO CIRCULAR
 ================================ */
-function copiarPedido(pedido) {
-  if (!pedido) return alert("Sin pedido disponible.");
-  navigator.clipboard.writeText(pedido);
-  alert("✅ Pedido copiado al portapapeles");
+function animarGrafico(valor) {
+  const canvas = document.getElementById("graficoTasa");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const centro = canvas.width / 2;
+  const radio = 60;
+  const circunferencia = Math.PI * 2;
+  const colorBase = "#e0e0e0";
+  const colorRelleno = valor >= 70 ? "#00c851" : valor >= 40 ? "#ffbb33" : "#ff4444";
+  const texto = document.getElementById("porcentajeTasa");
+
+  let progreso = 0;
+  const anim = setInterval(() => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fondo
+    ctx.beginPath();
+    ctx.arc(centro, centro, radio, 0, circunferencia);
+    ctx.strokeStyle = colorBase;
+    ctx.lineWidth = 10;
+    ctx.stroke();
+
+    // Progreso
+    ctx.beginPath();
+    ctx.arc(centro, centro, radio, -Math.PI / 2, (circunferencia * progreso) / 100 - Math.PI / 2);
+    ctx.strokeStyle = colorRelleno;
+    ctx.lineWidth = 10;
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    // Texto
+    texto.textContent = `${Math.round(progreso)}%`;
+
+    if (progreso >= valor) clearInterval(anim);
+    else progreso += 1;
+  }, 15);
+}
+
+/* ================================
+   💬 MENSAJE MOTIVACIONAL
+================================ */
+function mensajeMotivacional(tasa) {
+  if (tasa >= 80) return "🚀 ¡Excelente trabajo! Sos un referente de ventas.";
+  if (tasa >= 60) return "🔥 Muy bien, seguí con ese ritmo.";
+  if (tasa >= 40) return "💪 Buen desempeño, ¡vamos por más!";
+  return "💡 No te desanimes, cada cliente cuenta. ¡Dale con todo!";
 }
