@@ -2,6 +2,71 @@ const URL_API = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-
 const contenedor = document.getElementById("contenedor");
 const estado = document.getElementById("estado");
 
+const vendedores = {
+  "0001": "Martín",
+  "0002": "Lucas",
+  "0003": "Mercado Limpio"
+};
+
+const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
+
+function login() {
+  const clave = document.getElementById("clave").value.trim();
+  const error = document.getElementById("error");
+  if (!vendedores[clave]) {
+    error.textContent = "Clave incorrecta ❌";
+    return;
+  }
+  localStorage.setItem("vendedorClave", clave);
+  mostrarApp();
+}
+
+function mostrarApp() {
+  const clave = localStorage.getItem("vendedorClave");
+  if (!clave) return;
+
+  const nombre = vendedores[clave];
+  document.getElementById("login").classList.add("oculto");
+  const app = document.getElementById("app");
+  app.classList.remove("oculto");
+  document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
+  
+  const URL_API = `${URL_API_BASE}?accion=getClientesDelDia&vendedor=${clave}`;
+  
+  fetch(URL_API)
+    .then(r => r.json())
+    .then(clientes => {
+      document.getElementById("estado").textContent = `Clientes del día (${clientes.length})`;
+      mostrarClientesDelDia(clientes);
+    })
+    .catch(err => {
+      document.getElementById("estado").textContent = "❌ Error al cargar datos";
+      console.error(err);
+    });
+}
+
+window.onload = mostrarApp;
+
+function mostrarClientesDelDia(clientes) {
+  const contenedor = document.getElementById("contenedor");
+  contenedor.innerHTML = "";
+  clientes.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "cliente";
+    div.innerHTML = `
+      <h3>${c.nombre}</h3>
+      <p>${c.direccion}, ${c.localidad}</p>
+      <button onclick="abrirMapa('${encodeURIComponent(c.direccion + ', ' + c.localidad)}')">📍 Ver en mapa</button>
+    `;
+    contenedor.appendChild(div);
+  });
+}
+
+function abrirMapa(dir) {
+  window.open(`https://www.google.com/maps/search/?api=1&query=${dir}`, "_blank");
+}
+
+
 fetch(URL_API)
   .then(r => r.json())
   .then(data => {
