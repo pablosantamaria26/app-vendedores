@@ -315,56 +315,72 @@
       if (sec === "resumen") cargarResumen();
     }
 
-    /* ================================
-       🚗 RUTA DEL DÍA
-    ================================ */
-    async function cargarRutaDelDia() {
-      const clave = localStorage.getItem("vendedorClave");
-      const cont = document.getElementById("contenedorRuta");
-      cont.innerHTML = "⏳ Cargando clientes del día...";
+/* ================================
+   🚗 RUTA DEL DÍA (con distancia)
+================================ */
+async function cargarRutaDelDia() {
+  const clave = localStorage.getItem("vendedorClave");
+  const cont = document.getElementById("contenedorRuta");
+  cont.innerHTML = "⏳ Cargando clientes del día...";
 
-      try {
-        const resp = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
-        const data = await resp.json();
+  try {
+    const resp = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
+    const data = await resp.json();
 
-        if (!Array.isArray(data) || data.length === 0) {
-          cont.innerHTML = "<p>📭 No hay clientes asignados para hoy.</p>";
-          return;
-        }
-
-        cont.innerHTML = "";
-        data.forEach((cli) => {
-          const tarjeta = document.createElement("div");
-          tarjeta.classList.add("tarjeta");
-          tarjeta.innerHTML = `
-            <div class="nombre">${cli.nombre}</div>
-            <div class="direccion">${cli.direccion}</div>
-            <div class="direccion">📍 ${cli.localidad}</div>
-            <button class="boton-ir" onclick="irAlCliente(${cli.lat}, ${cli.lng})">🚗 Ir a este cliente</button>
-          `;
-          cont.appendChild(tarjeta);
-        });
-      } catch (e) {
-        cont.innerHTML = "❌ Error al cargar clientes.";
-        console.error(e);
-      }
+    if (!Array.isArray(data) || data.length === 0) {
+      cont.innerHTML = "<p>📭 No hay clientes asignados para hoy.</p>";
+      return;
     }
 
-    function irAlCliente(lat, lng) {
-      if (!navigator.geolocation) {
-        alert("Geolocalización no disponible.");
-        return;
-      }
+    // Primero obtener la posición actual del vendedor
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const latActual = pos.coords.latitude;
+      const lngActual = pos.coords.longitude;
 
-      navigator.geolocation.getCurrentPosition((pos) => {
-        const oLat = pos.coords.latitude;
-        const oLng = pos.coords.longitude;
-        const url = `https://www.google.com/maps/dir/?api=1&origin=${oLat},${oLng}&destination=${lat},${lng}&travelmode=driving`;
-        window.open(url, "_blank");
-      }, () => {
-        alert("⚠️ No se pudo obtener tu ubicación actual.");
+      cont.innerHTML = "";
+      data.forEach((cli) => {
+        const distancia = cli.lat && cli.lng
+          ? calcularDistancia(latActual, lngActual, cli.lat, cli.lng)
+          : null;
+
+        const tarjeta = document.createElement("div");
+        tarjeta.classList.add("tarjeta");
+        tarjeta.innerHTML = `
+          <div class="nombre">${cli.nombre}</div>
+          <div class="direccion">${cli.direccion}</div>
+          <div class="direccion">📍 ${cli.localidad}</div>
+          ${distancia ? `<p>📏 A ${distancia} km de tu ubicación</p>` : ""}
+          <button class="boton-ir" onclick="irAlCliente(${cli.lat}, ${cli.lng})">🚗 Ir a este cliente</button>
+        `;
+        cont.appendChild(tarjeta);
       });
-    }
+    }, (err) => {
+      cont.innerHTML = "⚠️ No se pudo obtener tu ubicación actual. Activa el GPS.";
+      console.error(err);
+    });
+  } catch (e) {
+    cont.innerHTML = "❌ Error al cargar clientes.";
+    console.error(e);
+  }
+}
+
+/* ================================
+   📏 CÁLCULO DE DISTANCIA (Haversine)
+================================ */
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distancia = R * c;
+  return distancia.toFixed(1); // redondea a 1 decimal
+}
+
 
     /* ================================
        📈 RESUMEN
