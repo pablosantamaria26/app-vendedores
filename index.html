@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- ==========================
+       LOGIN
+  =========================== -->
   <div id="login" class="login">
     <h2>🔐 Ingresá tu clave</h2>
     <input type="password" id="clave" maxlength="4" placeholder="4 dígitos" />
@@ -14,16 +17,102 @@
     <p id="error" class="error"></p>
   </div>
 
+  <!-- ==========================
+       APP PRINCIPAL
+  =========================== -->
   <div id="app" class="oculto">
     <header>
       <h1 id="titulo"></h1>
-      <button id="btnLogout" onclick="logout()">Salir</button>
+      <div class="menu">
+        <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta del Día</button>
+        <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅 Calendario</button>
+        <button id="btnLogout" onclick="logout()">Salir</button>
+      </div>
       <p id="estado"></p>
     </header>
 
-    <main id="contenedor"></main>
+    <!-- Contenedores de secciones -->
+    <main>
+      <section id="seccion-ruta" class="seccion visible">
+        <div id="contenedor"></div>
+      </section>
+
+      <section id="seccion-calendario" class="seccion oculto">
+        <h2>📅 Calendario de Visitas</h2>
+        <div id="contenedorCalendario" class="tabla-calendario"></div>
+      </section>
+    </main>
   </div>
 
   <script src="app.js"></script>
+  <script>
+    /* ================================
+       MANEJO DE SECCIONES (Ruta / Calendario)
+    ================================ */
+    function mostrarSeccion(seccion) {
+      // alternar botones activos
+      document.getElementById("btnRuta").classList.remove("activo");
+      document.getElementById("btnCalendario").classList.remove("activo");
+
+      document.getElementById("seccion-ruta").classList.add("oculto");
+      document.getElementById("seccion-calendario").classList.add("oculto");
+
+      if (seccion === "ruta") {
+        document.getElementById("btnRuta").classList.add("activo");
+        document.getElementById("seccion-ruta").classList.remove("oculto");
+      } else {
+        document.getElementById("btnCalendario").classList.add("activo");
+        document.getElementById("seccion-calendario").classList.remove("oculto");
+        cargarCalendario();
+      }
+    }
+
+    /* ================================
+       CARGA DE CALENDARIO
+    ================================ */
+    async function cargarCalendario() {
+      const clave = localStorage.getItem("vendedorClave");
+      const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
+      const cont = document.getElementById("contenedorCalendario");
+      cont.innerHTML = "⏳ Cargando calendario...";
+
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (!data || data.length === 0) {
+          cont.innerHTML = "📭 No hay visitas programadas.";
+          return;
+        }
+
+        // crear tabla
+        let html = `
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th></tr>
+            </thead>
+            <tbody>
+        `;
+
+        data.forEach(fila => {
+          html += `
+            <tr>
+              <td>${fila.fecha}</td>
+              <td>${fila.dia}</td>
+              <td>${fila.localidad}</td>
+              <td>${fila.ultimaVisita || "-"}</td>
+              <td>${fila.compro ? "✅" : "❌"}</td>
+            </tr>
+          `;
+        });
+
+        html += "</tbody></table>";
+        cont.innerHTML = html;
+      } catch (e) {
+        console.error("Error al cargar calendario:", e);
+        cont.innerHTML = "❌ Error al cargar calendario.";
+      }
+    }
+  </script>
 </body>
 </html>
