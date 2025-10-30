@@ -1,3 +1,6 @@
+/* ================================
+   ESTILOS GENERALES
+================================ */
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   background: #f6f8fc;
@@ -6,53 +9,144 @@ body {
   padding: 0;
 }
 
+/* ================================
+   HEADER Y MENÚ
+================================ */
 header {
   background: #004aad;
   color: white;
   padding: 1em;
   text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-button {
+header h1 {
+  margin: 0.3em 0;
+  font-size: 1.6em;
+}
+
+.menu {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.5em;
+}
+
+.menu button {
+  background: white;
+  color: #004aad;
+  border: 2px solid #004aad;
+  border-radius: 6px;
+  padding: 0.4em 0.9em;
+  margin: 0.3em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu button:hover {
   background: #004aad;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5em 1em;
-  margin: 0.3em;
-  cursor: pointer;
 }
 
-button:hover { background: #00368a; }
+.menu button.activo {
+  background: #004aad;
+  color: white;
+}
 
-.oculto { display: none; }
+#estado {
+  font-size: 0.9em;
+  margin-top: 0.4em;
+  color: #d7e6ff;
+}
 
+/* ================================
+   LOGIN
+================================ */
 .login {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 120px;
+  text-align: center;
+}
+
+.login h2 {
+  color: #004aad;
 }
 
 .login input {
-  font-size: 1.5em;
+  font-size: 1.3em;
   padding: 0.5em;
   text-align: center;
   margin: 0.5em;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
-.error { color: red; }
+.login button {
+  background: #004aad;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 1.5em;
+  cursor: pointer;
+  font-weight: bold;
+}
 
+.login button:hover {
+  background: #00368a;
+}
+
+.error {
+  color: red;
+  margin-top: 0.5em;
+}
+
+/* ================================
+   SECCIONES Y CONTENEDORES
+================================ */
+main {
+  padding-bottom: 3em;
+}
+
+.seccion {
+  padding: 1em;
+}
+
+.oculto {
+  display: none;
+}
+
+.visible {
+  display: block;
+}
+
+.titulo-seccion {
+  color: #004aad;
+  text-align: center;
+  margin-top: 1em;
+}
+
+/* ================================
+   RESUMEN DE PREDICCIONES
+================================ */
 .resumen {
   background: #e7f0ff;
   border-left: 5px solid #004aad;
   border-radius: 10px;
   padding: 1em;
-  margin: 1em auto;
+  margin: 1.5em auto;
   width: 90%;
-  max-width: 600px;
+  max-width: 700px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
+/* ================================
+   TARJETAS DE CLIENTES
+================================ */
 .cliente {
   background: white;
   border-left: 5px solid #004aad;
@@ -64,5 +158,81 @@ button:hover { background: #00368a; }
   max-width: 600px;
 }
 
-.cliente h3 { color: #004aad; margin-top: 0; }
-textarea { width: 100%; resize: none; border-radius: 8px; padding: 0.5em; }
+.cliente h3 {
+  color: #004aad;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+.cliente p {
+  margin: 0.3em 0;
+}
+
+textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 8px;
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  margin-top: 0.5em;
+}
+
+/* ================================
+   BOTONES GENERALES
+================================ */
+button {
+  background: #004aad;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  margin: 0.3em;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: #00368a;
+}
+
+.btn-mapa {
+  display: block;
+  margin: 1em auto;
+  font-size: 1em;
+}
+
+/* ================================
+   TABLA DE CALENDARIO
+================================ */
+.tabla-calendario {
+  overflow-x: auto;
+  margin: 1em auto;
+  width: 95%;
+  max-width: 900px;
+}
+
+.tabla-calendario table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tabla-calendario th {
+  background: #004aad;
+  color: white;
+  text-align: left;
+  padding: 0.8em;
+}
+
+.tabla-calendario td {
+  border-bottom: 1px solid #eee;
+  padding: 0.7em;
+}
+
+.tabla-calendario tr:hover {
+  background: #f0f6ff;
+}
