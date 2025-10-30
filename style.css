@@ -236,3 +236,13 @@ button:hover {
 .tabla-calendario tr:hover {
   background: #f0f6ff;
 }
+.resumen h2 {
+  color: #004aad;
+  margin-bottom: 0.5em;
+}
+
+.resumen p {
+  margin: 0.4em 0;
+  font-size: 1.05em;
+}
+
