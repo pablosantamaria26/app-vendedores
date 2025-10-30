@@ -28,7 +28,6 @@
   }
 }
 
-/* También activar modo oscuro según hora local */
 @media (prefers-color-scheme: light) {
   body[data-dark='true'] {
     --azul: #58a6ff;
@@ -55,11 +54,23 @@ body {
   transition: background 0.6s ease, color 0.6s ease;
 }
 
+#app.oculto {
+  display: none !important;
+}
+
 /* ================================
    HEADER Y MENÚ
 ================================ */
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 header {
-  background: var(--gradiente);
+  background: linear-gradient(270deg, #004aad, #0079ff, #00c8ff);
+  background-size: 600% 600%;
+  animation: gradientMove 12s ease infinite;
   color: var(--blanco);
   padding: 1em;
   text-align: center;
@@ -116,15 +127,24 @@ header h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 120px;
+  justify-content: center;
+  min-height: 100vh;
   text-align: center;
   animation: fadeIn 0.8s ease-in-out;
+  background: var(--gradiente);
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+body[data-dark="true"] .login {
+  background: linear-gradient(135deg, #0d1117, #001f4d);
 }
 
 .login h2 {
-  color: var(--azul);
-  font-size: 1.6em;
-  text-shadow: 0 0 10px rgba(0,74,173,0.3);
+  color: var(--blanco);
+  font-size: 1.7em;
+  margin-bottom: 0.5em;
+  text-shadow: 0 0 10px rgba(255,255,255,0.3);
 }
 
 .login input {
@@ -144,8 +164,8 @@ header h1 {
 }
 
 .login button {
-  background: var(--gradiente);
-  color: white;
+  background: var(--blanco);
+  color: var(--azul);
   border: none;
   border-radius: 50px;
   padding: 0.7em 2em;
@@ -158,7 +178,15 @@ header h1 {
 
 .login button:hover {
   transform: scale(1.07);
-  box-shadow: 0 4px 12px rgba(0, 74, 173, 0.4);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+}
+
+.error {
+  color: #ff5555;
+  margin-top: 0.5em;
+  background: rgba(255,255,255,0.1);
+  padding: 0.4em 1em;
+  border-radius: 6px;
 }
 
 /* ================================
@@ -224,7 +252,7 @@ header h1 {
 }
 
 /* ================================
-   BOTONES
+   BOTONES GENERALES
 ================================ */
 button {
   background: var(--gradiente);
@@ -241,6 +269,37 @@ button {
 button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(0,74,173,0.4);
+}
+
+/* ================================
+   BOTÓN MODO OSCURO 🌙 / ☀️
+================================ */
+.modo-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 1.6em;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+body[data-dark="true"] .modo-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f7ff;
+  box-shadow: 0 0 10px rgba(88,166,255,0.5);
+}
+
+.modo-toggle:hover {
+  transform: scale(1.1) rotate(10deg);
 }
 
 /* ================================
