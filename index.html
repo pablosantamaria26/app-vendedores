@@ -421,6 +421,52 @@
         options: { plugins: { legend: { display: false } } }
       });
     }
+    // ===========================
+// 🔔 CONFIGURAR NOTIFICACIONES PUSH
+// ===========================
+
+const firebaseConfig2 = {
+  apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+  authDomain: "app-vendedores-inteligente.firebaseapp.com",
+  projectId: "app-vendedores-inteligente",
+  storageBucket: "app-vendedores-inteligente.firebasestorage.app",
+  messagingSenderId: "583313989429",
+  appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+};
+
+firebase.initializeApp(firebaseConfig2);
+
+const messaging = firebase.messaging();
+
+messaging.getToken({ vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0" })
+  .then((token) => {
+    console.log("📱 Token de notificación:", token);
+    // 👉 En el futuro, podés enviarlo a tu Apps Script para registrar este dispositivo
+  })
+  .catch((err) => {
+    console.warn("⚠️ Error al obtener token de notificaciones", err);
+  });
+
+// Escuchar mensajes cuando la app está abierta
+messaging.onMessage((payload) => {
+  console.log("📩 Notificación recibida en primer plano:", payload);
+  new Notification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: "/icon-192.png"
+  });
+});
+
+// Registrar el Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('firebase-messaging-sw.js')
+    .then((registration) => {
+      console.log('✅ Service Worker registrado:', registration);
+    })
+    .catch((error) => {
+      console.error('❌ Error al registrar el Service Worker:', error);
+    });
+}
+
   </script>
 </body>
 </html>
