@@ -328,24 +328,24 @@
         card.setAttribute("draggable", String(!lock));
 
   
-        card.innerHTML = `
-          <h3>${c.nombre}</h3>
-          <div class="fila">
-            <span>📍 ${c.direccion || ""}${c.localidad ? ", "+c.localidad : ""}</span>
-            ${dist!==null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
-          </div>
-          <div class="fila" style="margin-top:6px">
-          
-            <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
-            <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
-          </div>
-          <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2" style="width:100%;margin-top:6px"></textarea>
-          <div class="acciones">
-            <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-            <button class="btn-secundario" onclick="irCliente(${tieneGeo?c.lat:"null"},${tieneGeo?c.lng:"null"})">🚗 Ir</button>
-           <button class="btn-lock" onclick="toggleLock(${c.numero})">${lock?"🔒 Bloqueado":"🔓 Bloquear"}</button>
-          </div>
-        `;
+    card.innerHTML = `
+  <h3>${c.nombre}</h3>
+  <div class="fila">
+    <span>📍 ${c.direccion || ""}${c.localidad ? ", "+c.localidad : ""}</span>
+    ${dist!==null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
+  </div>
+  <div class="fila" style="margin-top:6px">
+    <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
+    <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
+  </div>
+  <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2" style="width:100%;margin-top:6px"></textarea>
+  <div class="acciones">
+    <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
+    <button class="btn-secundario" onclick="irCliente(${tieneGeo?c.lat:"null"},${tieneGeo?c.lng:"null"})">🚗 Ir</button>
+    <button class="btn-lock" onclick="toggleLock(${c.numero})">${lock ? "🔒 Bloqueado" : "🔓 Bloquear"}</button>
+  </div>
+`;
+
         // Drag & Drop
         card.addEventListener("dragstart", (ev)=>{ dragSrc = idx; ev.dataTransfer.effectAllowed="move"; });
         card.addEventListener("dragover", (ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
