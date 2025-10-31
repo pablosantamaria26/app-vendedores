@@ -5,156 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🧠 App de Vendedores Inteligente</title>
 
-  <!-- Manifest + Firebase -->
+  <!-- Manifest + Tema -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#007aff">
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
-  <!-- Leaflet (mapas sin API key) -->
+  <!-- Leaflet (mapas sin key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Chart.js (gráficos del resumen) -->
+  <!-- Chart.js (gráficos) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body {
-      margin: 0;
-      font-family: "Inter", sans-serif;
-      background: #f4f6f8;
-      color: #222;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100dvh;
-      overflow-x: hidden;
+    /* ====== Tema 2026 + modo oscuro ====== */
+    :root{
+      --azul:#007aff; --azul2:#005fcc; --ok:#00c851; --no:#ff4444;
+      --bg:#f4f6f8; --card:#fff; --txt:#222; --borde:#e6e9ef; --sombra:rgba(0,0,0,.1);
+    }
+    body[data-dark="true"]{
+      --azul:#58a6ff; --azul2:#1f6feb; --bg:#0d1117; --card:#111827; --txt:#e6edf3; --borde:#1f2937; --sombra:rgba(255,255,255,.06);
     }
 
-    header {
-      width: 100%;
-      background: #007aff;
-      color: white;
-      padding: 14px;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 999;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    /* ====== Base ====== */
+    html,body{margin:0;height:100%}
+    body{
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:var(--bg); color:var(--txt);
+      display:flex; flex-direction:column; align-items:center; min-height:100dvh; overflow-x:hidden;
+      transition:background .3s,color .3s;
     }
-
-    header h1 { margin: 0; font-size: 1.3rem; }
-
-    .menu {
-      display: flex;
-      justify-content: space-around;
-      background: #fff;
-      width: 100%;
-      border-top: 1px solid #ccc;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      z-index: 1000;
+    header{
+      width:100%; background:var(--azul); color:#fff; padding:14px; text-align:center;
+      position:sticky; top:0; z-index:999; box-shadow:0 2px 10px rgba(0,0,0,.2);
     }
+    header h1{margin:0; font-size:1.3rem}
+    .modo-toggle{position:absolute; right:12px; top:12px; cursor:pointer; font-size:1.2rem}
 
-    .menu button {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: #fff;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.3s;
+    main{width:100%; max-width:780px; padding:10px; margin-bottom:86px}
+    h2{ text-align:center; margin:10px 0; color:var(--azul) }
+
+    /* ====== Login ====== */
+    #login{ position:fixed; inset:0; background:linear-gradient(135deg,#007aff,#00b4d8);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; z-index:10000; }
+    .login-card{ background:#fff; color:#222; border-radius:15px; padding:20px; width:85%; max-width:350px; text-align:center;
+      box-shadow:0 4px 12px rgba(0,0,0,.2); }
+    .login-card input{ font-size:1.4rem; padding:10px; text-align:center; margin:10px 0; border:2px solid var(--azul); border-radius:10px; width:80% }
+    .teclado-numerico button{ width:30%; margin:5px; padding:10px; font-size:1.2rem; border:none; border-radius:10px; background:var(--azul); color:#fff; cursor:pointer; transition:.2s }
+    .teclado-numerico button:hover{ background:var(--azul2) }
+    #error{ color:#ff3737; min-height:1.1em }
+
+    /* ====== Menu bottom ====== */
+    .menu{ display:flex; justify-content:space-around; background:var(--card); width:100%;
+      border-top:1px solid var(--borde); position:fixed; bottom:0; left:0; z-index:1000; }
+    .menu button{ flex:1; padding:10px; border:none; background:transparent; font-size:1rem; cursor:pointer; transition:.2s }
+    .menu button.activo{ background:var(--azul); color:#fff; font-weight:700 }
+
+    /* ====== Secciones ====== */
+    .seccion{ display:none; animation:fade .25s ease }
+    .seccion.visible{ display:block }
+    @keyframes fade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+
+    /* ====== Cards ====== */
+    .cliente{
+      background:var(--card); border-radius:12px; padding:14px; margin:10px 0; box-shadow:0 2px 8px var(--sombra); border:1px solid var(--borde);
     }
+    .cliente h3{ margin:0 0 6px 0; color:var(--azul) }
+    .cliente .fila{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .cliente .acciones{ margin-top:8px; display:flex; gap:6px; flex-wrap:wrap }
+    .cliente button{ background:var(--azul); color:#fff; border:none; border-radius:8px; padding:8px 12px; cursor:pointer }
+    .cliente button:hover{ background:var(--azul2) }
+    .btn-secundario{ background:#00b894 }
+    .btn-lock{ background:#6b7280 }
+    .cliente[draggable="true"]{ cursor:grab }
+    .cliente.bloqueado{ opacity:.85; filter:saturate(.8) }
 
-    .menu button.activo { background: #007aff; color: white; font-weight: bold; }
+    .badge{ background:#eef2ff; color:#2c3e50; padding:2px 8px; border-radius:999px; font-size:.85rem; border:1px solid var(--borde) }
 
-    main {
-      width: 100%;
-      max-width: 700px;
-      padding: 10px;
-      margin-bottom: 80px;
+    /* ====== Contenedores ====== */
+    #mapaFull{ height:68vh; width:100%; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px var(--sombra) }
+    .panel-resumen{ text-align:center; background:var(--card); padding:15px; border-radius:12px; box-shadow:0 2px 8px var(--sombra); border:1px solid var(--borde); margin-bottom:20px }
+    canvas{ max-width:320px; margin:auto }
+
+    /* ====== Toast ====== */
+    .toast{
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      background:var(--azul); color:#fff; padding:10px 16px; border-radius:10px; box-shadow:0 4px 14px rgba(0,0,0,.25);
+      z-index:9999; opacity:0; animation:pop .2s forwards, fadeout .2s forwards 2.6s;
     }
-
-    h2 { text-align: center; margin-top: 10px; color: #007aff; }
-
-    /* LOGIN */
-    #login {
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, #007aff, #00b4d8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      z-index: 10000;
-    }
-
-    .login-card {
-      background: white;
-      color: #222;
-      border-radius: 15px;
-      padding: 20px;
-      width: 85%;
-      max-width: 350px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-
-    .login-card input {
-      font-size: 1.4rem;
-      padding: 10px;
-      text-align: center;
-      margin: 10px 0;
-      border: 2px solid #007aff;
-      border-radius: 10px;
-      width: 80%;
-    }
-
-    .teclado-numerico button {
-      width: 30%;
-      margin: 5px;
-      padding: 10px;
-      font-size: 1.2rem;
-      border: none;
-      border-radius: 10px;
-      background: #007aff;
-      color: white;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .teclado-numerico button:hover { background: #005fcc; }
-
-    .cliente {
-      background: white;
-      border-radius: 12px;
-      padding: 14px;
-      margin: 10px 0;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .cliente h3 { margin: 0; color: #007aff; }
-
-    .cliente button {
-      margin-top: 8px;
-      margin-right: 4px;
-      background: #007aff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-
-    .cliente button:hover { background: #005fcc; }
-    .btn-secundario { background: #00b894; }
-    #mapa { height: 300px; width: 100%; border-radius: 10px; margin-top: 10px; overflow: hidden; }
-    .panel-resumen { text-align: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
-    canvas { max-width: 300px; margin: auto; }
+    @keyframes pop{ to{ opacity:1; transform:translateX(-50%) translateY(0) } }
+    @keyframes fadeout{ to{ opacity:0 } }
   </style>
 </head>
 
@@ -166,39 +109,43 @@
       <h2>🔐 Ingresá tu código</h2>
       <input type="password" id="clave" maxlength="4" placeholder="••••" />
       <div class="teclado-numerico">
-        <button onclick="agregarDigito('1')">1</button>
-        <button onclick="agregarDigito('2')">2</button>
-        <button onclick="agregarDigito('3')">3</button>
-        <button onclick="agregarDigito('4')">4</button>
-        <button onclick="agregarDigito('5')">5</button>
-        <button onclick="agregarDigito('6')">6</button>
-        <button onclick="agregarDigito('7')">7</button>
-        <button onclick="agregarDigito('8')">8</button>
-        <button onclick="agregarDigito('9')">9</button>
-        <button onclick="borrarDigito()">⌫</button>
-        <button onclick="agregarDigito('0')">0</button>
-        <button onclick="login()">✔️</button>
+        <button onclick="agregarDigito('1')">1</button><button onclick="agregarDigito('2')">2</button><button onclick="agregarDigito('3')">3</button>
+        <button onclick="agregarDigito('4')">4</button><button onclick="agregarDigito('5')">5</button><button onclick="agregarDigito('6')">6</button>
+        <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
+        <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
       </div>
-      <p id="error" style="color:red;"></p>
+      <p id="error"></p>
     </div>
   </div>
 
   <!-- APP PRINCIPAL -->
-  <header><h1 id="titulo">🧠 App de Vendedores</h1></header>
+  <header>
+    <h1 id="titulo">🧠 App de Vendedores</h1>
+    <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
+  </header>
 
   <main>
-    <section id="seccion-ruta" class="seccion">
+    <!-- Ruta -->
+    <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
+      <div id="estado" style="text-align:center; margin:6px 0 10px"></div>
       <div id="contenedor"></div>
-      <div id="mapa"></div>
     </section>
 
-    <section id="seccion-calendario" class="seccion oculto">
+    <!-- Mapa separado -->
+    <section id="seccion-mapa" class="seccion">
+      <h2>📍 Mapa</h2>
+      <div id="mapaFull"></div>
+    </section>
+
+    <!-- Calendario -->
+    <section id="seccion-calendario" class="seccion">
       <h2>📅 Calendario</h2>
       <div id="contenedorCalendario"></div>
     </section>
 
-    <section id="seccion-resumen" class="seccion oculto">
+    <!-- Resumen -->
+    <section id="seccion-resumen" class="seccion">
       <h2>📈 Resumen</h2>
       <div id="contenedorResumen" class="panel-resumen"></div>
       <canvas id="graficoResumen"></canvas>
@@ -207,170 +154,427 @@
 
   <div class="menu">
     <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
+    <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
     <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
     <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
     <button id="btnLogout" onclick="logout()">🚪</button>
   </div>
 
   <script>
-    const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
-    const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
+    /* ================================
+       ⚙️ Config principal
+    ================================ */
+    const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" }; // igual a tu app
+    const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec"; // tu endpoint
+    let clientesData = [];
+    let posicionActual = null;
+    let mapaFull = null;
+    let dragSrc = null;
 
-    function agregarDigito(n){const i=document.getElementById("clave");if(i.value.length<4)i.value+=n;}
-    function borrarDigito(){const i=document.getElementById("clave");i.value=i.value.slice(0,-1);}
-    function login(){const c=document.getElementById("clave").value.trim();const e=document.getElementById("error");if(!vendedores[c]){e.textContent="❌ Clave incorrecta";return;}localStorage.setItem("vendedorClave",c);document.getElementById("login").style.display="none";mostrarApp();}
-    function logout(){localStorage.removeItem("vendedorClave");location.reload();}
-    window.onload=()=>{const c=localStorage.getItem("vendedorClave");if(c&&vendedores[c]){document.getElementById("login").style.display="none";mostrarApp();}};
+    /* ================================
+       🔐 Login
+    ================================ */
+    function agregarDigito(n){const i=document.getElementById("clave"); if(i.value.length<4) i.value+=n;}
+    function borrarDigito(){const i=document.getElementById("clave"); i.value=i.value.slice(0,-1);}
+    function login(){
+      const c=document.getElementById("clave").value.trim(); const e=document.getElementById("error");
+      if(!vendedores[c]){ e.textContent="❌ Clave incorrecta"; return; }
+      localStorage.setItem("vendedorClave", c);
+      document.getElementById("login").style.display="none";
+      mostrarApp();
+    }
+    function logout(){ localStorage.removeItem("vendedorClave"); location.reload(); }
+    window.onload=()=>{
+      const c=localStorage.getItem("vendedorClave");
+      if(c && vendedores[c]){ document.getElementById("login").style.display="none"; mostrarApp(); }
+    };
 
+    /* ================================
+       🧭 Navegación de secciones
+    ================================ */
+    function mostrarSeccion(s){
+      document.querySelectorAll(".seccion").forEach(sec=>sec.classList.remove("visible"));
+      document.getElementById("seccion-"+s).classList.add("visible");
+      document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("activo"));
+      const btn=document.querySelector(`[onclick="mostrarSeccion('${s}')"]`); if(btn) btn.classList.add("activo");
+      if(s==="mapa") renderMapaFull();
+    }
+
+    /* ================================
+       🚀 App
+    ================================ */
     async function mostrarApp(){
       const clave=localStorage.getItem("vendedorClave");
       const nombre=vendedores[clave];
       document.getElementById("titulo").textContent=`👋 Hola, ${nombre}`;
       mostrarSeccion("ruta");
-      cargarRuta(clave);
-      cargarResumen(clave);
-      inicializarNotificaciones(clave);
+      await cargarRuta(clave);
+      await cargarResumen(clave);
+      await cargarCalendario();
+      inicializarNotificaciones(clave); /* FCM intacto */ /*:contentReference[oaicite:6]{index=6}*/
     }
 
-    function mostrarSeccion(s){
-      document.querySelectorAll(".seccion").forEach(sec=>sec.classList.add("oculto"));
-      document.getElementById("seccion-"+s).classList.remove("oculto");
-      document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("activo"));
-      const btn=document.querySelector(`[onclick="mostrarSeccion('${s}')"]`);
-      if(btn)btn.classList.add("activo");
+    /* ================================
+       📍 Distancia (Haversine)
+    ================================ */
+    const toRad = (d)=> d*Math.PI/180;
+    function distanciaKm(aLat,aLng,bLat,bLng){
+      const R=6371, dLat=toRad(bLat-aLat), dLng=toRad(bLng-aLng);
+      const A = Math.sin(dLat/2)**2 + Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLng/2)**2;
+      return R*2*Math.atan2(Math.sqrt(A), Math.sqrt(1-A));
     }
 
+    /* ================================
+       🗂️ Orden + bloqueo por cliente
+    ================================ */
+    function keyOrden(){ return "ordenClientes_"+localStorage.getItem("vendedorClave"); }
+    function keyLock(){ return "clientesLock_"+localStorage.getItem("vendedorClave"); }
+    function cargarOrden(){ try{ return JSON.parse(localStorage.getItem(keyOrden())||"[]"); }catch{ return []; } }
+    function guardarOrden(ids){ localStorage.setItem(keyOrden(), JSON.stringify(ids)); }
+    function locks(){ try{ return JSON.parse(localStorage.getItem(keyLock())||"{}"); }catch{ return {}; } }
+    function setLock(id, val){ const m=locks(); m[id]=val; localStorage.setItem(keyLock(), JSON.stringify(m)); }
+
+    /* ================================
+       🚗 Cargar ruta
+    ================================ */
     async function cargarRuta(clave){
       const cont=document.getElementById("contenedor");
       cont.innerHTML="⏳ Cargando clientes...";
-      const resp=await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
-      const data=await resp.json();
+      try{
+        const [r1, predR] = await Promise.all([
+          fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`),
+          fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`)
+        ]);
+        clientesData = await r1.json();
+        const pred = await predR.json();
+
+        // estado header
+        const ahora = new Date().toLocaleString("es-AR", { timeZone:"America/Argentina/Buenos_Aires" });
+        document.getElementById("estado").textContent = `Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`;
+
+        // aplicar orden guardado
+        const orden = cargarOrden();
+        if(orden.length){
+          const map = new Map(clientesData.map(c=>[String(c.numero), c]));
+          clientesData = orden.map(id=>map.get(String(id))).filter(Boolean)
+            .concat(clientesData.filter(c=>!orden.includes(String(c.numero))));
+        }
+
+        // tomar ubicación actual (para distancias)
+        if(navigator.geolocation){
+          navigator.geolocation.getCurrentPosition(pos=>{
+            posicionActual = { lat:pos.coords.latitude, lng:pos.coords.longitude };
+            renderClientes();
+          }, ()=>renderClientes(), { enableHighAccuracy:true, maximumAge:15000, timeout:8000 });
+        }else{
+          renderClientes();
+        }
+
+        // panel de IA/resumen rápido en la sección Resumen si querés usarlo
+        // (tu backend ya envía `mensaje`, `tasa`, etc) :contentReference[oaicite:7]{index=7}
+        if(pred && pred.mensaje){
+          // se muestra en cargarResumen para unificar
+        }
+
+      }catch(e){
+        console.error(e);
+        cont.innerHTML="❌ Error al cargar clientes.";
+      }
+    }
+
+    /* ================================
+       🧱 Render de tarjetas + drag&drop
+    ================================ */
+    function renderClientes(){
+      const cont=document.getElementById("contenedor");
       cont.innerHTML="";
-      let puntos=[];
-      data.forEach(c=>{
-        const div=document.createElement("div");
-        div.className="cliente";
-        div.innerHTML=`<h3>${c.nombre}</h3><p>📍 ${c.direccion}, ${c.localidad}</p>
-        <button class="btn-secundario" onclick='irCliente(${c.lat},${c.lng})'>🚗 Ir</button>
-        <button onclick='registrarVisita(${JSON.stringify(c)})'>💾 Registrar</button>`;
-        cont.appendChild(div);
-        if(c.lat&&c.lng)puntos.push([c.lat,c.lng,c.nombre]);
+
+      const mlocks = locks();
+
+      clientesData.forEach((c, idx)=>{
+        const card = document.createElement("div");
+        card.className = "cliente";
+        card.id = "c_"+c.numero;
+        const tieneGeo = typeof c.lat==="number" && typeof c.lng==="number";
+        const dist = (posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,c.lat,c.lng) : null;
+
+        const lock = !!mlocks[c.numero];
+        card.classList.toggle("bloqueado", lock);
+        card.setAttribute("draggable", String(!lock));
+
+        card.innerHTML = `
+          <h3>${c.nombre}</h3>
+          <div class="fila">
+            <span>📍 ${c.direccion || ""}${c.localidad ? ", "+c.localidad : ""}</span>
+            ${dist!==null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
+          </div>
+          <div class="fila" style="margin-top:6px">
+            <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
+            <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
+          </div>
+          <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2" style="width:100%;margin-top:6px"></textarea>
+          <div class="acciones">
+            <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
+            <button class="btn-secundario" onclick="irCliente(${tieneGeo?c.lat:"null"},${tieneGeo?c.lng:"null"})">🚗 Ir</button>
+            <button class="btn-lock" onclick="toggleLock(${c.numero})">${lock?"🔒 Bloqueado":"🔓 Bloquear"}</button>
+          </div>
+        `;
+
+        // Drag & Drop
+        card.addEventListener("dragstart", (ev)=>{ dragSrc = idx; ev.dataTransfer.effectAllowed="move"; });
+        card.addEventListener("dragover", (ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
+        card.addEventListener("drop", (ev)=>{
+          ev.preventDefault();
+          const target = Array.from(cont.children).indexOf(card);
+          if(dragSrc===null || dragSrc===target) return;
+          const moved = clientesData.splice(dragSrc,1)[0];
+          clientesData.splice(target,0,moved);
+          dragSrc = null;
+          // guardar orden
+          guardarOrden(clientesData.map(x=>String(x.numero)));
+          renderClientes();
+        });
+
+        cont.appendChild(card);
       });
-      mostrarMapa(puntos);
     }
 
-    function irCliente(lat,lng){
-      if(!lat||!lng){alert("📍 Este cliente no tiene coordenadas.");return;}
-      navigator.geolocation.getCurrentPosition(pos=>{
-        const url=`https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${lat},${lng}&travelmode=driving`;
+    function toggleLock(numero){
+      const m=locks();
+      const now = !m[numero];
+      setLock(numero, now);
+      toast(now?"🔒 Tarjeta bloqueada":"🔓 Tarjeta desbloqueada");
+      renderClientes();
+    }
+
+    /* ================================
+       🗺️ Mapa (vista separada)
+    ================================ */
+    function renderMapaFull(){
+      const el = document.getElementById("mapaFull");
+      if(!el) return;
+      el.innerHTML = "";
+      mapaFull = L.map("mapaFull").setView([-34.7,-58.4], 11);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapaFull);
+
+      const group = [];
+      clientesData.forEach(c=>{
+        if(typeof c.lat==="number" && typeof c.lng==="number"){
+          const mk = L.marker([c.lat, c.lng]).addTo(mapaFull).bindPopup(c.nombre);
+          group.push(mk);
+        }
+      });
+      if(group.length){ const gl = L.featureGroup(group); mapaFull.fitBounds(gl.getBounds().pad(0.3)); }
+
+      if(posicionActual){
+        L.marker([posicionActual.lat,posicionActual.lng],{
+          icon: L.icon({ iconUrl:"https://cdn-icons-png.flaticon.com/512/684/684908.png", iconSize:[32,32] })
+        }).addTo(mapaFull).bindPopup("📍 Estás aquí");
+      }else if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+          posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude};
+          renderMapaFull();
+        });
+      }
+    }
+
+    function irCliente(lat, lng){
+      if(!lat || !lng){ alert("📍 Este cliente no tiene coordenadas."); return; }
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const url=`https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${lat},${lng}&travelmode=driving`;
+          window.open(url,"_blank");
+        }, ()=>{
+          const url=`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+          window.open(url,"_blank");
+        });
+      }else{
+        const url=`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
         window.open(url,"_blank");
+      }
+    }
+
+    /* ================================
+       💾 Registrar visita (+ offline)
+    ================================ */
+    function getClientePorNumero(num){ return clientesData.find(x=>String(x.numero)===String(num)); }
+
+    async function registrarVisita(numero){
+      const c = getClientePorNumero(numero);
+      if(!c){ toast("❌ Cliente no encontrado"); return; }
+      const visitado = document.getElementById(`visitado-${numero}`).checked;
+      const compro   = document.getElementById(`compro-${numero}`).checked;
+      const comentario = (document.getElementById(`coment-${numero}`).value||"").trim();
+      const vendedor = localStorage.getItem("vendedorClave");
+
+      const params = new URLSearchParams({
+        accion:"registrarVisita",
+        numero:c.numero, nombre:c.nombre, direccion:c.direccion||"", localidad:c.localidad||"",
+        visitado, compro, comentario, vendedor
       });
+
+      try{
+        const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
+        const js = await r.json();
+        toast(js.estado || "✅ Visita registrada");
+        // marcar en UI
+        if(visitado) document.getElementById(`visitado-${numero}`).checked = true;
+      }catch{
+        // offline queue
+        queueOffline({ t:"visita", params:Object.fromEntries(params) });
+        toast("📶 Sin conexión. Guardado offline y se sincroniza después.");
+      }
     }
 
-    function mostrarMapa(p){
-      const m=L.map("mapa").setView([-34.7,-58.4],11);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(m);
-      p.forEach(e=>L.marker([e[0],e[1]]).addTo(m).bindPopup(e[2]));
+    function queueOffline(item){
+      const k="offlineQueue"; let q=[];
+      try{ q=JSON.parse(localStorage.getItem(k)||"[]"); }catch{}
+      q.push(item); localStorage.setItem(k, JSON.stringify(q));
     }
 
-    function registrarVisita(c){
-      const v=localStorage.getItem("vendedorClave");
-      const params=new URLSearchParams({accion:"registrarVisita",numero:c.numero,nombre:c.nombre,direccion:c.direccion,localidad:c.localidad,visitado:true,compro:false,comentario:"",vendedor:v});
-      fetch(`${URL_API_BASE}?${params}`).then(r=>r.json()).then(d=>alert(d.estado));
-    }
+    async function syncOffline(){
+      if(!navigator.onLine) return;
+      const k="offlineQueue"; let q=[];
+      try{ q=JSON.parse(localStorage.getItem(k)||"[]"); }catch{}
+      if(!q.length) return;
 
+      const rest=[]; // reintentos fallidos
+      for(const it of q){
+        try{
+          if(it.t==="visita"){
+            const p = new URLSearchParams(it.params);
+            const r = await fetch(`${URL_API_BASE}?${p.toString()}`);
+            await r.json();
+          }
+        }catch{ rest.push(it); }
+      }
+      localStorage.setItem(k, JSON.stringify(rest));
+      if(q.length && rest.length===0) toast("✅ Sincronización completada");
+    }
+    window.addEventListener("online", syncOffline);
+
+    /* ================================
+       📈 Resumen + gráfico
+    ================================ */
     async function cargarResumen(clave){
       const cont=document.getElementById("contenedorResumen");
       cont.innerHTML="⏳ Analizando desempeño...";
-      const [r1,r2]=await Promise.all([
-        fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`),
-        fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`)
-      ]);
-      const res=await r1.json(), ana=await r2.json();
-      cont.innerHTML=`<h3>${res.fecha}</h3><p>🚶 Visitas: <b>${res.totalHoy||0}</b></p>
-      <p>🛒 Compraron: <b>${res.compraronHoy||0}</b></p><p>🎯 Tasa: <b>${res.tasa||0}%</b></p>
-      <p>⏱️ Frecuencia: <b>${res.frecuenciaProm||"N/D"}</b> días</p><p>🤖 ${ana.mensaje}</p>`;
-      const ctx=document.getElementById("graficoResumen").getContext("2d");
-      new Chart(ctx,{type:"doughnut",data:{labels:["Compraron","No compraron"],datasets:[{data:[res.compraronHoy,res.totalHoy-res.compraronHoy],backgroundColor:["#00c851","#ff4444"]}]},options:{plugins:{legend:{display:false}}}});
+      try{
+        const [r1,r2]=await Promise.all([
+          fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`),
+          fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`)
+        ]);
+        const res=await r1.json(), ana=await r2.json();
+        cont.innerHTML = `
+          <h3>${res.fecha||""}</h3>
+          <p>🚶 Visitas: <b>${res.totalHoy||0}</b> — 🛒 Compraron: <b>${res.compraronHoy||0}</b></p>
+          <p>🎯 Tasa: <b>${res.tasa||0}%</b> — ⏱️ Frecuencia: <b>${res.frecuenciaProm||"N/D"}</b> días</p>
+          <p>🤖 ${ana.mensaje||""}</p>
+        `;
+        const ctx=document.getElementById("graficoResumen").getContext("2d");
+        new Chart(ctx,{type:"doughnut",data:{labels:["Compraron","No compraron"],datasets:[{data:[res.compraronHoy||0,(res.totalHoy||0)-(res.compraronHoy||0)],backgroundColor:["#00c851","#ff4444"]}]} ,options:{plugins:{legend:{display:false}}}});
+      }catch(e){
+        console.error(e); cont.innerHTML="❌ Error al cargar resumen.";
+      }
     }
 
-// 🔔 NOTIFICACIONES PUSH FIREBASE (versión actualizada y estable)
-function inicializarNotificaciones(vendedor) {
-  const firebaseConfig = {
-    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-    authDomain: "app-vendedores-inteligente.firebaseapp.com",
-    projectId: "app-vendedores-inteligente",
-    storageBucket: "app-vendedores-inteligente.firebasestorage.app",
-    messagingSenderId: "583313989429",
-    appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-  };
-
-  // Inicializar Firebase si aún no está inicializado
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-
-  const messaging = firebase.messaging();
-
-  // Registrar el Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('firebase-messaging-sw.js')
-      .then(async (registration) => {
-        console.log('✅ Service Worker registrado correctamente:', registration);
-
-        // Pedir permiso al usuario
-        const permiso = await Notification.requestPermission();
-        if (permiso !== 'granted') {
-          console.warn('⚠️ Permiso de notificaciones denegado.');
-          return;
-        }
-
-        // Obtener el token de Firebase vinculado al service worker
-        const token = await messaging.getToken({
-          vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0",
-          serviceWorkerRegistration: registration
+    /* ================================
+       📅 Calendario
+    ================================ */
+    async function cargarCalendario(){
+      const cont = document.getElementById("contenedorCalendario");
+      const clave=localStorage.getItem("vendedorClave");
+      if(!clave){ cont.innerHTML="⚠️ Debes iniciar sesión primero."; return; }
+      cont.innerHTML="⏳ Cargando calendario...";
+      try{
+        const resp = await fetch(`${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`);
+        const data = await resp.json();
+        if(!data || !data.length){ cont.innerHTML="📭 No hay visitas programadas."; return; }
+        let html = `<div class="panel-resumen">`;
+        data.forEach(f=>{
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--borde);padding:8px 0">
+            <div><b>${f.fecha}</b> — ${f.dia}<br><span>📍 ${f.localidad||""}</span></div>
+            <div style="font-size:1.1rem">${f.compro?"✅":"❌"}</div>
+          </div>`;
         });
+        html += `</div>`;
+        cont.innerHTML = html;
+      }catch(e){ console.error(e); cont.innerHTML="❌ Error al cargar calendario."; }
+    }
 
-        console.log('📱 Token FCM generado:', token);
+    /* ================================
+       🔔 FCM (igual a tu versión)
+    ================================ */
+    function inicializarNotificaciones(vendedor) {
+      const firebaseConfig = {
+        apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+        authDomain: "app-vendedores-inteligente.firebaseapp.com",
+        projectId: "app-vendedores-inteligente",
+        storageBucket: "app-vendedores-inteligente.firebasestorage.app",
+        messagingSenderId: "583313989429",
+        appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+      };
 
-        if (token && vendedor) {
-          // Enviar token al Apps Script
-          fetch(`${URL_API_BASE}?accion=registrarToken`, {
-            method: 'POST',
-            body: JSON.stringify({ vendedor, token }),
-            headers: { 'Content-Type': 'application/json' }
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      const messaging = firebase.messaging();
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+          .register('firebase-messaging-sw.js')
+          .then(async (registration) => {
+            const permiso = await Notification.requestPermission();
+            if (permiso !== 'granted') { console.warn('⚠️ Permiso de notificaciones denegado.'); return; }
+
+            const token = await messaging.getToken({
+              vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0",
+              serviceWorkerRegistration: registration
+            });
+
+            if (token && vendedor) {
+              fetch(`${URL_API_BASE}?accion=registrarToken`, {
+                method: 'POST',
+                body: JSON.stringify({ vendedor, token }),
+                headers: { 'Content-Type': 'application/json' }
+              }).catch((err)=>console.error('❌ Error enviando token al servidor:', err));
+            }
           })
-            .then((r) => r.text())
-            .then((resp) => console.log('✅ Token enviado al servidor:', resp))
-            .catch((err) => console.error('❌ Error enviando token al servidor:', err));
-        }
-      })
-      .catch((error) => {
-        console.error('❌ Error al registrar el Service Worker:', error);
-      });
+          .catch((error) => { console.error('❌ Error al registrar el Service Worker:', error); });
 
-    // Escuchar notificaciones en primer plano
-    messaging.onMessage((payload) => {
-      console.log('📩 Notificación recibida (primer plano):', payload);
-      const n = payload.notification;
-      new Notification(n.title, {
-        body: n.body,
-        icon: '/icon-192.png'
-      });
-    });
-  } else {
-    console.warn('⚠️ Este navegador no soporta notificaciones push.');
-  }
-}
+        messaging.onMessage((payload) => {
+          const n = payload.notification;
+          toast(`${n.title} — ${n.body}`);
+        });
+      } else {
+        console.warn('⚠️ Este navegador no soporta notificaciones push.');
+      }
+    }
 
+    /* ================================
+       🌙 Modo oscuro
+    ================================ */
+    function toggleModoOscuro(){
+      const dark = document.body.getAttribute("data-dark")==="true";
+      document.body.setAttribute("data-dark", !dark);
+      localStorage.setItem("modoOscuro", String(!dark));
+    }
+    if(localStorage.getItem("modoOscuro")==="true"){ document.body.setAttribute("data-dark", "true"); }
 
-   window.agregarDigito = agregarDigito;
-window.borrarDigito = borrarDigito;
-window.login = login;
-window.logout = logout;
-window.mostrarSeccion = mostrarSeccion;
+    /* ================================
+       💬 Toast
+    ================================ */
+    function toast(msg){
+      const t = document.createElement("div");
+      t.className = "toast"; t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(), 2900);
+    }
 
+    /* ================================
+       🔁 Sincronización al iniciar
+    ================================ */
+    (async function bootstrap(){
+      await syncOffline();
+    })();
   </script>
 </body>
 </html>
