@@ -408,7 +408,6 @@
 
     /* ==================================
        INICIO DE LA SECCIÓN CORREGIDA
-       (Esta era la que tenía el SyntaxError)
     ================================== */
     function irCliente(lat, lng){
       if(!lat || !lng){ 
@@ -416,9 +415,8 @@
         return; 
       }
       
-      // Usamos backticks (`) para crear la URL y ${} para insertar las variables.
+      const baseUrl = "https://www.google.com/maps/dir/?api=1";
       const destino = `&destination=${lat},${lng}&travelmode=driving`;
-      const baseUrl = "https://www.google.com/maps/dir/?api=1"; // URL base para direcciones
 
       if(navigator.geolocation){
         navigator.geolocation.getCurrentPosition(pos => {
@@ -550,74 +548,68 @@
       }
     }
 
-    /* ==================================================
-       🔔 FCM (SECCIÓN CORREGIDA - VUELTA A POST)
-       ================================================== */
+    /* ================================
+       🔔 FCM (igual a tu versión)
+    ================================ */
    function inicializarNotificaciones(vendedor) {
-      console.log("🚀 Inicializando notificaciones para", vendedor);
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-        authDomain: "app-vendedores-inteligente.firebaseapp.com",
-        projectId: "app-vendedores-inteligente",
-        storageBucket: "app-vendedores-inteligente.firebasestorage.app",
-        messagingSenderId: "583313989429",
-        appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-      };
-      // Inicializa Firebase solo si no está inicializado aún
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  console.log("🚀 Inicializando notificaciones para", vendedor);
+  // Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+  authDomain: "app-vendedores-inteligente.firebaseapp.com",
+  projectId: "app-vendedores-inteligente",
+  storageBucket: "app-vendedores-inteligente.firebasestorage.app",
+  messagingSenderId: "583313989429",
+  appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+};
+  // Inicializa Firebase solo si no está inicializado aún
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-      const messaging = firebase.messaging();
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("firebase-messaging-sw.js")
-          .then(async (registration) => {
-            console.log("✅ Service Worker registrado correctamente. Esperando que se active...");
+  const messaging = firebase.messaging();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("firebase-messaging-sw.js")
+      .then(async (registration) => {
+        console.log("✅ Service Worker registrado correctamente. Esperando que se active...");
 
-            await navigator.serviceWorker.ready;
+        // 👇 Esperar a que el SW esté completamente listo antes de pedir token
+        await navigator.serviceWorker.ready;
 
-            console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
-            const permiso = await Notification.requestPermission();
-        
-            if (permiso !== "granted") {
-              console.warn("⚠️ Permiso de notificaciones denegado.");
-              return;
-            }
+        console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
+        const permiso = await Notification.requestPermission();
+    
+        if (permiso !== "granted") {
+          console.warn("⚠️ Permiso de notificaciones denegado.");
+          return;
+        }
 
-            console.log("🔑 Obteniendo token FCM...");
-            const token = await messaging.getToken({
-              vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
-              serviceWorkerRegistration: registration
-            });
-
-           
-             if (token) {
-              console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
-              
-              /* --- INICIO DE LA CORRECCIÓN --- */
-              // Volvemos al método POST, que es el que tu 'codigo.gs' espera.
-              // La función 'doPost' y 'doOptions' en tu .gs se encargarán del CORS.
-              await fetch(URL_API_BASE, { // La URL base, sin parámetros
-                method: "POST",
-                body: JSON.stringify({ vendedor: vendedor, token: token }),
-                headers: { "Content-Type": "application/json" }
-              });
-              /* --- FIN DE LA CORRECCIÓN --- */
-              
-              console.log("✅ Token enviado correctamente al servidor.");
-            } else {
-              console.warn("⚠️ No se pudo obtener token FCM (puede ser por bloqueador o permisos).");
-            }
-          })
-          .catch((err) => console.error("❌ Error en el proceso de registro o fetch:", err));
-        
-        messaging.onMessage((payload) => {
-          console.log("📢 Notificación recibida (primer plano):", payload);
-          toast(`${payload.notification.title} — ${payload.notification.body}`);
+        console.log("🔑 Obteniendo token FCM...");
+        const token = await messaging.getToken({
+          vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
+          serviceWorkerRegistration: registration
         });
-      } else {
-        console.warn("⚠️ Este navegador no soporta notificaciones push.");
-      }
+
+       
+         if (token) {
+          console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
+          await fetch(`${URL_API_BASE}?accion=registrarToken`, {
+            method: "POST",
+            body: JSON.stringify({ vendedor, token }),
+            headers: { "Content-Type": "application/json" }
+          });
+          console.log("✅ Token enviado correctamente al servidor.");
+        } else {
+          console.warn("⚠️ No se pudo obtener token FCM (puede ser por bloqueador o permisos).");
+        }
+      })
+      .catch((err) => console.error("❌ Error registrando el Service Worker:", err));
+    messaging.onMessage((payload) => {
+      console.log("📢 Notificación recibida (primer plano):", payload);
+      toast(`${payload.notification.title} — ${payload.notification.body}`);
+    });
+  } else {
+    console.warn("⚠️ Este navegador no soporta notificaciones push.");
+  }
 }
 
 
