@@ -294,41 +294,83 @@
       new Chart(ctx,{type:"doughnut",data:{labels:["Compraron","No compraron"],datasets:[{data:[res.compraronHoy,res.totalHoy-res.compraronHoy],backgroundColor:["#00c851","#ff4444"]}]},options:{plugins:{legend:{display:false}}}});
     }
 
-    // 🔔 NOTIFICACIONES PUSH FIREBASE
-    function inicializarNotificaciones(vendedor){
-      const config={apiKey:"AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",authDomain:"app-vendedores-inteligente.firebaseapp.com",projectId:"app-vendedores-inteligente",storageBucket:"app-vendedores-inteligente.firebasestorage.app",messagingSenderId:"583313989429",appId:"1:583313989429:web:c4f78617ad957c3b11367c"};
-      firebase.initializeApp(config);
-      const messaging=firebase.messaging();
+// 🔔 NOTIFICACIONES PUSH FIREBASE (versión actualizada y estable)
+function inicializarNotificaciones(vendedor) {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+    authDomain: "app-vendedores-inteligente.firebaseapp.com",
+    projectId: "app-vendedores-inteligente",
+    storageBucket: "app-vendedores-inteligente.firebasestorage.app",
+    messagingSenderId: "583313989429",
+    appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+  };
 
-      if('serviceWorker' in navigator){
-        navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg=>{
-          messaging.useServiceWorker(reg);
-          return Notification.requestPermission();
-        }).then(async perm=>{
-          if(perm==='granted'){
-            const token=await messaging.getToken({vapidKey:"BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0"});
-            console.log("📱 Token FCM:",token);
-            await fetch(`${URL_API_BASE}?accion=registrarToken`,{
-              method:"POST",
-              body:JSON.stringify({vendedor,token}),
-              headers:{"Content-Type":"application/json"}
-            });
-          }
-        }).catch(e=>console.warn("⚠️ Error permisos/registro:",e));
-      }
+  // Inicializar Firebase si aún no está inicializado
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 
-      messaging.onMessage(payload=>{
-        console.log("📩 Notificación recibida:",payload);
-        const n=payload.notification;
-        new Notification(n.title,{body:n.body,icon:"/icon-192.png"});
+  const messaging = firebase.messaging();
+
+  // Registrar el Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('firebase-messaging-sw.js')
+      .then(async (registration) => {
+        console.log('✅ Service Worker registrado correctamente:', registration);
+
+        // Pedir permiso al usuario
+        const permiso = await Notification.requestPermission();
+        if (permiso !== 'granted') {
+          console.warn('⚠️ Permiso de notificaciones denegado.');
+          return;
+        }
+
+        // Obtener el token de Firebase vinculado al service worker
+        const token = await messaging.getToken({
+          vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0",
+          serviceWorkerRegistration: registration
+        });
+
+        console.log('📱 Token FCM generado:', token);
+
+        if (token && vendedor) {
+          // Enviar token al Apps Script
+          fetch(`${URL_API_BASE}?accion=registrarToken`, {
+            method: 'POST',
+            body: JSON.stringify({ vendedor, token }),
+            headers: { 'Content-Type': 'application/json' }
+          })
+            .then((r) => r.text())
+            .then((resp) => console.log('✅ Token enviado al servidor:', resp))
+            .catch((err) => console.error('❌ Error enviando token al servidor:', err));
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Error al registrar el Service Worker:', error);
       });
-    }
 
-    window.agregarDigito=agregarDigito;
-    window.borrarDigito=borrarDigito;
-    window.login=login;
-    window.logout=logout;
-    window.mostrarSeccion=mostrarSeccion;
+    // Escuchar notificaciones en primer plano
+    messaging.onMessage((payload) => {
+      console.log('📩 Notificación recibida (primer plano):', payload);
+      const n = payload.notification;
+      new Notification(n.title, {
+        body: n.body,
+        icon: '/icon-192.png'
+      });
+    });
+  } else {
+    console.warn('⚠️ Este navegador no soporta notificaciones push.');
+  }
+}
+
+
+   window.agregarDigito = agregarDigito;
+window.borrarDigito = borrarDigito;
+window.login = login;
+window.logout = logout;
+window.mostrarSeccion = mostrarSeccion;
+
   </script>
 </body>
 </html>
