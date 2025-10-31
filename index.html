@@ -511,14 +511,23 @@
    function inicializarNotificaciones(vendedor) {
   console.log("🚀 Inicializando notificaciones para", vendedor);
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-    authDomain: "app-vendedores-inteligente.firebaseapp.com",
-    projectId: "app-vendedores-inteligente",
-    storageBucket: "app-vendedores-inteligente.appspot.com",
-    messagingSenderId: "583313989429",
-    appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-  };
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+  authDomain: "app-vendedores-inteligente.firebaseapp.com",
+  projectId: "app-vendedores-inteligente",
+  storageBucket: "app-vendedores-inteligente.firebasestorage.app",
+  messagingSenderId: "583313989429",
+  appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   const messaging = firebase.messaging();
