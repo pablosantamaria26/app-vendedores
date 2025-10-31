@@ -511,11 +511,6 @@
    function inicializarNotificaciones(vendedor) {
   console.log("🚀 Inicializando notificaciones para", vendedor);
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
@@ -526,7 +521,7 @@ const firebaseConfig = {
   appId: "1:583313989429:web:c4f78617ad957c3b11367c"
 };
 
-// Inicializa Firebase solo si no está inicializado aún
+  // Inicializa Firebase solo si no está inicializado aún
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
   const messaging = firebase.messaging();
@@ -575,6 +570,7 @@ const firebaseConfig = {
     console.warn("⚠️ Este navegador no soporta notificaciones push.");
   }
 }
+
 
 
     /* ================================
