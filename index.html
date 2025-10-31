@@ -343,8 +343,7 @@
           <div class="acciones">
             <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
             <button class="btn-secundario" onclick="irCliente(${tieneGeo?c.lat:"null"},${tieneGeo?c.lng:"null"})">🚗 Ir</button>
-            <button class="btn-lock" onclick="toggleLock(${c.numero})">${lock?"🔒 Bloqueado":"🔓 
-            Bloquear"}</button>
+           <button class="btn-lock" onclick="toggleLock(${c.numero})">${lock?"🔒 Bloqueado":"🔓 Bloquear"}</button>
           </div>
         `;
         // Drag & Drop
