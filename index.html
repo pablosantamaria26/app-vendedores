@@ -509,48 +509,53 @@
        🔔 FCM (igual a tu versión)
     ================================ */
     function inicializarNotificaciones(vendedor) {
-      const firebaseConfig = {
-        apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-        authDomain: "app-vendedores-inteligente.firebaseapp.com",
-        projectId: "app-vendedores-inteligente",
-        storageBucket: "app-vendedores-inteligente.firebasestorage.app",
-        messagingSenderId: "583313989429",
-        appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-      };
+  console.log("🚀 Inicializando notificaciones para", vendedor);
 
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      const messaging = firebase.messaging();
+  const firebaseConfig = {
+   apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+  authDomain: "app-vendedores-inteligente.firebaseapp.com",
+  projectId: "app-vendedores-inteligente",
+  storageBucket: "app-vendedores-inteligente.firebasestorage.app",
+  messagingSenderId: "583313989429",
+  appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+  };
 
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker
-          .register('firebase-messaging-sw.js')
-          .then(async (registration) => {
-            const permiso = await Notification.requestPermission();
-            if (permiso !== 'granted') { console.warn('⚠️ Permiso de notificaciones denegado.'); return; }
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
 
-            const token = await messaging.getToken({
-              vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0",
-              serviceWorkerRegistration: registration
-            });
-
-            if (token && vendedor) {
-              fetch(`${URL_API_BASE}?accion=registrarToken`, {
-                method: 'POST',
-                body: JSON.stringify({ vendedor, token }),
-                headers: { 'Content-Type': 'application/json' }
-              }).catch((err)=>console.error('❌ Error enviando token al servidor:', err));
-            }
-          })
-          .catch((error) => { console.error('❌ Error al registrar el Service Worker:', error); });
-
-        messaging.onMessage((payload) => {
-          const n = payload.notification;
-          toast(`${n.title} — ${n.body}`);
-        });
-      } else {
-        console.warn('⚠️ Este navegador no soporta notificaciones push.');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('firebase-messaging-sw.js').then(async (registration) => {
+      const permiso = await Notification.requestPermission();
+      if (permiso !== 'granted') {
+        console.warn('⚠️ Permiso de notificaciones denegado.');
+        return;
       }
-    }
+
+      const token = await messaging.getToken({
+        vapidKey: "TU_VAPID_KEY_WEB_PUSH",
+        serviceWorkerRegistration: registration
+      });
+
+      console.log("✅ Token obtenido:", token);
+
+      if (token && vendedor) {
+        await fetch("API_URL_DE_TU_SCRIPT", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vendedor, token })
+        });
+        console.log("📬 Token enviado correctamente al servidor");
+      }
+    }).catch((error) => {
+      console.error('❌ Error registrando el service worker:', error);
+    });
+
+    messaging.onMessage((payload) => {
+      const n = payload.notification;
+      toast(`${n.title} — ${n.body}`);
+    });
+  }
+}
 
     /* ================================
        🌙 Modo oscuro
