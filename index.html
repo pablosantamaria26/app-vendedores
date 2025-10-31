@@ -4,27 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🧠 App de Vendedores Inteligente</title>
- 
+
   <!-- Manifest + Firebase -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#004aad">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#007aff">
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
-
-  <!-- Leaflet (para mapa sin API key) -->
+  <!-- Leaflet (mapas sin API key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Chart.js (para los gráficos del resumen) -->
+  <!-- Chart.js (gráficos del resumen) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* ===========================
-       ESTILOS GENERALES
-    ============================ */
     body {
       margin: 0;
       font-family: "Inter", sans-serif;
@@ -49,10 +45,7 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
-    header h1 {
-      margin: 0;
-      font-size: 1.3rem;
-    }
+    header h1 { margin: 0; font-size: 1.3rem; }
 
     .menu {
       display: flex;
@@ -76,11 +69,7 @@
       transition: 0.3s;
     }
 
-    .menu button.activo {
-      background: #007aff;
-      color: white;
-      font-weight: bold;
-    }
+    .menu button.activo { background: #007aff; color: white; font-weight: bold; }
 
     main {
       width: 100%;
@@ -89,21 +78,12 @@
       margin-bottom: 80px;
     }
 
-    h2 {
-      text-align: center;
-      margin-top: 10px;
-      color: #007aff;
-    }
+    h2 { text-align: center; margin-top: 10px; color: #007aff; }
 
-    /* ===========================
-       LOGIN
-    ============================ */
+    /* LOGIN */
     #login {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100dvh;
+      inset: 0;
       background: linear-gradient(135deg, #007aff, #00b4d8);
       display: flex;
       flex-direction: column;
@@ -147,26 +127,17 @@
       transition: 0.2s;
     }
 
-    .teclado-numerico button:hover {
-      background: #005fcc;
-    }
+    .teclado-numerico button:hover { background: #005fcc; }
 
-    /* ===========================
-       TARJETAS
-    ============================ */
     .cliente {
       background: white;
       border-radius: 12px;
       padding: 14px;
       margin: 10px 0;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      animation: fadeIn 0.3s ease-in-out;
     }
 
-    .cliente h3 {
-      margin: 0;
-      color: #007aff;
-    }
+    .cliente h3 { margin: 0; color: #007aff; }
 
     .cliente button {
       margin-top: 8px;
@@ -177,53 +148,18 @@
       border-radius: 8px;
       padding: 8px 12px;
       cursor: pointer;
-      transition: 0.2s;
     }
 
-    .cliente button:hover {
-      background: #005fcc;
-    }
-
-    .btn-secundario {
-      background: #00b894;
-    }
-
-    #mapa {
-      height: 300px;
-      width: 100%;
-      margin-top: 10px;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    /* ===========================
-       RESUMEN
-    ============================ */
-    .panel-resumen {
-      text-align: center;
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
-
-    canvas {
-      max-width: 300px;
-      margin: auto;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .cliente button:hover { background: #005fcc; }
+    .btn-secundario { background: #00b894; }
+    #mapa { height: 300px; width: 100%; border-radius: 10px; margin-top: 10px; overflow: hidden; }
+    .panel-resumen { text-align: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+    canvas { max-width: 300px; margin: auto; }
   </style>
 </head>
 
 <body>
-  <!-- ==========================
-       LOGIN
-  =========================== -->
+  <!-- LOGIN -->
   <div id="login">
     <div class="login-card">
       <h1>🧠 App de Vendedores</h1>
@@ -247,12 +183,8 @@
     </div>
   </div>
 
-  <!-- ==========================
-       APP PRINCIPAL
-  =========================== -->
-  <header>
-    <h1 id="titulo">🧠 App de Vendedores</h1>
-  </header>
+  <!-- APP PRINCIPAL -->
+  <header><h1 id="titulo">🧠 App de Vendedores</h1></header>
 
   <main>
     <section id="seccion-ruta" class="seccion">
@@ -280,204 +212,123 @@
     <button id="btnLogout" onclick="logout()">🚪</button>
   </div>
 
-  <!-- ==========================
-       SCRIPT PRINCIPAL
-  =========================== -->
   <script>
     const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
     const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
 
-    function agregarDigito(n) {
-      const input = document.getElementById("clave");
-      if (input.value.length < 4) input.value += n;
-    }
-    function borrarDigito() {
-      const input = document.getElementById("clave");
-      input.value = input.value.slice(0, -1);
-    }
+    function agregarDigito(n){const i=document.getElementById("clave");if(i.value.length<4)i.value+=n;}
+    function borrarDigito(){const i=document.getElementById("clave");i.value=i.value.slice(0,-1);}
+    function login(){const c=document.getElementById("clave").value.trim();const e=document.getElementById("error");if(!vendedores[c]){e.textContent="❌ Clave incorrecta";return;}localStorage.setItem("vendedorClave",c);document.getElementById("login").style.display="none";mostrarApp();}
+    function logout(){localStorage.removeItem("vendedorClave");location.reload();}
+    window.onload=()=>{const c=localStorage.getItem("vendedorClave");if(c&&vendedores[c]){document.getElementById("login").style.display="none";mostrarApp();}};
 
-    function login() {
-      const clave = document.getElementById("clave").value.trim();
-      const error = document.getElementById("error");
-      if (!vendedores[clave]) { error.textContent = "❌ Clave incorrecta"; return; }
-      localStorage.setItem("vendedorClave", clave);
-      document.getElementById("login").style.display = "none";
-      mostrarApp();
-    }
-
-    function logout() { localStorage.removeItem("vendedorClave"); location.reload(); }
-
-    window.onload = () => {
-      const clave = localStorage.getItem("vendedorClave");
-      if (clave && vendedores[clave]) { document.getElementById("login").style.display = "none"; mostrarApp(); }
-    };
-
-    async function mostrarApp() {
-      const clave = localStorage.getItem("vendedorClave");
-      const nombre = vendedores[clave];
-      document.getElementById("titulo").textContent = `👋 Hola, ${nombre}`;
+    async function mostrarApp(){
+      const clave=localStorage.getItem("vendedorClave");
+      const nombre=vendedores[clave];
+      document.getElementById("titulo").textContent=`👋 Hola, ${nombre}`;
       mostrarSeccion("ruta");
       cargarRuta(clave);
       cargarResumen(clave);
+      inicializarNotificaciones(clave);
     }
 
-  function mostrarSeccion(seccion) {
-  // Oculta todas las secciones
-  document.querySelectorAll(".seccion").forEach(s => s.classList.add("oculto"));
+    function mostrarSeccion(s){
+      document.querySelectorAll(".seccion").forEach(sec=>sec.classList.add("oculto"));
+      document.getElementById("seccion-"+s).classList.remove("oculto");
+      document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("activo"));
+      const btn=document.querySelector(`[onclick="mostrarSeccion('${s}')"]`);
+      if(btn)btn.classList.add("activo");
+    }
 
-  // Muestra la que corresponde
-  document.getElementById("seccion-" + seccion).classList.remove("oculto");
-
-  // Actualiza los botones
-  document.querySelectorAll(".menu button").forEach(b => b.classList.remove("activo"));
-  const botonActivo = document.querySelector(`[onclick="mostrarSeccion('${seccion}')"]`);
-  if (botonActivo) botonActivo.classList.add("activo");
-}
-
-
-    async function cargarRuta(clave) {
-      const cont = document.getElementById("contenedor");
-      cont.innerHTML = "⏳ Cargando clientes...";
-      const resp = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
-      const data = await resp.json();
-      cont.innerHTML = "";
-      let puntos = [];
-      data.forEach(c => {
-        const div = document.createElement("div");
-        div.className = "cliente";
-        div.innerHTML = `
-          <h3>${c.nombre}</h3>
-          <p>📍 ${c.direccion}, ${c.localidad}</p>
-          <button class="btn-secundario" onclick='irCliente(${c.lat}, ${c.lng})'>🚗 Ir a este cliente</button>
-          <button onclick='registrarVisita(${JSON.stringify(c)})'>💾 Registrar Visita</button>
-        `;
+    async function cargarRuta(clave){
+      const cont=document.getElementById("contenedor");
+      cont.innerHTML="⏳ Cargando clientes...";
+      const resp=await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
+      const data=await resp.json();
+      cont.innerHTML="";
+      let puntos=[];
+      data.forEach(c=>{
+        const div=document.createElement("div");
+        div.className="cliente";
+        div.innerHTML=`<h3>${c.nombre}</h3><p>📍 ${c.direccion}, ${c.localidad}</p>
+        <button class="btn-secundario" onclick='irCliente(${c.lat},${c.lng})'>🚗 Ir</button>
+        <button onclick='registrarVisita(${JSON.stringify(c)})'>💾 Registrar</button>`;
         cont.appendChild(div);
-        if (c.lat && c.lng) puntos.push([c.lat, c.lng, c.nombre]);
+        if(c.lat&&c.lng)puntos.push([c.lat,c.lng,c.nombre]);
       });
       mostrarMapa(puntos);
     }
 
-    function irCliente(lat, lng) {
-      if (!lat || !lng) { alert("📍 Este cliente no tiene coordenadas cargadas."); return; }
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const url = `https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${lat},${lng}&travelmode=driving`;
-          window.open(url, "_blank");
-        });
-      } else alert("⚠️ Geolocalización no disponible.");
-    }
-
-    function mostrarMapa(puntos) {
-      const mapaDiv = document.getElementById("mapa");
-      mapaDiv.innerHTML = "";
-      const map = L.map("mapa").setView([-34.7, -58.4], 11);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-      puntos.forEach(p => L.marker([p[0], p[1]]).addTo(map).bindPopup(p[2]));
-    }
-
-    function registrarVisita(c) {
-      const vendedor = localStorage.getItem("vendedorClave");
-      const params = new URLSearchParams({
-        accion: "registrarVisita",
-        numero: c.numero,
-        nombre: c.nombre,
-        direccion: c.direccion,
-        localidad: c.localidad,
-        visitado: true,
-        compro: false,
-        comentario: "",
-        vendedor,
-      });
-      fetch(`${URL_API_BASE}?${params}`).then(r => r.json()).then(d => alert(d.estado));
-    }
-
-    async function cargarResumen(clave) {
-      const cont = document.getElementById("contenedorResumen");
-      cont.innerHTML = "⏳ Analizando desempeño...";
-      const resp = await fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`);
-      const pred = await fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`);
-      const resumen = await resp.json();
-      const analisis = await pred.json();
-
-      cont.innerHTML = `
-        <h3>${resumen.fecha}</h3>
-        <p>🚶 Visitas: <b>${resumen.totalHoy || 0}</b></p>
-        <p>🛒 Compraron: <b>${resumen.compraronHoy || 0}</b></p>
-        <p>🎯 Tasa: <b>${resumen.tasa || 0}%</b></p>
-        <p>⏱️ Frecuencia: <b>${resumen.frecuenciaProm || "N/D"}</b> días</p>
-        <p>🤖 ${analisis.mensaje}</p>
-      `;
-
-      const ctx = document.getElementById("graficoResumen").getContext("2d");
-      new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: ["Compraron", "No compraron"],
-          datasets: [{
-            data: [resumen.compraronHoy, resumen.totalHoy - resumen.compraronHoy],
-            backgroundColor: ["#00c851", "#ff4444"],
-          }]
-        },
-        options: { plugins: { legend: { display: false } } }
+    function irCliente(lat,lng){
+      if(!lat||!lng){alert("📍 Este cliente no tiene coordenadas.");return;}
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const url=`https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${lat},${lng}&travelmode=driving`;
+        window.open(url,"_blank");
       });
     }
-    // ===========================
-// 🔔 CONFIGURAR NOTIFICACIONES PUSH
-// ===========================
 
-const firebaseConfig2 = {
-  apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-  authDomain: "app-vendedores-inteligente.firebaseapp.com",
-  projectId: "app-vendedores-inteligente",
-  storageBucket: "app-vendedores-inteligente.firebasestorage.app",
-  messagingSenderId: "583313989429",
-  appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-};
+    function mostrarMapa(p){
+      const m=L.map("mapa").setView([-34.7,-58.4],11);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(m);
+      p.forEach(e=>L.marker([e[0],e[1]]).addTo(m).bindPopup(e[2]));
+    }
 
-firebase.initializeApp(firebaseConfig2);
+    function registrarVisita(c){
+      const v=localStorage.getItem("vendedorClave");
+      const params=new URLSearchParams({accion:"registrarVisita",numero:c.numero,nombre:c.nombre,direccion:c.direccion,localidad:c.localidad,visitado:true,compro:false,comentario:"",vendedor:v});
+      fetch(`${URL_API_BASE}?${params}`).then(r=>r.json()).then(d=>alert(d.estado));
+    }
 
-const messaging = firebase.messaging();
+    async function cargarResumen(clave){
+      const cont=document.getElementById("contenedorResumen");
+      cont.innerHTML="⏳ Analizando desempeño...";
+      const [r1,r2]=await Promise.all([
+        fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`),
+        fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`)
+      ]);
+      const res=await r1.json(), ana=await r2.json();
+      cont.innerHTML=`<h3>${res.fecha}</h3><p>🚶 Visitas: <b>${res.totalHoy||0}</b></p>
+      <p>🛒 Compraron: <b>${res.compraronHoy||0}</b></p><p>🎯 Tasa: <b>${res.tasa||0}%</b></p>
+      <p>⏱️ Frecuencia: <b>${res.frecuenciaProm||"N/D"}</b> días</p><p>🤖 ${ana.mensaje}</p>`;
+      const ctx=document.getElementById("graficoResumen").getContext("2d");
+      new Chart(ctx,{type:"doughnut",data:{labels:["Compraron","No compraron"],datasets:[{data:[res.compraronHoy,res.totalHoy-res.compraronHoy],backgroundColor:["#00c851","#ff4444"]}]},options:{plugins:{legend:{display:false}}}});
+    }
 
-messaging.getToken({ vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0" })
-  .then((token) => {
-    console.log("📱 Token del dispositivo:", token);
-    const vendedor = localStorage.getItem("vendedorClave");
+    // 🔔 NOTIFICACIONES PUSH FIREBASE
+    function inicializarNotificaciones(vendedor){
+      const config={apiKey:"AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",authDomain:"app-vendedores-inteligente.firebaseapp.com",projectId:"app-vendedores-inteligente",storageBucket:"app-vendedores-inteligente.firebasestorage.app",messagingSenderId:"583313989429",appId:"1:583313989429:web:c4f78617ad957c3b11367c"};
+      firebase.initializeApp(config);
+      const messaging=firebase.messaging();
 
-    // Enviar el token al Apps Script
-    fetch(`${URL_API_BASE}?accion=registrarToken`, {
-      method: "POST",
-      body: JSON.stringify({ vendedor, token }),
-      headers: { "Content-Type": "application/json" }
-    });
-  })
-  .catch((err) => {
-    console.warn("⚠️ Error al obtener token de notificaciones", err);
-  });
+      if('serviceWorker' in navigator){
+        navigator.serviceWorker.register('firebase-messaging-sw.js').then(reg=>{
+          messaging.useServiceWorker(reg);
+          return Notification.requestPermission();
+        }).then(async perm=>{
+          if(perm==='granted'){
+            const token=await messaging.getToken({vapidKey:"BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0"});
+            console.log("📱 Token FCM:",token);
+            await fetch(`${URL_API_BASE}?accion=registrarToken`,{
+              method:"POST",
+              body:JSON.stringify({vendedor,token}),
+              headers:{"Content-Type":"application/json"}
+            });
+          }
+        }).catch(e=>console.warn("⚠️ Error permisos/registro:",e));
+      }
 
-  .catch((err) => {
-    console.warn("⚠️ Error al obtener token de notificaciones", err);
-  });
+      messaging.onMessage(payload=>{
+        console.log("📩 Notificación recibida:",payload);
+        const n=payload.notification;
+        new Notification(n.title,{body:n.body,icon:"/icon-192.png"});
+      });
+    }
 
-// Escuchar mensajes cuando la app está abierta
-messaging.onMessage((payload) => {
-  console.log("📩 Notificación recibida en primer plano:", payload);
-  new Notification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: "/icon-192.png"
-  });
-});
-
-// Registrar el Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('firebase-messaging-sw.js')
-    .then((registration) => {
-      console.log('✅ Service Worker registrado:', registration);
-    })
-    .catch((error) => {
-      console.error('❌ Error al registrar el Service Worker:', error);
-    });
-}
-
+    window.agregarDigito=agregarDigito;
+    window.borrarDigito=borrarDigito;
+    window.login=login;
+    window.logout=logout;
+    window.mostrarSeccion=mostrarSeccion;
   </script>
 </body>
 </html>
