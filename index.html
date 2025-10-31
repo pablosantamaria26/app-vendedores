@@ -526,24 +526,28 @@ const firebaseConfig = {
   appId: "1:583313989429:web:c4f78617ad957c3b11367c"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
+// Inicializa Firebase solo si no está inicializado aún
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
   const messaging = firebase.messaging();
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("firebase-messaging-sw.js")
       .then(async (registration) => {
-        console.log("✅ Service Worker registrado correctamente.");
+        console.log("✅ Service Worker registrado correctamente. Esperando que se active...");
 
+        // 👇 Esperar a que el SW esté completamente listo antes de pedir token
+        await navigator.serviceWorker.ready;
+
+        console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
         const permiso = await Notification.requestPermission();
         if (permiso !== "granted") {
           console.warn("⚠️ Permiso de notificaciones denegado.");
           return;
         }
 
+        console.log("🔑 Obteniendo token FCM...");
         const token = await messaging.getToken({
           vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
           serviceWorkerRegistration: registration
@@ -558,7 +562,7 @@ const app = initializeApp(firebaseConfig);
           });
           console.log("✅ Token enviado correctamente al servidor.");
         } else {
-          console.warn("⚠️ No se pudo obtener token FCM.");
+          console.warn("⚠️ No se pudo obtener token FCM (puede ser por bloqueador o permisos).");
         }
       })
       .catch((err) => console.error("❌ Error registrando el Service Worker:", err));
