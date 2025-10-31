@@ -406,14 +406,19 @@
       }
     }
 
+    /* ==================================
+       INICIO DE LA SECCIÓN CORREGIDA
+       (Esta era la que tenía el SyntaxError)
+    ================================== */
     function irCliente(lat, lng){
       if(!lat || !lng){ 
         alert("📍 Este cliente no tiene coordenadas."); 
         return; 
       }
       
-      const baseUrl = "https://www.google.com/maps/dir/?api=1";
+      // Usamos backticks (`) para crear la URL y ${} para insertar las variables.
       const destino = `&destination=${lat},${lng}&travelmode=driving`;
+      const baseUrl = "https://www.google.com/maps/dir/?api=1"; // URL base para direcciones
 
       if(navigator.geolocation){
         navigator.geolocation.getCurrentPosition(pos => {
@@ -429,6 +434,9 @@
         window.open(`${baseUrl}${destino}`, "_blank");
       }
     }
+    /* ================================
+       FIN DE LA SECCIÓN CORREGIDA
+    ================================ */
 
     /* ================================
        💾 Registrar visita (+ offline)
@@ -543,7 +551,7 @@
     }
 
     /* ==================================================
-       🔔 FCM (SECCIÓN CORREGIDA PARA EVITAR CORS)
+       🔔 FCM (SECCIÓN CORREGIDA - VUELTA A POST)
        ================================================== */
    function inicializarNotificaciones(vendedor) {
       console.log("🚀 Inicializando notificaciones para", vendedor);
@@ -587,16 +595,13 @@
               console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
               
               /* --- INICIO DE LA CORRECCIÓN --- */
-              // Convertimos el POST en un GET para evitar el error CORS,
-              // ya que tu script de Google parece aceptar solo GET.
-              const params = new URLSearchParams({
-                  accion: "registrarToken",
-                  vendedor: vendedor,
-                  token: token
+              // Volvemos al método POST, que es el que tu 'codigo.gs' espera.
+              // La función 'doPost' y 'doOptions' en tu .gs se encargarán del CORS.
+              await fetch(URL_API_BASE, { // La URL base, sin parámetros
+                method: "POST",
+                body: JSON.stringify({ vendedor: vendedor, token: token }),
+                headers: { "Content-Type": "application/json" }
               });
-              
-              // Enviamos como GET, que no requiere pre-vuelo CORS
-              await fetch(`${URL_API_BASE}?${params.toString()}`);
               /* --- FIN DE LA CORRECCIÓN --- */
               
               console.log("✅ Token enviado correctamente al servidor.");
