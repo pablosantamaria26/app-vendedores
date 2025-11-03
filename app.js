@@ -15,7 +15,7 @@
    ⚙️ Config principal
 ================================ */
 const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
-const URL_API_BASE = "https://script.google.com/macros/s/AKfycbxYAF9Oi7Qdf44_ThKFV8ajWUyGXPsSnZYmjx9zXnTXAxfePP0JOfi8Vho7rZe39Hw_/exec";
+const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzUdCXrwY9AkmtOB4T5ycNJKE17-_HeCQIVYZcUXCynNcQy3XQ1n51M5OKBgQoSL-pl/exec";
 
 /* Estado global */
 let clientesData = [];
