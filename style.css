@@ -194,7 +194,7 @@ button {
 }
 button:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0,0,0,.12); }
 .btn-secundario { background: #00b894; }
-.btn-lock { background: #6b7280; }
+
 
 /* Checkboxes + textarea dentro de tarjeta */
 .cliente input[type="checkbox"] { transform: translateY(1px); }
