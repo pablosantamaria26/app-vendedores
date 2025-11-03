@@ -353,3 +353,36 @@ canvas { max-width: 320px; margin: auto; display: block; }
   to { stroke-dashoffset: 0; }
 }
 
+/* === Fullscreen Success Toast (1s) === */
+.fullscreen-toast {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  display: grid;
+  place-items: center;
+  z-index: 10000;
+  animation: fst-fade 1s forwards;
+}
+.fullscreen-toast .box {
+  width: 170px;
+  height: 170px;
+  background: #ffffff;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 34px rgba(0,0,0,.25);
+}
+.fst-circle { width: 110px; height: 110px; position: relative; }
+.fst-circle svg { width: 110px; height: 110px; transform: rotate(-90deg); }
+.fst-circle .bg   { stroke: #e6f7ec; stroke-width: 10; fill: none; }
+.fst-circle .prog { stroke: #22c55e; stroke-width: 10; fill: none; stroke-linecap: round;
+  stroke-dasharray: 345; stroke-dashoffset: 345; animation: fst-progress 0.7s ease-out forwards; }
+.fst-check { position: absolute; inset: 0; display: grid; place-items: center; }
+.fst-check svg { width: 62px; height: 62px; }
+.fst-check path { stroke: #22c55e; stroke-width: 8; fill: none; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 80; stroke-dashoffset: 80; animation: fst-check 0.25s ease-out forwards 0.65s; }
+.fst-title { margin-top: 10px; text-align: center; font-weight: 700; color: #111827; font-size: 14px; }
+
+@keyframes fst-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+@keyframes fst-progress { to { stroke-dashoffset: 0; } }
+@keyframes fst-check { to { stroke-dashoffset: 0; } }
