@@ -524,10 +524,14 @@ function inicializarNotificaciones(vendedor){
             // 1. Enviamos al endpoint base (sin ?accion=)
             // 2. Cambiamos Content-Type a text/plain para EVITAR el preflight de CORS
           fetch(URL_API_BASE, {
-            method:"POST", 
-            headers:{ "Content-Type":"text/plain" }, // <-- CAMBIO CLAVE
-            body:JSON.stringify({ vendedor, token })
-          }).catch(err=>console.error("❌ Error enviando token:", err));
+  method: "POST",
+  headers: { "Content-Type": "text/plain" }, // 👈 evita el preflight
+  body: JSON.stringify({ vendedor, token })
+})
+.then(r => r.text())
+.then(t => console.log("✅ Token enviado correctamente:", t))
+.catch(err => console.error("❌ Error enviando token:", err));
+
         }
         messaging.onMessage((payload)=>{ const n=payload.notification; if(n) toast(`${n.title} — ${n.body}`); });
       })
