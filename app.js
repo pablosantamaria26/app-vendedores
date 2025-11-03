@@ -316,34 +316,18 @@ function abrirRutaEnMapa(clientes){
 /* ================================
    💾 Registrar visita (+ offline + bloqueo automático)
 ================================ */
-function getClientePorNumero(num) {
-  return clientesData.find(x => String(x.numero) === String(num));
-}
-
 async function registrarVisita(numero) {
   const c = getClientePorNumero(numero);
-  if (!c) { toastSuccess("❌ Cliente no encontrado", false); return; }
+  if (!c) {
+    toast("❌ Cliente no encontrado");
+    return;
+  }
 
-  // 1) Leemos UI
   const visitado   = document.getElementById(`visitado-${numero}`)?.checked || false;
   const compro     = document.getElementById(`compro-${numero}`)?.checked || false;
   const comentario = (document.getElementById(`coment-${numero}`)?.value || "").trim();
   const vendedor   = localStorage.getItem("vendedorClave") || "";
 
-  // 2) UI OPTIMISTA: bloquear y mandar al final YA
-  const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
-  if (idx !== -1) {
-    const cliente = clientesData.splice(idx, 1)[0];
-    cliente.bloqueado = true;
-    clientesData.push(cliente);
-    guardarOrden(clientesData.map(x => String(x.numero)));
-    renderClientes();
-  }
-
-  // 3) Toast full-screen instantáneo (1s)
-  toastSuccess("✅ Visita guardada", true);
-
-  // 4) Hacemos el request en 2º plano (con fallback offline)
   const params = new URLSearchParams({
     accion: "registrarVisita",
     numero: c.numero,
@@ -355,12 +339,45 @@ async function registrarVisita(numero) {
     comentario,
     vendedor,
   });
+  let exito = false;
 
   try {
     const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
-    await r.json().catch(()=>{});
+    const js = await r.json();
+    
+    // --- MODIFICACIÓN ---
+    mostrarExito(); // En lugar de toast()
+    // --- FIN MODIFICACIÓN ---
+
+    exito = true;
   } catch {
+    // Guardado offline si no hay conexión
     queueOffline({ t: "visita", params: Object.fromEntries(params) });
+
+    // --- MODIFICACIÓN ---
+    mostrarExito(); // En lugar de toast()
+    // --- FIN MODIFICACIÓN ---
+
+    exito = true;
+  }
+
+  if (exito) {
+    // 🔒 Esta lógica de bloqueo y movimiento ya estaba correcta
+    const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
+    if (idx !== -1) {
+      const cliente = clientesData.splice(idx, 1)[0];
+      cliente.bloqueado = true;
+      clientesData.push(cliente);
+      guardarOrden(clientesData.map(x => String(x.numero)));
+
+      // 🔄 Actualizar visualmente sin esperar recarga total
+      renderClientes();
+      // ✨ Animación opcional para que se note el cambio
+      const card = document.getElementById(`c_${numero}`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }
   }
 }
 
@@ -677,6 +694,41 @@ setInterval(()=>{
 /* ================================
    💬 Toasts
 ================================ */
+/* ================================
+   ✅ Modal de Éxito (NUEVO)
+================================ */
+function mostrarExito() {
+  // 1. Crear elementos
+  const overlay = document.createElement("div");
+  overlay.className = "exito-overlay";
+
+  const modal = document.createElement("div");
+  modal.className = "exito-modal";
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Visita registrada con éxito";
+
+  const animContainer = document.createElement("div");
+  animContainer.className = "exito-anim-container";
+  // El CSS se encarga de la animación
+  animContainer.innerHTML = '<div class="exito-circulo"></div><div class="exito-tilde"></div>';
+
+  // 2. Ensamblar
+  modal.appendChild(animContainer);
+  modal.appendChild(titulo);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // 3. Remover después de 1 segundo (1000ms)
+  setTimeout(() => {
+    overlay.remove();
+  }, 1000); 
+}
+
+
+function toast(msg){
+// ... (la función toast existente se queda como está)
+
 function toast(msg){
   const t=document.createElement("div");
   t.className="toast"; t.textContent=msg;
