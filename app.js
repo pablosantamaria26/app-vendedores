@@ -339,21 +339,34 @@ async function registrarVisita(numero) {
     renderClientes();
   }
 
-  // 3) Toast instantáneo de éxito (1s, full-screen)
-  toastSuccess("✅ Visita guardada", true);
+function toastSuccess(titulo = "✅ Visita guardada", exito = true) {
+  // Remover cualquiera anterior
+  document.querySelectorAll(".fullscreen-toast").forEach(n => n.remove());
 
-  // 4) Disparo en segundo plano
-  const params = new URLSearchParams({
-    accion: "registrarVisita",
-    numero: c.numero,
-    nombre: c.nombre,
-    direccion: c.direccion || "",
-    localidad: c.localidad || "",
-    visitado,
-    compro,
-    comentario,
-    vendedor,
-  });
+  const wrap = document.createElement("div");
+  wrap.className = "fullscreen-toast";
+  wrap.innerHTML = `
+    <div class="box">
+      <div class="fst-circle">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="bg"   cx="60" cy="60" r="55"></circle>
+          <circle class="prog" cx="60" cy="60" r="55"></circle>
+        </svg>
+        <div class="fst-check">
+          <svg viewBox="0 0 64 64">
+            <path d="M16 34 L28 46 L48 20"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="fst-title">${exito ? "Visita guardada correctamente" : titulo}</div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  // Remover a 1s
+  setTimeout(() => wrap.remove(), 1000);
+}
+
 
   try {
     const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
