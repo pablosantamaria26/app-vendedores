@@ -497,12 +497,12 @@ function mensajeMotivacional(tasa){
 
 
 /* ==================================================
-   🔔 Inicializar notificaciones Firebase (versión CORS-safe)
+   🔔 Inicializar notificaciones Firebase (versión final CORS-safe)
    ================================================== */
 function inicializarNotificaciones(vendedor) {
   console.log("🚀 Inicializando notificaciones para", vendedor);
 
-  // Configuración de tu proyecto Firebase
+  // 🔧 Configuración de tu proyecto Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
     authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -512,7 +512,7 @@ function inicializarNotificaciones(vendedor) {
     appId: "1:583313989429:web:c4f78617ad957c3b11367c"
   };
 
-  // Inicializa Firebase (solo si no está ya iniciado)
+  // 🧩 Inicializar Firebase si no está iniciado
   if (typeof firebase === "undefined") {
     console.error("⚠️ Firebase no está cargado.");
     return;
@@ -525,11 +525,9 @@ function inicializarNotificaciones(vendedor) {
     navigator.serviceWorker
       .register("firebase-messaging-sw.js")
       .then(async (registration) => {
-        console.log("✅ Service Worker registrado correctamente.");
-
-        // Esperar a que esté activo
+        console.log("✅ Service Worker registrado correctamente. Esperando activación...");
         await navigator.serviceWorker.ready;
-        console.log("🟢 Service Worker activo. Solicitando permiso...");
+        console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
 
         const permiso = await Notification.requestPermission();
         if (permiso !== "granted") {
@@ -547,29 +545,30 @@ function inicializarNotificaciones(vendedor) {
           console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
 
           /* ==================================================
-             🚀 Envío CORS-safe del token al servidor
+             🚀 Envío del token al backend via Worker (sin CORS)
              --------------------------------------------------
-             🔹 Usa un proxy externo para agregar los headers CORS.
-             🔹 Evita el preflight y mantiene compatibilidad total
-                con GitHub Pages y navegadores móviles.
+             ✅ El Worker Cloudflare actúa como proxy hacia Apps Script
+             ✅ Evita errores CORS y preflight
           ================================================== */
+          const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+
           try {
-            const respuesta = await fetch(`https://corsproxy.io/?${encodeURIComponent(URL_API_BASE)}`, {
+            const respuesta = await fetch(WORKER_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ vendedor, token })
             });
 
             const texto = await respuesta.text();
-            console.log("✅ Token enviado correctamente al servidor:", texto);
+            console.log("✅ Token enviado correctamente vía Worker:", texto);
           } catch (err) {
-            console.error("❌ Error enviando token al servidor:", err);
+            console.error("❌ Error enviando token vía Worker:", err);
           }
         } else {
           console.warn("⚠️ No se obtuvo token FCM (posible bloqueo o permiso denegado).");
         }
 
-        // Escucha notificaciones en primer plano
+        // 🔔 Escuchar notificaciones en primer plano
         messaging.onMessage((payload) => {
           console.log("📢 Notificación recibida (foreground):", payload);
           const n = payload.notification;
@@ -581,6 +580,7 @@ function inicializarNotificaciones(vendedor) {
     console.warn("⚠️ Este navegador no soporta Service Workers ni notificaciones push.");
   }
 }
+
 
 /* ================================
    🔔 Notificación diaria suave
