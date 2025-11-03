@@ -155,14 +155,19 @@ async function cargarRuta(clave){
       estado.textContent = `Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`;
     }
 
-    // Panel inteligente arriba de la lista
+       // Panel inteligente arriba de la lista
     mostrarPanelPredicciones(pred);
 
-  }catch(e){
+    // 👇 devolvemos la lista para detectar clientes cercanos
+    return clientesData;
+
+  } catch(e) {
     console.error("❌ Error al cargar datos:", e);
-    if(estado) estado.textContent = "❌ Error al cargar datos.";
+    if (estado) estado.textContent = "❌ Error al cargar datos.";
+    return []; // 👈 devolvemos lista vacía en caso de error
   }
 }
+
 
 /* ================================
    🧱 Render de tarjetas + DnD
