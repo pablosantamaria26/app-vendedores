@@ -214,27 +214,22 @@ function renderClientes(){
       </div>
     `;
 
-    // DnD
-    card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
-    card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; card.classList.add("drag-over"); });
-    card.addEventListener("dragleave",()=>card.classList.remove("drag-over"));
-    card.addEventListener("drop",(ev)=>{
-      ev.preventDefault();
-      document.querySelectorAll(".cliente.drag-over").forEach(x=>x.classList.remove("drag-over"));
-      const targetIndex = Array.from(cont.children).indexOf(card) - 1; // -1 por la barra de herramientas
-      if(dragSrcIndex===null || dragSrcIndex===targetIndex) return;
-      const moved = clientesData.splice(dragSrcIndex,1)[0];
-      clientesData.splice(targetIndex,0,moved);
-      dragSrcIndex=null;
-      guardarOrden(clientesData.map(x=>String(x.numero)));
-      renderClientes();
-    });
+card.addEventListener("drop", (ev) => {
+  ev.preventDefault();
+  document.querySelectorAll(".cliente.drag-over").forEach(x => x.classList.remove("drag-over"));
 
-    cont.appendChild(card);
-  });
+  const cards = Array.from(cont.querySelectorAll(".cliente")); // solo tarjetas
+  const targetIndex = cards.indexOf(card);
+  if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
 
-  animarTarjetas();
-}
+  const moved = clientesData.splice(dragSrcIndex, 1)[0];
+  clientesData.splice(targetIndex, 0, moved);
+  dragSrcIndex = null;
+
+  guardarOrden(clientesData.map(x => String(x.numero)));
+  renderClientes();
+});
+
 
 /* Barra superior: filtro + botón ruta en Google Maps */
 function insertarBarraHerramientas(container){
