@@ -180,9 +180,6 @@ function renderClientes() {
   if (!cont) return;
   cont.innerHTML = "";
 
-  // Filtro + botón “ruta completa”
-  insertarBarraHerramientas(cont);
-
   clientesData.forEach((c, idx) => {
     const card = document.createElement("div");
     card.className = "cliente";
@@ -196,7 +193,6 @@ function renderClientes() {
         ? distanciaKm(posicionActual.lat, posicionActual.lng, lat, lng)
         : null;
 
-    // Contenido de la tarjeta
     card.innerHTML = `
       <h3>${c.nombre}</h3>
       <div class="fila">
@@ -214,13 +210,12 @@ function renderClientes() {
       </div>
     `;
 
-    // 🔒 Si el cliente ya fue visitado (bloqueado), desactivar campos y aplicar estilo
+    // Si está bloqueado (visitado)
     if (c.bloqueado) {
       card.classList.add("bloqueado");
       card.querySelectorAll("input, textarea, button").forEach(el => el.disabled = true);
       card.style.opacity = "0.6";
 
-      // Mostrar etiqueta visual "Visitado"
       const tag = document.createElement("div");
       tag.textContent = "✅ Visitado";
       tag.className = "etiqueta-bloqueado";
@@ -229,43 +224,30 @@ function renderClientes() {
       card.appendChild(tag);
     }
 
-    // 🧱 Drag & Drop funcional
+    // Drag & drop funcional
     card.addEventListener("dragstart", (ev) => {
-      dragSrcIndex = idx;
+      dragSrc = idx;
       ev.dataTransfer.effectAllowed = "move";
     });
-
     card.addEventListener("dragover", (ev) => {
       ev.preventDefault();
       ev.dataTransfer.dropEffect = "move";
-      card.classList.add("drag-over");
     });
-
-    card.addEventListener("dragleave", () =>
-      card.classList.remove("drag-over")
-    );
-
     card.addEventListener("drop", (ev) => {
       ev.preventDefault();
-      document.querySelectorAll(".cliente.drag-over").forEach((x) => x.classList.remove("drag-over"));
-
-      const cards = Array.from(cont.querySelectorAll(".cliente"));
-      const targetIndex = cards.indexOf(card);
-      if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
-
-      const moved = clientesData.splice(dragSrcIndex, 1)[0];
-      clientesData.splice(targetIndex, 0, moved);
-      dragSrcIndex = null;
-
-      guardarOrden(clientesData.map((x) => String(x.numero)));
+      const target = Array.from(cont.children).indexOf(card);
+      if (dragSrc === null || dragSrc === target) return;
+      const moved = clientesData.splice(dragSrc, 1)[0];
+      clientesData.splice(target, 0, moved);
+      dragSrc = null;
+      guardarOrden(clientesData.map(x => String(x.numero)));
       renderClientes();
     });
 
     cont.appendChild(card);
   });
-
-  animarTarjetas();
 }
+
 
 
 
@@ -334,6 +316,9 @@ function getClientePorNumero(num) {
   return clientesData.find(x => String(x.numero) === String(num));
 }
 
+/* ================================
+   💾 Registrar visita (+ offline + bloqueo automático)
+================================ */
 async function registrarVisita(numero) {
   const c = getClientePorNumero(numero);
   if (!c) {
@@ -373,14 +358,22 @@ async function registrarVisita(numero) {
   }
 
   if (exito) {
-    // 🔒 Bloquear tarjeta y moverla al final
+    // 🔒 Bloquear tarjeta y moverla al final del listado
     const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
     if (idx !== -1) {
       const cliente = clientesData.splice(idx, 1)[0];
       cliente.bloqueado = true;
       clientesData.push(cliente);
       guardarOrden(clientesData.map(x => String(x.numero)));
+
+      // 🔄 Actualizar visualmente sin esperar recarga total
       renderClientes();
+
+      // ✨ Animación opcional para que se note el cambio
+      const card = document.getElementById(`c_${numero}`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
     }
   }
 }
