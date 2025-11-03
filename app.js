@@ -202,7 +202,7 @@ function renderClientes(){
       <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
       <div class="acciones">
         <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-        <button class="btn-secundario" onclick="irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})">🚗 Ir</button>
+        <button class="btn-secundario" onclick="irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})">🚗 Ir a este cliente</button>
       </div>`;
 
     // DnD
@@ -295,7 +295,6 @@ function getClientePorNumero(num){ return clientesData.find(x=>String(x.numero)=
 async function registrarVisita(numero){
   const c=getClientePorNumero(numero);
   if(!c){ 
-    // Usar toast simple si falla
     toast("❌ Cliente no encontrado"); 
     return; 
   }
@@ -311,7 +310,12 @@ async function registrarVisita(numero){
     clientesData.push(cliente);
     guardarOrden(clientesData.map(x=>String(x.numero)));
     renderClientes();
-    const card=document.getElementById(`c_${numero}`); card?.scrollIntoView({behavior:"smooth", block:"end"});
+    
+    // --- 👇 LÍNEA MODIFICADA (COMPORTAMIENTO DE SCROLL) 👇 ---
+    // Antes: card?.scrollIntoView({behavior:"smooth", block:"end"});
+    // Ahora: Sube al inicio de la lista
+    document.getElementById('estado')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // --- --- --- --- --- --- --- --- --- --- --- --- --- ---
   }
 
   // 3) Enviar en segundo plano (con offline queue)
