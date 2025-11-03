@@ -24,7 +24,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- 🎨 CSS externo actualizado -->
-  <link rel="stylesheet" href="./style.css?v=20251103">
+  <link rel="stylesheet" href="./style.css?v=20251104">
 </head>
 
 <body class="tema-confianza">
@@ -35,10 +35,18 @@
       <h2>🔐 Ingresá tu código</h2>
       <input type="password" id="clave" maxlength="4" placeholder="••••" />
       <div class="teclado-numerico">
-        <button onclick="agregarDigito('1')">1</button><button onclick="agregarDigito('2')">2</button><button onclick="agregarDigito('3')">3</button>
-        <button onclick="agregarDigito('4')">4</button><button onclick="agregarDigito('5')">5</button><button onclick="agregarDigito('6')">6</button>
-        <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
-        <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
+        <button onclick="agregarDigito('1')">1</button>
+        <button onclick="agregarDigito('2')">2</button>
+        <button onclick="agregarDigito('3')">3</button>
+        <button onclick="agregarDigito('4')">4</button>
+        <button onclick="agregarDigito('5')">5</button>
+        <button onclick="agregarDigito('6')">6</button>
+        <button onclick="agregarDigito('7')">7</button>
+        <button onclick="agregarDigito('8')">8</button>
+        <button onclick="agregarDigito('9')">9</button>
+        <button onclick="borrarDigito()">⌫</button>
+        <button onclick="agregarDigito('0')">0</button>
+        <button onclick="login()">✔️</button>
       </div>
       <p id="error"></p>
     </div>
@@ -105,6 +113,6 @@
   </div>
 
   <!-- App principal -->
-  <script src="./app.js?v=20251103" defer></script>
+  <script src="./app.js?v=20251104" defer></script>
 </body>
 </html>
