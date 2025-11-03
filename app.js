@@ -521,11 +521,14 @@ function inicializarNotificaciones(vendedor){
           serviceWorkerRegistration:registration
         });
         if(token && vendedor){
-          fetch(`${URL_API_BASE}?accion=registrarToken`,{
-            method:"POST", headers:{ "Content-Type":"application/json" },
-            body:JSON.stringify({ vendedor, token })
-          }).catch(err=>console.error("❌ Error enviando token:", err));
-        }
+            // 1. Enviamos al endpoint base (sin ?accion=)
+            // 2. Cambiamos Content-Type a text/plain para EVITAR el preflight de CORS
+          fetch(URL_API_BASE, {
+            method:"POST", 
+            headers:{ "Content-Type":"text/plain" }, // <-- CAMBIO CLAVE
+            body:JSON.stringify({ vendedor, token })
+          }).catch(err=>console.error("❌ Error enviando token:", err));
+        }
         messaging.onMessage((payload)=>{ const n=payload.notification; if(n) toast(`${n.title} — ${n.body}`); });
       })
       .catch(e=>console.error("❌ Error Service Worker:", e));
