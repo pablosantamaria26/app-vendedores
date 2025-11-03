@@ -1,185 +1,241 @@
 /* ======================================================
-   🌈 APP VENDEDORES INTELIGENTE — STYLE 2026
+   🌙 APP VENDEDORES INTELIGENTE — ESTILO 2026 FINAL
    ====================================================== */
 
 /* ================================
    🎨 VARIABLES BASE
 ================================ */
 :root {
-  --tema-azul: #0d47a1;
-  --tema-azul-oscuro: #002171;
-  --tema-verde: #00c851;
-  --tema-fucsia: #e040fb;
-  --tema-violeta: #8e24aa;
-  --tema-negro: #111;
-  --tema-amarillo: #fdd835;
-
-  --ok: var(--tema-verde);
-  --no: #ff4444;
-
-  --bg: #f5f7fa;
-  --card: #ffffff;
-  --texto: #212529;
-  --borde: #e5e9f0;
-  --sombra: rgba(0, 0, 0, 0.08);
-
-  --trans: all 0.35s ease;
-}
-
-/* Temas motivacionales */
-body[data-tema="confianza"] {
-  --principal: var(--tema-azul);
-  --secundario: var(--tema-azul-oscuro);
-}
-body[data-tema="energia"] {
-  --principal: var(--tema-violeta);
-  --secundario: var(--tema-fucsia);
-}
-body[data-tema="foco"] {
-  --principal: var(--tema-negro);
-  --secundario: var(--tema-amarillo);
-  --texto: #f8f9fa;
-  --card: #1a1a1a;
-  --borde: #2a2a2a;
+  --azul: #0a63ff;
+  --azul-oscuro: #0a2b57;
+  --ok: #22c55e;
+  --no: #ef4444;
+  --bg: #0b1220;
+  --card: #0f1a2d;
+  --texto: #e6edf3;
+  --borde: #1f2a44;
+  --sombra: rgba(0,0,0,.35);
+  --boton-grad-a: var(--azul);
+  --boton-grad-b: #0e63ff;
+  --trans: all .35s ease;
 }
 
 /* ================================
-   🧱 ESTRUCTURA BASE
+   🌈 TEMAS MOTIVACIONALES
+================================ */
+body.tema-confianza {
+  --azul: #0a63ff;
+  --azul-oscuro: #0a2b57;
+  --bg: #0b1220;
+  --card: #0f1a2d;
+  --texto: #e6edf3;
+  --borde: #1f2a44;
+  --boton-grad-a: #0a63ff;
+  --boton-grad-b: #0e8bff;
+}
+body.tema-energia {
+  --azul: #8b5cf6;
+  --azul-oscuro: #22c55e;
+  --bg: #0f0b1a;
+  --card: #17122b;
+  --texto: #f4f4fd;
+  --borde: #2a214a;
+  --sombra: rgba(0,0,0,.4);
+  --boton-grad-a: #8b5cf6;
+  --boton-grad-b: #22c55e;
+}
+body.tema-foco {
+  --azul: #facc15;
+  --azul-oscuro: #111827;
+  --bg: #0a0a0a;
+  --card: #121212;
+  --texto: #f8fafc;
+  --borde: #1f2937;
+  --sombra: rgba(255,255,255,.08);
+  --boton-grad-a: #facc15;
+  --boton-grad-b: #fde047;
+}
+/* 🆕 Tema noche — blanco y azul oscuro (contraste suave) */
+body.tema-noche {
+  --azul: #0a2b57;
+  --azul-oscuro: #001b3a;
+  --bg: #f3f6fc;
+  --card: #ffffff;
+  --texto: #0a2b57;
+  --borde: #d0d6e0;
+  --sombra: rgba(0, 0, 0, 0.1);
+  --boton-grad-a: #0a63ff;
+  --boton-grad-b: #003eb0;
+}
+
+/* Transición suave al cambiar de tema */
+html, body, header, .cliente, .menu, .panel-resumen, #mapaFull {
+  transition: background-color .4s ease, color .4s ease, border-color .4s ease;
+}
+
+/* ================================
+   🧱 BASE + LAYOUT
 ================================ */
 html, body {
   height: 100%;
   margin: 0;
-  font-family: "Inter", "Poppins", system-ui, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--texto);
-  transition: var(--trans);
   overflow-x: hidden;
 }
-
-/* ================================
-   🔝 HEADER
-================================ */
 header {
-  background: var(--principal);
+  width: 100%;
+  background: var(--azul-oscuro);
   color: #fff;
-  padding: 14px;
-  text-align: center;
+  padding: 12px 14px;
   position: sticky;
   top: 0;
   z-index: 999;
-  box-shadow: 0 2px 10px rgba(0,0,0,.2);
-  display: flex;
+  box-shadow: 0 2px 14px var(--sombra);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
 }
-header h1 { margin: 0; font-size: 1.3rem; }
-#tema-selector {
-  position: absolute;
-  right: 14px;
-  top: 10px;
+header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 /* ================================
-   💻 LOGIN
+   🌙 BOTONES DE TEMA
 ================================ */
-#login {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, var(--principal), var(--secundario));
+.modo-toggle, .tema-toggle {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: .95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tema-toggle .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.tema-menu {
+  position: absolute;
+  right: 10px;
+  top: 48px;
+  background: var(--card);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px var(--sombra);
+  padding: 8px;
+  display: none;
+  min-width: 220px;
+}
+.tema-menu.visible { display: block; }
+.tema-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 10000;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
 }
-.login-card {
+.tema-item:hover { background: rgba(255,255,255,.06); }
+.tema-item .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: 0 0 14px;
+}
+.tema-item .nombre { font-weight: 700; }
+
+/* ================================
+   📱 LAYOUT PRINCIPAL
+================================ */
+main { width: 100%; max-width: 780px; margin: 0 auto 84px; padding: 10px; }
+h2 { text-align: center; color: var(--azul); margin: 10px 0; }
+
+/* ================================
+   📦 TARJETAS CLIENTES
+================================ */
+.cliente {
   background: var(--card);
   color: var(--texto);
-  border-radius: 18px;
-  padding: 24px;
-  width: 85%;
-  max-width: 360px;
-  text-align: center;
-  box-shadow: 0 6px 20px var(--sombra);
   border: 1px solid var(--borde);
-  transition: var(--trans);
-}
-#login input {
-  font-size: 1.4rem;
-  padding: 10px;
+  border-left: 6px solid var(--azul);
+  border-radius: 14px;
+  padding: 14px;
   margin: 10px 0;
-  width: 80%;
-  border-radius: 10px;
-  border: 2px solid var(--principal);
-  text-align: center;
+  box-shadow: 0 4px 14px var(--sombra);
+}
+.cliente h3 { margin: 0 0 6px; color: var(--azul); }
+.cliente .acciones {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cliente.bloqueado {
+  filter: grayscale(.75) saturate(.7);
+  opacity: .65;
+  pointer-events: none;
 }
 
 /* ================================
-   📱 MENÚ INFERIOR
+   🔘 BOTONES
+================================ */
+button {
+  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 16px var(--sombra);
+  transition: var(--trans);
+}
+button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.btn-secundario {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+/* ================================
+   🧭 MENU INFERIOR
 ================================ */
 .menu {
-  display: flex;
-  justify-content: space-around;
-  background: var(--card);
-  width: 100%;
-  border-top: 1px solid var(--borde);
   position: fixed;
   bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--borde);
   z-index: 1000;
 }
 .menu button {
   flex: 1;
   padding: 10px;
-  border: none;
   background: transparent;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: var(--trans);
+  border: none;
+  color: var(--texto);
 }
 .menu button.activo {
-  background: var(--principal);
+  background: var(--azul);
   color: #fff;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* ================================
-   📦 TARJETAS DE CLIENTES
+   🗺️ MAPA
 ================================ */
-main { width: 100%; max-width: 780px; margin: 0 auto 100px auto; padding: 10px; }
-.cliente {
-  background: var(--card);
-  border: 1px solid var(--borde);
-  border-left: 6px solid var(--principal);
-  border-radius: 14px;
-  padding: 14px;
-  margin: 10px 0;
-  box-shadow: 0 3px 10px var(--sombra);
-  transition: var(--trans);
-}
-.cliente:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,.15); }
-.cliente h3 { margin: 0 0 6px 0; color: var(--principal); }
-.cliente .acciones { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-
-/* ================================
-   ⚙️ BOTONES
-================================ */
-button {
-  background: linear-gradient(135deg, var(--principal), var(--secundario));
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: var(--trans);
-}
-button:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
-.btn-secundario { background: var(--ok); }
-
-/* ================================
-   🗺️ MAPAS
-================================ */
-#mapa, #mapaFull {
+#mapaFull {
   height: 68vh;
   width: 100%;
   border-radius: 12px;
@@ -189,89 +245,68 @@ button:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.1
 }
 
 /* ================================
-   🧭 TOOLBAR FILTROS
-================================ */
-.toolbar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin: 10px 0 12px;
-}
-.toolbar select, .toolbar button {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--borde);
-  background: var(--card);
-  color: var(--texto);
-  font-weight: 600;
-}
-
-/* ================================
-   🎉 TOAST DE ÉXITO (VISITA REGISTRADA)
+   🔔 TOAST ÉXITO (VISITA REGISTRADA)
 ================================ */
 .exito-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.45);
+  z-index: 9999;
+  animation: exito-fade 1s forwards;
+}
+.exito-box {
+  width: min(560px, 88vw);
+  height: 80vh;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(0,0,0,.35);
+  display: grid;
+  grid-template-rows: auto 1fr;
   align-items: center;
-  justify-content: center;
-  z-index: 20000;
-  animation: fadeIn 0.1s forwards;
+  justify-items: center;
+  padding: 20px;
 }
-.exito-modal {
-  width: 80%;
-  max-width: 320px;
-  background: #fff;
-  border-radius: 20px;
-  padding: 25px;
-  text-align: center;
-  box-shadow: 0 6px 25px rgba(0,0,0,0.25);
-  transform: scale(0.9);
-  animation: popIn 0.25s 0.05s forwards;
-}
-.exito-modal h2 {
-  color: #000;
-  font-weight: 700;
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-}
-.exito-anim-container {
-  height: 100px; width: 100px; margin: 0 auto 10px; position: relative;
-}
-.exito-circulo {
-  width: 100px; height: 100px;
-  border: 8px solid #e0e0e0;
-  border-radius: 50%;
+.exito-titulo { font-weight: 800; font-size: 1.2rem; margin-top: 6px; }
+.exito-circle {
   position: relative;
-  box-sizing: border-box;
+  width: 180px; height: 180px; margin-top: 10px;
 }
-.exito-circulo::after {
-  content: '';
-  position: absolute;
-  top: -8px; left: -8px;
-  right: -8px; bottom: -8px;
-  border: 8px solid transparent;
-  border-top-color: #00c851;
-  border-radius: 50%;
-  animation: spinCircle 0.7s ease-out forwards;
+.exito-circle svg { width: 180px; height: 180px; transform: rotate(-90deg); }
+.exito-circle .bg { stroke: #e5e7eb; stroke-width: 12; fill: none; }
+.exito-circle .prog {
+  stroke: #22c55e;
+  stroke-width: 12;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 565;
+  animation: exito-progress .7s ease-out forwards;
 }
-.exito-tilde {
-  position: absolute;
-  top: 22px;
-  left: 34px;
-  width: 30px;
-  height: 60px;
-  border: solid #00c851;
-  border-width: 0 8px 8px 0;
-  transform: rotate(45deg) scale(0);
-  animation: drawCheck 0.3s 0.5s forwards;
+.exito-check {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
 }
+.exito-check svg { width: 96px; height: 96px; }
+.exito-check path {
+  stroke: #22c55e;
+  stroke-width: 10;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: exito-check .25s ease-out forwards .65s;
+  filter: drop-shadow(0 0 10px rgba(34,197,94,.45));
+}
+@keyframes exito-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+@keyframes exito-progress { to { stroke-dashoffset: 0; } }
+@keyframes exito-check { to { stroke-dashoffset: 0; } }
 
 /* ================================
-   📍 TOAST DE CONFIRMACIÓN (MAPA)
+   📍 TOAST CONFIRM (MAPAS)
 ================================ */
 .toast-confirm {
   position: fixed;
@@ -284,10 +319,11 @@ button:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.1
 }
 .toast-confirm .card {
   background: #fff;
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 30px;
-  width: 80%;
-  max-width: 380px;
+  width: 70vw;
+  height: 60vh;
+  max-width: 480px;
   text-align: center;
   box-shadow: 0 8px 30px rgba(0,0,0,0.25);
   animation: popIn 0.25s ease;
@@ -305,19 +341,15 @@ button:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.1
 }
 
 /* ================================
-   ✨ ANIMACIONES
+   ✨ ANIMACIONES BASE
 ================================ */
-@keyframes fadeIn { to { opacity: 1; } }
 @keyframes popIn { to { transform: scale(1); } }
-@keyframes spinCircle { to { transform: rotate(360deg); border-top-color: #00c851; } }
-@keyframes drawCheck { to { transform: rotate(45deg) scale(1); } }
 
 /* ================================
    📱 RESPONSIVE
 ================================ */
 @media (max-width: 600px) {
-  header h1 { font-size: 1.1rem; }
-  .menu button { font-size: .95rem; padding: 10px 6px; }
-  .cliente { padding: 12px; }
-  #mapa, #mapaFull { height: 58vh; }
+  header h1 { font-size: 1rem; }
+  .menu button { font-size: .95rem; padding: 10px 8px; }
+  #mapaFull { height: 58vh; }
 }
