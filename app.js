@@ -321,16 +321,28 @@ function getClientePorNumero(num) {
 ================================ */
 async function registrarVisita(numero) {
   const c = getClientePorNumero(numero);
-  if (!c) {
-    toast("❌ Cliente no encontrado");
-    return;
-  }
+  if (!c) { toastSuccess("❌ Cliente no encontrado", false); return; }
 
+  // 1) Tomamos datos del UI
   const visitado   = document.getElementById(`visitado-${numero}`)?.checked || false;
   const compro     = document.getElementById(`compro-${numero}`)?.checked || false;
   const comentario = (document.getElementById(`coment-${numero}`)?.value || "").trim();
   const vendedor   = localStorage.getItem("vendedorClave") || "";
 
+  // 2) UI OPTIMISTA: bloqueamos y mandamos al final YA
+  const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
+  if (idx !== -1) {
+    const cliente = clientesData.splice(idx, 1)[0];
+    cliente.bloqueado = true;
+    clientesData.push(cliente);
+    guardarOrden(clientesData.map(x => String(x.numero)));
+    renderClientes();
+  }
+
+  // 3) Toast instantáneo de éxito (1s, full-screen)
+  toastSuccess("✅ Visita guardada", true);
+
+  // 4) Disparo en segundo plano
   const params = new URLSearchParams({
     accion: "registrarVisita",
     numero: c.numero,
@@ -343,40 +355,16 @@ async function registrarVisita(numero) {
     vendedor,
   });
 
-  let exito = false;
-
   try {
     const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
-    const js = await r.json();
-    toast(js.estado || "✅ Visita registrada");
-    exito = true;
+    // Si el backend responde JSON válido, lo ignoramos: ya actualizamos la UI.
+    await r.json().catch(()=>{});
   } catch {
-    // Guardado offline si no hay conexión
+    // Sin conexión → a la cola offline (se sincroniza sola)
     queueOffline({ t: "visita", params: Object.fromEntries(params) });
-    toast("📶 Sin conexión. Guardado offline y se sincroniza después.");
-    exito = true; // Igual bloqueamos localmente
-  }
-
-  if (exito) {
-    // 🔒 Bloquear tarjeta y moverla al final del listado
-    const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
-    if (idx !== -1) {
-      const cliente = clientesData.splice(idx, 1)[0];
-      cliente.bloqueado = true;
-      clientesData.push(cliente);
-      guardarOrden(clientesData.map(x => String(x.numero)));
-
-      // 🔄 Actualizar visualmente sin esperar recarga total
-      renderClientes();
-
-      // ✨ Animación opcional para que se note el cambio
-      const card = document.getElementById(`c_${numero}`);
-      if (card) {
-        card.scrollIntoView({ behavior: "smooth", block: "end" });
-      }
-    }
   }
 }
+
 
 /* ================================
    📶 Cola offline + sincronización automática
