@@ -70,18 +70,28 @@ function mostrarSeccion(s){
 /* ================================
    🚀 App principal
 ================================ */
-async function mostrarApp(){
+async function mostrarApp() {
   const clave = localStorage.getItem("vendedorClave");
   const nombre = vendedores[clave];
   const titulo = document.getElementById("titulo");
-  if(titulo) titulo.textContent = `👋 Hola, ${nombre}`;
+  if (titulo) titulo.textContent = `👋 Hola, ${nombre}`;
 
   mostrarSeccion("ruta");
-  await cargarRuta(clave);
+
+  // 1️⃣ Cargar información principal
+  const clientesHoy = await cargarRuta(clave);
   await cargarResumen(clave);
   await cargarCalendario();
-  inicializarNotificaciones(clave); // FCM intacto
+
+  // 2️⃣ Inicializar notificaciones push (Firebase)
+  inicializarNotificaciones(clave);
+
+  // 3️⃣ Activar detección de cliente cercano (geofencing local)
+  if (clientesHoy && clientesHoy.length) {
+    detectarClienteCercano(clave, clientesHoy);
+  }
 }
+
 
 /* ================================
    📍 Distancias (Haversine)
@@ -656,3 +666,73 @@ window.registrarVisita   = registrarVisita;
 window.irCliente         = irCliente;
 window.toggleLock        = toggleLock;
 window.abrirRutaEnMapa   = abrirRutaEnMapa;
+
+
+/* ==================================================
+   📍 DETECCIÓN DE CLIENTE CERCANO (Geofencing básico)
+   -------------------------------------------------- */
+async function detectarClienteCercano(vendedor, clientesHoy) {
+  if (!navigator.geolocation) {
+    console.warn("⚠️ Geolocalización no soportada en este dispositivo.");
+    return;
+  }
+
+  // Distancia mínima en metros para considerar “cercano”
+  const RADIO_ALERTA = 150;
+
+  // Función para calcular distancia entre dos coordenadas (Haversine)
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // metros
+    const toRad = deg => (deg * Math.PI) / 180;
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1);
+    const Δλ = toRad(lon2 - lon1);
+
+    const a =
+      Math.sin(Δφ / 2) ** 2 +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // distancia en metros
+  }
+
+  // Verifica ubicación periódicamente (cada 60 segundos)
+  setInterval(() => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        for (const c of clientesHoy) {
+          if (!c.lat || !c.lng) continue;
+          const dist = calcularDistancia(latitude, longitude, c.lat, c.lng);
+          if (dist < RADIO_ALERTA) {
+            mostrarNotificacionLocal(
+              "📍 Cliente cercano",
+              `Estás a ${Math.round(dist)} m de ${c.nombre}. Recordá registrar la visita.`
+            );
+            break; // evita múltiples alertas seguidas
+          }
+        }
+      },
+      (err) => console.warn("❌ Error obteniendo ubicación:", err),
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
+    );
+  }, 60 * 1000);
+}
+
+/* ==================================================
+   🔔 Notificación local directa desde el navegador
+   -------------------------------------------------- */
+function mostrarNotificacionLocal(titulo, cuerpo) {
+  if (Notification.permission === "granted") {
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.showNotification(titulo, {
+        body: cuerpo,
+        icon: "ml-icon-192.png",
+        badge: "ml-icon-96.png"
+      });
+    });
+  } else {
+    console.warn("⚠️ Notificaciones no permitidas por el usuario.");
+  }
+}
+
