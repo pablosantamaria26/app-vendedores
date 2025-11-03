@@ -1,10 +1,11 @@
-/* ======================================================
-   🌙 APP VENDEDORES INTELIGENTE — ESTILO 2026 FINAL
-   ====================================================== */
+/* ============================================================
+   🧠 App de Vendedores — Estilos actualizados 2026
+   Temas motivacionales + animaciones + diseño moderno
+============================================================ */
 
-/* ================================
-   🎨 VARIABLES BASE
-================================ */
+/* ===============================
+   🎨 Variables base (tema Confianza)
+================================= */
 :root {
   --azul: #0a63ff;
   --azul-oscuro: #0a2b57;
@@ -17,12 +18,13 @@
   --sombra: rgba(0,0,0,.35);
   --boton-grad-a: var(--azul);
   --boton-grad-b: #0e63ff;
-  --trans: all .35s ease;
 }
 
-/* ================================
-   🌈 TEMAS MOTIVACIONALES
-================================ */
+/* ===============================
+   🌈 Temas motivacionales
+================================= */
+
+/* Tema 1: Confianza (azul profesional) */
 body.tema-confianza {
   --azul: #0a63ff;
   --azul-oscuro: #0a2b57;
@@ -33,6 +35,8 @@ body.tema-confianza {
   --boton-grad-a: #0a63ff;
   --boton-grad-b: #0e8bff;
 }
+
+/* Tema 2: Energía (violeta + verde, animado) */
 body.tema-energia {
   --azul: #8b5cf6;
   --azul-oscuro: #22c55e;
@@ -40,10 +44,11 @@ body.tema-energia {
   --card: #17122b;
   --texto: #f4f4fd;
   --borde: #2a214a;
-  --sombra: rgba(0,0,0,.4);
   --boton-grad-a: #8b5cf6;
   --boton-grad-b: #22c55e;
 }
+
+/* Tema 3: Foco (negro + amarillo contrastante) */
 body.tema-foco {
   --azul: #facc15;
   --azul-oscuro: #111827;
@@ -51,39 +56,44 @@ body.tema-foco {
   --card: #121212;
   --texto: #f8fafc;
   --borde: #1f2937;
-  --sombra: rgba(255,255,255,.08);
   --boton-grad-a: #facc15;
   --boton-grad-b: #fde047;
 }
-/* 🆕 Tema noche — blanco y azul oscuro (contraste suave) */
+
+/* Tema 4: Noche (negro + azul suave, minimal) */
 body.tema-noche {
-  --azul: #0a2b57;
+  --azul: #0066ff;
   --azul-oscuro: #001b3a;
-  --bg: #f3f6fc;
-  --card: #ffffff;
-  --texto: #0a2b57;
-  --borde: #d0d6e0;
-  --sombra: rgba(0, 0, 0, 0.1);
-  --boton-grad-a: #0a63ff;
-  --boton-grad-b: #003eb0;
+  --bg: #000a1a;
+  --card: #021024;
+  --texto: #e0e7ff;
+  --borde: #08223e;
+  --boton-grad-a: #004aad;
+  --boton-grad-b: #007bff;
 }
 
-/* Transición suave al cambiar de tema */
+/* ===============================
+   Transiciones globales
+================================= */
 html, body, header, .cliente, .menu, .panel-resumen, #mapaFull {
   transition: background-color .4s ease, color .4s ease, border-color .4s ease;
 }
 
-/* ================================
-   🧱 BASE + LAYOUT
-================================ */
+/* ===============================
+   Layout base
+================================= */
 html, body {
   height: 100%;
   margin: 0;
-  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: var(--bg);
   color: var(--texto);
   overflow-x: hidden;
 }
+
+/* ===============================
+   Header
+================================= */
 header {
   width: 100%;
   background: var(--azul-oscuro);
@@ -98,15 +108,16 @@ header {
   gap: 8px;
   align-items: center;
 }
+
 header h1 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
 }
 
-/* ================================
-   🌙 BOTONES DE TEMA
-================================ */
+/* ===============================
+   Botones del encabezado
+================================= */
 .modo-toggle, .tema-toggle {
   background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.25);
@@ -119,12 +130,17 @@ header h1 {
   align-items: center;
   gap: 6px;
 }
+
 .tema-toggle .dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   display: inline-block;
 }
+
+/* ===============================
+   Menú de temas
+================================= */
 .tema-menu {
   position: absolute;
   right: 10px;
@@ -138,6 +154,7 @@ header h1 {
   min-width: 220px;
 }
 .tema-menu.visible { display: block; }
+
 .tema-item {
   display: flex;
   align-items: center;
@@ -147,68 +164,32 @@ header h1 {
   cursor: pointer;
 }
 .tema-item:hover { background: rgba(255,255,255,.06); }
+
 .tema-item .dot {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  flex: 0 0 14px;
 }
 .tema-item .nombre { font-weight: 700; }
 
-/* ================================
-   📱 LAYOUT PRINCIPAL
-================================ */
-main { width: 100%; max-width: 780px; margin: 0 auto 84px; padding: 10px; }
-h2 { text-align: center; color: var(--azul); margin: 10px 0; }
-
-/* ================================
-   📦 TARJETAS CLIENTES
-================================ */
-.cliente {
-  background: var(--card);
-  color: var(--texto);
-  border: 1px solid var(--borde);
-  border-left: 6px solid var(--azul);
-  border-radius: 14px;
-  padding: 14px;
+/* ===============================
+   Main y secciones
+================================= */
+main {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto 84px;
+  padding: 10px;
+}
+h2 {
+  text-align: center;
+  color: var(--azul);
   margin: 10px 0;
-  box-shadow: 0 4px 14px var(--sombra);
-}
-.cliente h3 { margin: 0 0 6px; color: var(--azul); }
-.cliente .acciones {
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.cliente.bloqueado {
-  filter: grayscale(.75) saturate(.7);
-  opacity: .65;
-  pointer-events: none;
 }
 
-/* ================================
-   🔘 BOTONES
-================================ */
-button {
-  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 6px 16px var(--sombra);
-  transition: var(--trans);
-}
-button:hover { filter: brightness(1.05); transform: translateY(-1px); }
-.btn-secundario {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-}
-
-/* ================================
-   🧭 MENU INFERIOR
-================================ */
+/* ===============================
+   Menú inferior
+================================= */
 .menu {
   position: fixed;
   bottom: 0;
@@ -225,16 +206,86 @@ button:hover { filter: brightness(1.05); transform: translateY(-1px); }
   background: transparent;
   border: none;
   color: var(--texto);
+  cursor: pointer;
 }
 .menu button.activo {
   background: var(--azul);
-  color: #fff;
+  color: #0b1220;
   font-weight: 800;
 }
 
-/* ================================
-   🗺️ MAPA
-================================ */
+/* ===============================
+   Clientes y tarjetas
+================================= */
+.cliente {
+  background: var(--card);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-left: 6px solid var(--azul);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 10px 0;
+  box-shadow: 0 4px 14px var(--sombra);
+}
+.cliente h3 {
+  margin: 0 0 6px 0;
+  color: var(--azul);
+}
+.cliente .fila {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cliente .acciones {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cliente.bloqueado {
+  filter: grayscale(.75) saturate(.7);
+  opacity: .65;
+  pointer-events: none;
+}
+
+/* ===============================
+   Botones
+================================= */
+button {
+  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 16px var(--sombra);
+  transition: transform .2s ease, filter .2s ease;
+}
+button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+.btn-secundario {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+/* ===============================
+   Textarea
+================================= */
+.cliente textarea {
+  width: 100%;
+  margin-top: 6px;
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 8px;
+  outline: none;
+}
+
+/* ===============================
+   Mapa
+================================= */
 #mapaFull {
   height: 68vh;
   width: 100%;
@@ -244,9 +295,27 @@ button:hover { filter: brightness(1.05); transform: translateY(-1px); }
   border: 1px solid var(--borde);
 }
 
-/* ================================
-   🔔 TOAST ÉXITO (VISITA REGISTRADA)
-================================ */
+/* ===============================
+   Panel resumen
+================================= */
+.panel-resumen {
+  text-align: center;
+  background: var(--card);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--sombra);
+  border: 1px solid var(--borde);
+  margin-bottom: 20px;
+}
+canvas {
+  max-width: 320px;
+  margin: auto;
+  display: block;
+}
+
+/* ===============================
+   Toast de éxito animado
+================================= */
 .exito-overlay {
   position: fixed;
   inset: 0;
@@ -269,13 +338,27 @@ button:hover { filter: brightness(1.05); transform: translateY(-1px); }
   justify-items: center;
   padding: 20px;
 }
-.exito-titulo { font-weight: 800; font-size: 1.2rem; margin-top: 6px; }
+.exito-titulo {
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin-top: 6px;
+}
 .exito-circle {
   position: relative;
-  width: 180px; height: 180px; margin-top: 10px;
+  width: 180px;
+  height: 180px;
+  margin-top: 10px;
 }
-.exito-circle svg { width: 180px; height: 180px; transform: rotate(-90deg); }
-.exito-circle .bg { stroke: #e5e7eb; stroke-width: 12; fill: none; }
+.exito-circle svg {
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
+}
+.exito-circle .bg {
+  stroke: #e5e7eb;
+  stroke-width: 12;
+  fill: none;
+}
 .exito-circle .prog {
   stroke: #22c55e;
   stroke-width: 12;
@@ -286,10 +369,15 @@ button:hover { filter: brightness(1.05); transform: translateY(-1px); }
   animation: exito-progress .7s ease-out forwards;
 }
 .exito-check {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
 }
-.exito-check svg { width: 96px; height: 96px; }
+.exito-check svg {
+  width: 96px;
+  height: 96px;
+}
 .exito-check path {
   stroke: #22c55e;
   stroke-width: 10;
@@ -305,49 +393,83 @@ button:hover { filter: brightness(1.05); transform: translateY(-1px); }
 @keyframes exito-progress { to { stroke-dashoffset: 0; } }
 @keyframes exito-check { to { stroke-dashoffset: 0; } }
 
-/* ================================
-   📍 TOAST CONFIRM (MAPAS)
-================================ */
-.toast-confirm {
+/* ===============================
+   Confirm de destino
+================================= */
+.confirm-toast {
   position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 15000;
-}
-.toast-confirm .card {
-  background: #fff;
-  border-radius: 22px;
-  padding: 30px;
-  width: 70vw;
-  height: 60vh;
-  max-width: 480px;
-  text-align: center;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-  animation: popIn 0.25s ease;
-}
-.toast-confirm h3 {
-  margin-top: 0;
-  color: #111;
-  font-size: 1.2rem;
-}
-.toast-confirm .acciones {
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  background: var(--card);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  box-shadow: 0 12px 24px var(--sombra);
+  border-radius: 14px;
+  padding: 10px 12px;
   display: flex;
   gap: 10px;
-  justify-content: center;
-  margin-top: 15px;
+  align-items: center;
+  z-index: 9500;
+}
+.confirm-toast button {
+  padding: 6px 10px;
+  border-radius: 10px;
 }
 
-/* ================================
-   ✨ ANIMACIONES BASE
-================================ */
-@keyframes popIn { to { transform: scale(1); } }
+/* ===============================
+   Login pantalla completa
+================================= */
+#login {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
+  z-index: 10000;
+}
+.login-card {
+  background: var(--card);
+  color: var(--texto);
+  border-radius: 16px;
+  padding: 20px;
+  width: 86%;
+  max-width: 360px;
+  text-align: center;
+  border: 1px solid var(--borde);
+  box-shadow: 0 16px 36px var(--sombra);
+}
+#login input {
+  font-size: 1.4rem;
+  padding: 10px;
+  text-align: center;
+  margin: 10px 0;
+  width: 80%;
+  border-radius: 10px;
+  border: 2px solid var(--azul);
+  background: #fff;
+  color: #111;
+}
+.teclado-numerico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5em;
+}
+.teclado-numerico button {
+  background: #fff;
+  color: var(--azul-oscuro);
+  border-radius: 10px;
+  padding: .6em 0;
+  width: 100%;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+}
+#login #error {
+  color: #ef4444;
+  min-height: 1.1em;
+}
 
-/* ================================
-   📱 RESPONSIVE
-================================ */
 @media (max-width: 600px) {
   header h1 { font-size: 1rem; }
   .menu button { font-size: .95rem; padding: 10px 8px; }
