@@ -340,7 +340,7 @@ async function registrarVisita(numero) {
   }
 
 function toastSuccess(titulo = "✅ Visita guardada", exito = true) {
-  // Remover cualquiera anterior
+  // Por si quedó alguna abierta
   document.querySelectorAll(".fullscreen-toast").forEach(n => n.remove());
 
   const wrap = document.createElement("div");
@@ -362,20 +362,7 @@ function toastSuccess(titulo = "✅ Visita guardada", exito = true) {
     </div>
   `;
   document.body.appendChild(wrap);
-
-  // Remover a 1s
   setTimeout(() => wrap.remove(), 1000);
-}
-
-
-  try {
-    const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
-    // Si el backend responde JSON válido, lo ignoramos: ya actualizamos la UI.
-    await r.json().catch(()=>{});
-  } catch {
-    // Sin conexión → a la cola offline (se sincroniza sola)
-    queueOffline({ t: "visita", params: Object.fromEntries(params) });
-  }
 }
 
 
