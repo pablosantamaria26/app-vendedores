@@ -1,10 +1,10 @@
 /* ================================================
-   🧠 App de Vendedores — 2026 (UI renovada)
-   - Temas motivacionales (Confianza / Energía / Foco) con persistencia
-   - Toast de éxito 80% pantalla (instantáneo, 1s, círculo + tilde)
-   - Mapa recargable al volver de pestañas + confirm toast para abrir destino
-   - Lógica intacta (ruta, resumen, calendario, offline queue, FCM, etc.)
-   - Geofencing básico + notificación diaria (como en tu versión)
+    🧠 App de Vendedores — 2026 (UI renovada)
+    - Temas motivacionales (Confianza / Energía / Foco) con persistencia
+    - Toast de éxito 80% pantalla (instantáneo, 1s, círculo + tilde)
+    - Mapa recargable al volver de pestañas + confirm toast para abrir destino
+    - Lógica intacta (ruta, resumen, calendario, offline queue, FCM, etc.)
+    - Geofencing básico + notificación diaria (como en tu versión)
 ================================================= */
 
 /* ================================
@@ -29,15 +29,26 @@ function login(){
   const error=document.getElementById("error");
   if(!vendedores[clave]){ if(error) error.textContent="❌ Clave incorrecta"; return; }
   localStorage.setItem("vendedorClave", clave);
-  const loginDiv=document.getElementById("login"); if(loginDiv) loginDiv.style.display="none";
+  const loginDiv=document.getElementById("login"); 
+  if(loginDiv) {
+    loginDiv.style.opacity = "0"; // Efecto de fade out
+    setTimeout(() => { loginDiv.style.display="none"; }, 300);
+  }
   mostrarApp();
 }
 function logout(){ localStorage.removeItem("vendedorClave"); location.reload(); }
 
 window.addEventListener("load",()=>{
   const c=localStorage.getItem("vendedorClave");
-  if(c && vendedores[c]){ document.getElementById("login").style.display="none"; mostrarApp(); }
-  else { document.getElementById("login").style.display="grid"; }
+  if(c && vendedores[c]){ 
+    const loginDiv=document.getElementById("login");
+    if(loginDiv) loginDiv.style.display="none"; 
+    mostrarApp(); 
+  }
+  else { 
+    const loginDiv=document.getElementById("login");
+    if(loginDiv) loginDiv.style.display="grid"; 
+  }
   // restaurar tema
   restaurarTema();
   // utilidades
@@ -51,6 +62,7 @@ window.addEventListener("load",()=>{
 function toggleTemaMenu(ev){
   ev.stopPropagation();
   const m=document.getElementById("temaMenu");
+  if (!m) return;
   m.classList.toggle("visible");
   // cerrar si clic fuera
   const close=()=>{ m.classList.remove("visible"); document.removeEventListener("click", close); };
@@ -59,9 +71,12 @@ function toggleTemaMenu(ev){
 
 function aplicarTema(clase){
   const b=document.body;
-  b.classList.remove("tema-confianza","tema-energia","tema-foco");
+  b.classList.remove("tema-confianza","tema-energia","tema-foco", "tema-noche");
   b.classList.add(clase);
   localStorage.setItem("temaPreferido", clase);
+  // Actualizar theme-color
+  const color = getComputedStyle(b).getPropertyValue('--azul-oscuro').trim();
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', color);
 }
 
 function restaurarTema(){
@@ -72,7 +87,8 @@ function restaurarTema(){
 function toggleModoOscuro(){
   // Alterna rápido al tema de alto contraste
   const actual=document.body.classList.contains("tema-foco");
-  aplicarTema(actual? (localStorage.getItem("temaPreferido")||"tema-confianza") : "tema-foco");
+  const guardado = localStorage.getItem("temaPreferido") || "tema-confianza";
+  aplicarTema(actual ? guardado : "tema-foco");
 }
 
 /* ================================
@@ -82,7 +98,7 @@ function mostrarSeccion(s){
   document.querySelectorAll(".seccion").forEach(sec=>sec.classList.remove("visible"));
   const destino=document.getElementById("seccion-"+s); if(destino) destino.classList.add("visible");
   document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("activo"));
-  const btn=document.querySelector(`.menu button[onclick=\"mostrarSeccion('${s}')\"]`); if(btn) btn.classList.add("activo");
+  const btn=document.querySelector(`.menu button[onclick="mostrarSeccion('${s}')"]`); if(btn) btn.classList.add("activo");
   if(s==="mapa") renderMapaFull();
 }
 
@@ -175,18 +191,18 @@ function renderClientes(){
 
     card.innerHTML=`
       <h3>${c.nombre}</h3>
-      <div class=\"fila\">
+      <div class="fila">
         <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
-        ${dist!==null?`<span class=\"badge\">📏 ${dist.toFixed(1)} km</span>`:""}
+        ${dist!==null?`<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
       </div>
-      <div class=\"fila\" style=\"margin-top:6px\">
-        <label><input type=\"checkbox\" id=\"visitado-${c.numero}\"> Visitado</label>
-        <label><input type=\"checkbox\" id=\"compro-${c.numero}\"> Compró</label>
+      <div class="fila" style="margin-top:6px">
+        <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
+        <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
       </div>
-      <textarea id=\"coment-${c.numero}\" placeholder=\"Comentario...\" rows=\"2\"></textarea>
-      <div class=\"acciones\">
-        <button onclick=\"registrarVisita(${c.numero})\">💾 Guardar</button>
-        <button class=\"btn-secundario\" onclick=\"irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})\">🚗 Ir</button>
+      <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
+      <div class="acciones">
+        <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
+        <button class="btn-secundario" onclick="irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})">🚗 Ir</button>
       </div>`;
 
     // DnD
@@ -226,7 +242,8 @@ function renderMapaFull(){
     const lat=(c.lat!=null)?parseFloat(c.lat):null; const lng=(c.lng!=null)?parseFloat(c.lng):null;
     if(Number.isFinite(lat)&&Number.isFinite(lng)){
       const mk=L.marker([lat,lng]).addTo(mapaFull).bindPopup(c.nombre);
-      mk.on("click",()=>confirmDestino(lat,lng,c.nombre));
+      // mk.on("click",()=>confirmDestino(lat,lng,c.nombre)); // Quitado para simplificar, el popup ya es la confirmación
+      mk.on("popupopen", () => confirmDestino(lat, lng, c.nombre));
       group.push(mk);
     }
   });
@@ -243,18 +260,31 @@ function confirmDestino(lat,lng,nombre){
   const old=document.querySelector(".confirm-toast"); if(old) old.remove();
   const t=document.createElement("div");
   t.className="confirm-toast";
-  t.innerHTML=`<span>¿Ir a <b>${nombre}</b>?</span> <button onclick=\"goYes(${lat},${lng})\">Sí</button> <button onclick=\"this.parentElement.remove()\">No</button>`;
+  t.innerHTML=`<span>¿Ir a <b>${nombre}</b>?</span> <button onclick="goYes(${lat},${lng})">Sí</button> <button onclick="this.parentElement.remove()">No</button>`;
   document.body.appendChild(t);
+  // Removerlo después de 5 segundos si no hace nada
+  setTimeout(() => t.remove(), 5000);
 }
-function goYes(lat,lng){ document.querySelector(".confirm-toast")?.remove(); irCliente(lat,lng); }
+// Exponer goYes al scope global para que el onclick funcione
+window.goYes = (lat,lng) => { 
+  document.querySelector(".confirm-toast")?.remove(); 
+  irCliente(lat,lng); 
+}
 
 function irCliente(lat,lng){
   if(!lat||!lng){ alert("📍 Este cliente no tiene coordenadas."); return; }
-  const base="https://www.google.com/maps/dir/?api=1";
+  const base="https://www.google.com/maps/dir/?api=1"; // URL moderna de Google Maps
   const dest=`&destination=${lat},${lng}&travelmode=driving`;
   if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{ const org=`&origin=${pos.coords.latitude},${pos.coords.longitude}`; window.open(`${base}${org}${dest}`,"_blank"); },()=>{ window.open(`${base}${dest}`,"_blank"); });
-  }else{ window.open(`${base}${dest}`,"_blank"); }
+    navigator.geolocation.getCurrentPosition(pos=>{ 
+      const org=`&origin=${pos.coords.latitude},${pos.coords.longitude}`; 
+      window.open(`${base}${org}${dest}`,"_blank"); 
+    },()=>{ 
+      window.open(`${base}${dest}`,"_blank"); 
+    });
+  }else{ 
+    window.open(`${base}${dest}`,"_blank"); 
+  }
 }
 
 /* ================================
@@ -264,7 +294,11 @@ function getClientePorNumero(num){ return clientesData.find(x=>String(x.numero)=
 
 async function registrarVisita(numero){
   const c=getClientePorNumero(numero);
-  if(!c){ toast("❌ Cliente no encontrado"); return; }
+  if(!c){ 
+    // Usar toast simple si falla
+    toast("❌ Cliente no encontrado"); 
+    return; 
+  }
 
   // 1) Mostrar éxito inmediato (1s) — ANTES del fetch
   mostrarExito();
@@ -307,16 +341,16 @@ function mostrarExito(){
   const wrap=document.createElement("div");
   wrap.className="exito-overlay";
   wrap.innerHTML=`
-    <div class=\"exito-box\">
-      <div class=\"exito-titulo\">Visita registrada</div>
-      <div class=\"exito-circle\">
-        <svg viewBox=\"0 0 200 200\">
-          <circle class=\"bg\"   cx=\"100\" cy=\"100\" r=\"90\"></circle>
-          <circle class=\"prog\" cx=\"100\" cy=\"100\" r=\"90\"></circle>
+    <div class="exito-box">
+      <div class="exito-titulo">Visita registrada</div>
+      <div class="exito-circle">
+        <svg viewBox="0 0 200 200">
+          <circle class="bg"   cx="100" cy="100" r="90"></circle>
+          <circle class="prog" cx="100" cy="100" r="90"></circle>
         </svg>
-        <div class=\"exito-check\">
-          <svg viewBox=\"0 0 52 52\">
-            <path d=\"M14 27 L22 36 L38 16\"></path>
+        <div class="exito-check">
+          <svg viewBox="0 0 52 52">
+            <path d="M14 27 L22 36 L38 16"></path>
           </svg>
         </div>
       </div>
@@ -324,6 +358,21 @@ function mostrarExito(){
   document.body.appendChild(wrap);
   setTimeout(()=>wrap.remove(),1000); // 1s total
 }
+
+/* ================================
+   💬 Toast simple (para errores)
+================================ */
+function toast(msg){
+  const t = document.createElement("div");
+  t.className = "confirm-toast"; // Reutilizar estilo de toast
+  t.style.bottom = "90px";
+  t.style.background = "var(--no)"; // Color de error
+  t.style.color = "#fff";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2900);
+}
+
 
 /* ================================
    📶 Cola offline + sincronización
@@ -357,7 +406,7 @@ async function cargarResumen(clave){
     if(canvas && window.Chart){
       const ctx=canvas.getContext("2d");
       if(canvas._chartInstance) canvas._chartInstance.destroy();
-      canvas._chartInstance=new Chart(ctx,{ type:"doughnut", data:{ labels:["Compraron","No compraron"], datasets:[{ data:[res.compraronHoy||0,(res.totalHoy||0)-(res.compraronHoy||0)] }] }, options:{ plugins:{ legend:{ display:false } } } });
+      canvas._chartInstance=new Chart(ctx,{ type:"doughnut", data:{ labels:["Compraron","No compraron"], datasets:[{ data:[res.compraronHoy||0,(res.totalHoy||0)-(res.compraronHoy||0)], backgroundColor: ['#22c55e', '#ef4444'] }] }, options:{ plugins:{ legend:{ display:false } } } });
     }
   }catch(e){ console.error("❌ Error resumen:", e); if(cont) cont.innerHTML="❌ Error al cargar resumen."; }
 }
@@ -373,17 +422,18 @@ async function cargarCalendario(){
     const resp=await fetch(`${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`);
     const data=await resp.json();
     if(!data || !data.length){ cont.innerHTML="📭 No hay visitas programadas."; return; }
-    let html=`<div class=\"lista-calendario\">`;
-    data.forEach(f=>{ html+=`<div class=\"cal-item\"><div class=\"cal-info\"><b>${f.fecha||""}</b> — ${f.dia||""}<br><span>📍 ${f.localidad||""}</span></div><div class=\"cal-estado\">${f.compro?"✅":"❌"}</div></div>`; });
+    let html=`<div class="lista-calendario">`; // Asumiendo que tenés esta clase
+    data.forEach(f=>{ html+=`<div class="cal-item" style="background: var(--card); border: 1px solid var(--borde); border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;"><div><b>${f.fecha||""}</b> — ${f.dia||""}<br><span>📍 ${f.localidad||""}</span></div><div style="font-size: 1.2rem;">${f.compro?"✅":"❌"}</div></div>`; });
     html+=`</div>`; cont.innerHTML=html;
   }catch(e){ console.error("Error calendario:", e); cont.innerHTML="❌ Error al cargar calendario."; }
 }
 
-/* ================================
-   🔔 Firebase Messaging (FCM) — igual que tu versión
-================================ */
-function inicializarNotificaciones(vendedor){
-  const firebaseConfig={
+/* ==================================================
+   🔔 Inicializar notificaciones Firebase (versión final CORS-safe)
+================================================== */
+function inicializarNotificaciones(vendedor) {
+  console.log("🚀 Inicializando notificaciones para", vendedor);
+  const firebaseConfig = {
     apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
     authDomain: "app-vendedores-inteligente.firebaseapp.com",
     projectId: "app-vendedores-inteligente",
@@ -391,158 +441,142 @@ function inicializarNotificaciones(vendedor){
     messagingSenderId: "583313989429",
     appId: "1:583313989429:web:c4f78617ad957c3b11367c"
   };
-  if(typeof firebase==="undefined") return;
-  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  const messaging=firebase.messaging();
-  if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("firebase-messaging-sw.js").then(async(reg)=>{
-      await navigator.serviceWorker.ready;
-      const permiso=await Notification.requestPermission();
-      if(permiso!=="granted") return;
-      const token=await messaging.getToken({ vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o", serviceWorkerRegistration: reg });
-      if(token && vendedor){
-        try{ // misma convención que tu app: POST crudo vía Worker
-          await fetch(URL_API_BASE,{ method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ vendedor, token }) });
-        }catch(e){ console.warn("No se pudo enviar token FCM", e); }
-      }
-      messaging.onMessage((payload)=>{ const n=payload.notification; if(n) toast(`${n.title} — ${n.body}`); });
-    });
+  if (typeof firebase === "undefined") { console.error("⚠️ Firebase no está cargado."); return; }
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+  const messaging = firebase.messaging();
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("firebase-messaging-sw.js") // Asegurate que este archivo exista
+      .then(async (registration) => {
+        console.log("✅ Service Worker registrado.");
+        await navigator.serviceWorker.ready;
+        console.log("🟢 Service Worker activo. Solicitando permiso...");
+
+        const permiso = await Notification.requestPermission();
+        if (permiso !== "granted") {
+          console.warn("⚠️ Permiso de notificaciones denegado.");
+          return;
+        }
+
+        console.log("🔑 Obteniendo token FCM...");
+        const token = await messaging.getToken({
+          vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
+          serviceWorkerRegistration: registration
+        });
+
+        if (token && vendedor) {
+          console.log("📬 Token:", token.slice(0, 40) + "...");
+          try {
+            const respuesta = await fetch(URL_API_BASE, { // Usa el worker
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ vendedor, token })
+            });
+            const texto = await respuesta.text();
+            console.log("✅ Token enviado vía Worker:", texto);
+          } catch (err) {
+            console.error("❌ Error enviando token vía Worker:", err);
+          }
+        } else {
+          console.warn("⚠️ No se obtuvo token FCM.");
+        }
+
+        messaging.onMessage((payload) => {
+          console.log("📢 Notificación recibida (foreground):", payload);
+          const n = payload.notification;
+          if (n) toast(`${n.title} — ${n.body}`);
+        });
+      })
+      .catch((err) => console.error("❌ Error al registrar el SW:", err));
+  } else {
+    console.warn("⚠️ Este navegador no soporta Service Workers.");
   }
 }
 
+
 /* ================================
-   🔔 Notificación diaria (como tu versión)
+   🔔 Notificación diaria suave (como tu app)
 ================================ */
 function notificacionDiaria(){
   try{
     if(!("Notification" in window)) return;
-    const hoy=new Date().toLocaleDateString("es-AR");
-    const ultima=localStorage.getItem("notificacionHoy");
+    const hoy = new Date().toLocaleDateString("es-AR");
+    const ultima = localStorage.getItem("notificacionHoy");
     if(ultima===hoy) return;
     Notification.requestPermission().then(perm=>{
       if(perm!=="granted") return;
       const clave=localStorage.getItem("vendedorClave"); if(!clave) return;
       const nombre=vendedores[clave];
-      const n=new Notification("🚗 Ruta del día disponible",{ body:`Hola ${nombre}, ya podés consultar tu ruta actualizada.`, icon:"/icon-192.png" });
+      const n=new Notification("🚗 Ruta del día disponible",{ body:`Hola ${nombre}, ya podés consultar tu ruta actualizada.`, icon:"ml-icon-192.png" });
       n.onclick=()=>window.focus();
       localStorage.setItem("notificacionHoy", hoy);
     });
   }catch{}
 }
 
-/* ================================
-   📍 Geofencing básico (como tu versión)
-================================ */
-async function detectarClienteCercano(vendedor, clientesHoy){
-  if(!navigator.geolocation) return;
-  const RADIO_ALERTA=150; // metros
-  function distM(lat1,lon1,lat2,lon2){
-    const R=6371e3; const t=d=>d*Math.PI/180;
-    const dphi=t(lat2-lat1), dl=t(lon2-lon1);
-    const a=Math.sin(dphi/2)**2 + Math.cos(t(lat1))*Math.cos(t(lat2))*Math.sin(dl/2)**2;
-    return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  }
-  setInterval(()=>{
-    navigator.geolocation.getCurrentPosition((pos)=>{
-      const {latitude,longitude}=pos.coords;
-      for(const c of clientesHoy){
-        if(!c.lat||!c.lng) continue;
-        const d=distM(latitude,longitude, c.lat, c.lng);
-        if(d<RADIO_ALERTA){ mostrarNotificacionLocal("📍 Cliente cercano", `Estás a ${Math.round(d)} m de ${c.nombre}. Recordá registrar la visita.`); break; }
-      }
-    },()=>{}, {enableHighAccuracy:true, maximumAge:30000, timeout:10000});
-  }, 60*1000);
-}
-function mostrarNotificacionLocal(titulo,cuerpo){
-  if(Notification.permission!=="granted") return;
-  navigator.serviceWorker?.ready.then(reg=>{ reg.showNotification(titulo,{ body:cuerpo, icon:"ml-icon-192.png", badge:"ml-icon-96.png" }); });
-}
-
-/* ================================
-   🔔 Toast simple (mensajes cortos)
-================================ */
-function toast(msg){ const old=document.querySelector(".toast"); if(old) old.remove(); const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2800); }
-
-// Exponer funciones si hiciera falta
-window.agregarDigito=agregarDigito; window.borrarDigito=borrarDigito; window.login=login; window.logout=logout; window.mostrarSeccion=mostrarSeccion; window.registrarVisita=registrarVisita; window.irCliente=irCliente;
-
-/* === Overrides añadidos: filtros + renderClientes con orden por distancia === */
-// Si las variables no existen por fallos de minificación, las definimos de forma segura
-if (typeof filtroLocalidad === 'undefined') { var filtroLocalidad = ""; }
-if (typeof ordenarPorDistancia === 'undefined') { var ordenarPorDistancia = false; }
-
-function poblarLocalidades(){
-  const sel=document.getElementById("filtroLocalidad"); if(!sel) return;
-  const set=new Set(); clientesData.forEach(c=>{ if(c && c.localidad) set.add(String(c.localidad)); });
-  const arr=[...set].sort((a,b)=>a.localeCompare(b));
-  sel.innerHTML = `<option value="">Todas las localidades</option>` + arr.map(l=>`<option value="${l}">${l}</option>`).join("");
-  if(filtroLocalidad) sel.value=filtroLocalidad;
-}
-function aplicarFiltroLocalidad(val){ filtroLocalidad = val || ""; renderClientes(); }
-function toggleOrdenDistancia(){ ordenarPorDistancia = !ordenarPorDistancia; const b=document.getElementById("btnOrdenDist"); if(b) b.classList.toggle("activo", ordenarPorDistancia); renderClientes(); }
-function initToolbar(){ const sel=document.getElementById("filtroLocalidad"); if(sel && !sel.children.length){ sel.innerHTML = `<option value=\"\">Todas las localidades</option>`; } }
-
-function renderClientes(){
-  const cont=document.getElementById("contenedor"); if(!cont) return;
-  cont.innerHTML="";
-
-  // aplicar filtros
-  let lista = clientesData.slice();
-  if(filtroLocalidad){ lista = lista.filter(c => String(c.localidad||"") === String(filtroLocalidad)); }
-
-  // ordenar por distancia si corresponde
-  if(ordenarPorDistancia && posicionActual){
-    lista.sort((a,b)=>{
-      const la=parseFloat(a?.lat), loa=parseFloat(a?.lng), lb=parseFloat(b?.lat), lob=parseFloat(b?.lng);
-      const da = (Number.isFinite(la)&&Number.isFinite(loa))? distanciaKm(posicionActual.lat,posicionActual.lng,la,loa) : Infinity;
-      const db = (Number.isFinite(lb)&&Number.isFinite(lob))? distanciaKm(posicionActual.lat,posicionActual.lng,lb,lob) : Infinity;
-      return da - db;
-    });
+/* ==================================================
+   📍 DETECCIÓN DE CLIENTE CERCANO (Geofencing básico)
+================================================== */
+async function detectarClienteCercano(vendedor, clientesHoy) {
+  if (!navigator.geolocation) { console.warn("⚠️ Geolocalización no soportada."); return; }
+  const RADIO_ALERTA = 150; // metros
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; const toRad = deg => (deg * Math.PI) / 180;
+    const φ1 = toRad(lat1); const φ2 = toRad(lat2);
+    const Δφ = toRad(lat2 - lat1); const Δλ = toRad(lon2 - lon1);
+    const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // metros
   }
 
-  lista.forEach((c,idx)=>{
-    const card=document.createElement("div");
-    card.className="cliente"; card.id="c_"+(c?.numero ?? idx);
+  setInterval(() => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        for (const c of clientesHoy) {
+          if (!c.lat || !c.lng || c.bloqueado) continue; // Ignorar si no tiene geo o ya fue visitado
+          const dist = calcularDistancia(latitude, longitude, c.lat, c.lng);
+          if (dist < RADIO_ALERTA) {
+            mostrarNotificacionLocal(
+              "📍 Cliente cercano",
+              `Estás a ${Math.round(dist)} m de ${c.nombre}. Recordá registrar la visita.`
+            );
+            break; 
+          }
+        }
+      },
+      (err) => console.warn("❌ Error obteniendo ubicación:", err),
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
+    );
+  }, 60 * 1000);
+}
 
-    const lat=parseFloat(c?.lat); const lng=parseFloat(c?.lng);
-    const tieneGeo=Number.isFinite(lat)&&Number.isFinite(lng);
-    const dist=(posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
-
-    card.innerHTML=`
-      <h3>${c?.nombre||"(sin nombre)"}</h3>
-      <div class=\"fila\">
-        <span>📍 ${(c?.direccion||"")}${c?.localidad?`, ${c.localidad}`:""}</span>
-        ${dist!==null?`<span class=\"badge\">📏 ${dist.toFixed(1)} km</span>`:""}
-      </div>
-      <div class=\"fila\" style=\"margin-top:6px\">
-        <label><input type=\"checkbox\" id=\"visitado-${c?.numero}\"> Visitado</label>
-        <label><input type=\"checkbox\" id=\"compro-${c?.numero}\"> Compró</label>
-      </div>
-      <textarea id=\"coment-${c?.numero}\" placeholder=\"Comentario...\" rows=\"2\"></textarea>
-      <div class=\"acciones\">
-        <button onclick=\"registrarVisita(${c?.numero})\">💾 Guardar</button>
-        <button class=\"btn-secundario\" onclick=\"irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})\">🚗 Ir</button>
-      </div>`;
-
-    // Drag & Drop (solo si NO está ordenando por distancia)
-    const draggable = !ordenarPorDistancia;
-    card.setAttribute("draggable", String(draggable));
-    if(draggable){
-      card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
-      card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
-      card.addEventListener("drop",(ev)=>{
-        ev.preventDefault();
-        const cards=Array.from(cont.querySelectorAll(".cliente"));
-        const targetIndex=cards.indexOf(card);
-        if(dragSrcIndex===null||dragSrcIndex===targetIndex) return;
-        const moved=clientesData.splice(dragSrcIndex,1)[0];
-        clientesData.splice(targetIndex,0,moved);
-        dragSrcIndex=null; guardarOrden(clientesData.map(x=>String(x.numero))); renderClientes();
+function mostrarNotificacionLocal(titulo, cuerpo) {
+  if (Notification.permission === "granted") {
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.showNotification(titulo, {
+        body: cuerpo,
+        icon: "ml-icon-192.png",
+        badge: "ml-icon-192.png"
       });
-    }
-
-    if(c?.bloqueado){ card.classList.add("bloqueado"); card.querySelectorAll("input,textarea,button").forEach(el=>el.disabled=true); }
-
-    cont.appendChild(card);
-  });
+    });
+  } else {
+    console.warn("⚠️ Notificaciones no permitidas.");
+  }
 }
+
+
+/* ================================
+   🔗 Exponer funciones a HTML
+================================ */
+window.agregarDigito = agregarDigito;
+window.borrarDigito = borrarDigito;
+window.login = login;
+window.logout = logout;
+window.mostrarSeccion = mostrarSeccion;
+window.registrarVisita = registrarVisita;
+window.irCliente = irCliente;
+window.toggleModoOscuro = toggleModoOscuro;
+window.toggleTemaMenu = toggleTemaMenu;
+window.aplicarTema = aplicarTema;
