@@ -104,16 +104,19 @@ function distanciaKm(aLat,aLng,bLat,bLng){
 }
 
 /* ================================
-   🗂️ Orden y bloqueo por cliente
+   🗂️ Orden de clientes (sin bloqueo manual)
 ================================ */
 function keyOrden(){ return "ordenClientes_"+localStorage.getItem("vendedorClave"); }
-function keyLock(){ return "clientesLock_"+localStorage.getItem("vendedorClave"); }
 
-function cargarOrden(){ try{ return JSON.parse(localStorage.getItem(keyOrden())||"[]"); }catch{ return []; } }
-function guardarOrden(ids){ localStorage.setItem(keyOrden(), JSON.stringify(ids)); }
+function cargarOrden(){
+  try { return JSON.parse(localStorage.getItem(keyOrden()) || "[]"); }
+  catch { return []; }
+}
 
-function locks(){ try{ return JSON.parse(localStorage.getItem(keyLock())||"{}"); }catch{ return {}; } }
-function setLock(id,val){ const m=locks(); m[id]=val; localStorage.setItem(keyLock(), JSON.stringify(m)); }
+function guardarOrden(ids){
+  localStorage.setItem(keyOrden(), JSON.stringify(ids));
+}
+
 
 /* ================================
    🚗 Cargar ruta del día
@@ -711,7 +714,6 @@ window.logout            = logout;
 window.mostrarSeccion    = mostrarSeccion;
 window.registrarVisita   = registrarVisita;
 window.irCliente         = irCliente;
-window.toggleLock        = toggleLock;
 window.abrirRutaEnMapa   = abrirRutaEnMapa;
 
 
