@@ -550,75 +550,89 @@
       }
     }
 
-    /* ==================================================
-       🔔 FCM (SECCIÓN CORREGIDA - POST LIMPIO)
-       ================================================== */
-   function inicializarNotificaciones(vendedor) {
-      console.log("🚀 Inicializando notificaciones para", vendedor);
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-        authDomain: "app-vendedores-inteligente.firebaseapp.com",
-        projectId: "app-vendedores-inteligente",
-        storageBucket: "app-vendedores-inteligente.firebasestorage.app",
-        messagingSenderId: "583313989429",
-        appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-      };
-      // Inicializa Firebase solo si no está inicializado aún
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+   /* ==================================================
+   🔔 Inicializar notificaciones Firebase (versión final con Worker)
+   ================================================== */
+function inicializarNotificaciones(vendedor) {
+  console.log("🚀 Inicializando notificaciones para", vendedor);
 
-      const messaging = firebase.messaging();
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("firebase-messaging-sw.js")
-          .then(async (registration) => {
-            console.log("✅ Service Worker registrado correctamente. Esperando que se active...");
+  // 🔧 Configuración de Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+    authDomain: "app-vendedores-inteligente.firebaseapp.com",
+    projectId: "app-vendedores-inteligente",
+    storageBucket: "app-vendedores-inteligente.appspot.com",
+    messagingSenderId: "583313989429",
+    appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+  };
 
-            await navigator.serviceWorker.ready;
+  // 🧩 Inicializa Firebase si no está iniciado
+  if (typeof firebase === "undefined") {
+    console.error("⚠️ Firebase no está cargado.");
+    return;
+  }
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-            console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
-            const permiso = await Notification.requestPermission();
-        
-            if (permiso !== "granted") {
-              console.warn("⚠️ Permiso de notificaciones denegado.");
-              return;
-            }
+  const messaging = firebase.messaging();
 
-            console.log("🔑 Obteniendo token FCM...");
-            const token = await messaging.getToken({
-              vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
-              serviceWorkerRegistration: registration
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("firebase-messaging-sw.js")
+      .then(async (registration) => {
+        console.log("✅ Service Worker registrado correctamente. Esperando activación...");
+        await navigator.serviceWorker.ready;
+        console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
+
+        const permiso = await Notification.requestPermission();
+        if (permiso !== "granted") {
+          console.warn("⚠️ Permiso de notificaciones denegado por el usuario.");
+          return;
+        }
+
+        console.log("🔑 Obteniendo token FCM...");
+        const token = await messaging.getToken({
+          vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0",
+          serviceWorkerRegistration: registration
+        });
+
+        if (token && vendedor) {
+          console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
+
+          /* ==================================================
+             🚀 Envío del token usando el Worker como proxy
+             --------------------------------------------------
+             Evita por completo el error CORS y permite
+             funcionar desde GitHub Pages y móvil.
+          ================================================== */
+          const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+
+          try {
+            const respuesta = await fetch(WORKER_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ vendedor, token })
             });
 
-           
-             if (token) {
-              console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
-              
-              /* --- INICIO DE LA CORRECCIÓN --- */
-              // Enviamos el POST a la URL base, sin parámetros.
-              // Tu 'codigo.gs' (doPost) espera leer el body.
-              await fetch(URL_API_BASE, {
-                method: "POST",
-                body: JSON.stringify({ vendedor: vendedor, token: token }),
-                headers: { "Content-Type": "application/json" },
-                mode: 'cors' // Añadido para asegurar la petición CORS
-              });
-              /* --- FIN DE LA CORRECCIÓN --- */
-              
-              console.log("✅ Token enviado correctamente al servidor.");
-            } else {
-              console.warn("⚠️ No se pudo obtener token FCM (puede ser por bloqueador o permisos).");
-            }
-          })
-          .catch((err) => console.error("❌ Error en el proceso de registro o fetch:", err));
-        
+            const texto = await respuesta.text();
+            console.log("✅ Token enviado correctamente vía Worker:", texto);
+          } catch (err) {
+            console.error("❌ Error enviando token vía Worker:", err);
+          }
+        } else {
+          console.warn("⚠️ No se obtuvo token FCM (posible bloqueo o permiso denegado).");
+        }
+
+        // 🔔 Escuchar notificaciones en primer plano
         messaging.onMessage((payload) => {
-          console.log("📢 Notificación recibida (primer plano):", payload);
-          toast(`${payload.notification.title} — ${payload.notification.body}`);
+          console.log("📢 Notificación recibida (foreground):", payload);
+          const n = payload.notification;
+          if (n) toast(`${n.title} — ${n.body}`);
         });
-      } else {
-        console.warn("⚠️ Este navegador no soporta notificaciones push.");
-      }
+      })
+      .catch((err) => console.error("❌ Error al registrar el Service Worker:", err));
+  } else {
+    console.warn("⚠️ Este navegador no soporta Service Workers ni notificaciones push.");
+  }
 }
 
 
