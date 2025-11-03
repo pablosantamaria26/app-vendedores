@@ -386,3 +386,115 @@ canvas { max-width: 320px; margin: auto; display: block; }
 @keyframes fst-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
 @keyframes fst-progress { to { stroke-dashoffset: 0; } }
 @keyframes fst-check { to { stroke-dashoffset: 0; } }
+
+
+/* ================================
+   ✅ MODAL DE ÉXITO (NUEVO)
+================================ */
+.exito-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  opacity: 0;
+  /* Animación instantánea de entrada */
+  animation: exito-fade-in 0.1s forwards;
+}
+
+.exito-modal {
+  width: 80%;
+  max-width: 350px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 25px;
+  text-align: center;
+  transform: scale(0.9);
+  animation: exito-pop-in 0.2s 0.05s forwards;
+}
+
+/* Título negro y en negrita */
+.exito-modal h2 {
+  color: #000;
+  font-weight: 700; /* bold */
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+/* Contenedor de la animación */
+.exito-anim-container {
+  height: 100px;
+  width: 100px;
+  margin: 0 auto 15px auto;
+  position: relative;
+}
+
+/* Círculo verde animado */
+.exito-circulo {
+  width: 100px;
+  height: 100px;
+  border: 8px solid #e0e0e0; /* Círculo base gris */
+  border-radius: 50%;
+  position: absolute;
+  box-sizing: border-box;
+}
+.exito-circulo::after {
+  content: '';
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border: 8px solid transparent;
+  border-top-color: #00c851; /* Verde OK */
+  border-radius: 50%;
+  /* Animación del círculo formándose */
+  animation: exito-spin 0.5s ease-in-out forwards;
+}
+
+/* Tilde (checkmark) */
+.exito-tilde {
+  width: 30px;
+  height: 60px;
+  border: solid #00c851; /* Verde OK */
+  border-width: 0 8px 8px 0;
+  position: absolute;
+  top: 15px;
+  left: 35px;
+  transform: rotate(45deg) scale(0);
+  /* Animación del tilde apareciendo */
+  animation: exito-tilde 0.2s 0.4s forwards;
+}
+        
+/* Destello (sparkle) */
+.exito-tilde::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  z-index: 10;
+  opacity: 0;
+  /* Animación del destello */
+  animation: exito-sparkle 0.3s 0.6s;
+}
+
+/* Keyframes (animaciones) */
+@keyframes exito-fade-in {
+  to { opacity: 1; }
+}
+@keyframes exito-pop-in {
+  to { transform: scale(1); }
+}
+@keyframes exito-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); border-color: #00c851; }
+}
+@keyframes exito-tilde {
+  to { transform: rotate(45deg) scale(1); }
+}
+@keyframes exito-sparkle {
+  0% { opacity: 1; box-shadow: 0 0 10px 10px #fff; }
+  100% { opacity: 0; box-shadow: 0 0 40px 30px #fff; }
+}
