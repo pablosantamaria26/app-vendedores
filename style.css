@@ -275,3 +275,8 @@ canvas { max-width: 320px; margin: auto; display: block; }
   .cliente { padding: 12px; }
   #mapaFull, #mapa { height: 58vh; }
 }
+.cliente.bloqueado {
+  filter: grayscale(0.7);
+  pointer-events: none;
+  opacity: 0.6;
+}
