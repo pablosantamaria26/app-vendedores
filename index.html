@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🧠 App de Vendedores Inteligente</title>
 
-  <!-- PWA / Icons (opcional si ya los tenés) -->
+  <!-- PWA / Icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png">
@@ -23,169 +23,10 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    /* ================================
-       🎨 Temas motivacionales 2026
-    ================================ */
-    :root {
-      --azul: #0a4aa6;         /* primario (Confianza) */
-      --azul-oscuro: #0a2b57;  /* header */
-      --ok: #22c55e;
-      --no: #ef4444;
-      --bg: #0b1220;           /* azul muy oscuro */
-      --card: #0f1a2d;         /* tarjeta */
-      --texto: #e6edf3;        /* texto */
-      --borde: #1f2a44;        /* bordes */
-      --sombra: rgba(0,0,0,.35);
-      --boton-grad-a: var(--azul);
-      --boton-grad-b: #0e63ff;
-    }
-
-    /* Tema 1: Confianza (default) — azul profesional */
-    body.tema-confianza {
-      --azul: #0a63ff;
-      --azul-oscuro: #0a2b57;
-      --bg: #0b1220;
-      --card: #0f1a2d;
-      --texto: #e6edf3;
-      --borde: #1f2a44;
-      --boton-grad-a: #0a63ff;
-      --boton-grad-b: #0e8bff;
-    }
-
-    /* Tema 2: Energía — violeta + verde/fucsia, animado */
-    body.tema-energia {
-      --azul: #8b5cf6;        /* violeta */
-      --azul-oscuro: #22c55e; /* verde */
-      --bg: #0f0b1a;
-      --card: #17122b;
-      --texto: #f4f4fd;
-      --borde: #2a214a;
-      --sombra: rgba(0,0,0,.4);
-      --boton-grad-a: #8b5cf6;
-      --boton-grad-b: #22c55e;
-    }
-
-    /* Tema 3: Foco — alto contraste negro + amarillo */
-    body.tema-foco {
-      --azul: #facc15;        /* amarillo */
-      --azul-oscuro: #111827; /* header */
-      --bg: #0a0a0a;
-      --card: #121212;
-      --texto: #f8fafc;
-      --borde: #1f2937;
-      --sombra: rgba(255,255,255,.08);
-      --boton-grad-a: #facc15;
-      --boton-grad-b: #fde047;
-    }
-
-    /* Transición suave al cambiar tema */
-    html, body, header, .cliente, .menu, .panel-resumen, #mapaFull { transition: background-color .4s ease, color .4s ease, border-color .4s ease; }
-
-    /* ================================
-       Base + layout
-    ================================ */
-    html, body { height: 100%; margin: 0; }
-    body {
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: var(--bg); color: var(--texto);
-      overflow-x: hidden;
-    }
-    header {
-      width: 100%; background: var(--azul-oscuro); color: #fff; padding: 12px 14px; position: sticky; top: 0; z-index: 999; box-shadow: 0 2px 14px var(--sombra);
-      display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center;
-    }
-    header h1 { margin: 0; font-size: 1.1rem; font-weight: 700; }
-
-    .modo-toggle, .tema-toggle {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.25);
-      color: #fff; border-radius: 999px; padding: 6px 10px; cursor: pointer; font-size: .95rem;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .tema-toggle .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .tema-menu {
-      position: absolute; right: 10px; top: 48px; background: var(--card); border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 12px 32px var(--sombra);
-      padding: 8px; display: none; min-width: 220px;
-    }
-    .tema-menu.visible { display: block; }
-    .tema-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; cursor: pointer; }
-    .tema-item:hover { background: rgba(255,255,255,.06); }
-    .tema-item .dot { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 14px; }
-    .tema-item .nombre { font-weight: 700; }
-
-    main { width: 100%; max-width: 780px; margin: 0 auto 84px; padding: 10px; }
-    h2 { text-align: center; color: var(--azul); margin: 10px 0; }
-
-    .menu { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; background: var(--card); border-top: 1px solid var(--borde); z-index: 1000; }
-    .menu button { flex: 1; padding: 10px; background: transparent; border: none; color: var(--texto); cursor: pointer; }
-    .menu button.activo { background: var(--azul); color: #0b1220; font-weight: 800; }
-
-    .seccion { display: none; animation: fade .25s ease; }
-    .seccion.visible { display: block; }
-    @keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: translateY(0) } }
-
-    .cliente { background: var(--card); color: var(--texto); border: 1px solid var(--borde); border-left: 6px solid var(--azul); border-radius: 14px; padding: 14px; margin: 10px 0; box-shadow: 0 4px 14px var(--sombra); }
-    .cliente h3 { margin: 0 0 6px 0; color: var(--azul); }
-    .cliente .fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .cliente .acciones { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-    .cliente[draggable="true"] { cursor: grab; }
-    .cliente.bloqueado { filter: grayscale(.75) saturate(.7); opacity: .65; pointer-events: none; }
-
-    .badge { background: rgba(255,255,255,.05); border: 1px solid var(--borde); padding: 2px 8px; border-radius: 999px; font-size: .85rem; }
-
-    button { background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b)); color: #fff; border: none; border-radius: 10px; padding: 8px 12px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 16px var(--sombra); }
-    button:hover { filter: brightness(1.05); transform: translateY(-1px); }
-    .btn-secundario { background: linear-gradient(135deg, #22c55e, #16a34a); }
-
-    .cliente textarea { width: 100%; margin-top: 6px; background: transparent; color: var(--texto); border: 1px solid var(--borde); border-radius: 8px; padding: 8px; outline: none; }
-
-    #mapaFull { height: 68vh; width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px var(--sombra); border: 1px solid var(--borde); }
-
-    .panel-resumen { text-align: center; background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--sombra); border: 1px solid var(--borde); margin-bottom: 20px; }
-    canvas { max-width: 320px; margin: auto; display: block; }
-
-    /* ================================
-       🔔 Toast de confirmación 80% pantalla
-    ================================ */
-    .exito-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.45); z-index: 9999; animation: exito-fade 1s forwards; }
-    .exito-box { width: min(560px, 88vw); height: 80vh; background: #ffffff; color: #111827; border-radius: 22px; box-shadow: 0 18px 48px rgba(0,0,0,.35); display: grid; grid-template-rows: auto 1fr; align-items: center; justify-items: center; padding: 20px; }
-    .exito-titulo { font-weight: 800; font-size: 1.2rem; margin-top: 6px; }
-
-    .exito-circle { position: relative; width: 180px; height: 180px; margin-top: 10px; }
-    .exito-circle svg { width: 180px; height: 180px; transform: rotate(-90deg); }
-    .exito-circle .bg { stroke: #e5e7eb; stroke-width: 12; fill: none; }
-    .exito-circle .prog { stroke: #22c55e; stroke-width: 12; fill: none; stroke-linecap: round; stroke-dasharray: 565; stroke-dashoffset: 565; animation: exito-progress .7s ease-out forwards; }
-    .exito-check { position: absolute; inset: 0; display: grid; place-items: center; }
-    .exito-check svg { width: 96px; height: 96px; }
-    .exito-check path { stroke: #22c55e; stroke-width: 10; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 140; stroke-dashoffset: 140; animation: exito-check .25s ease-out forwards .65s; filter: drop-shadow(0 0 10px rgba(34,197,94,.45)); }
-    @keyframes exito-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
-    @keyframes exito-progress { to { stroke-dashoffset: 0; } }
-    @keyframes exito-check { to { stroke-dashoffset: 0; } }
-
-    /* ================================
-       Confirm de destino (TOAST pregunta)
-    ================================ */
-    .confirm-toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: var(--card); color: var(--texto); border: 1px solid var(--borde); box-shadow: 0 12px 24px var(--sombra); border-radius: 14px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; z-index: 9500; }
-    .confirm-toast button { padding: 6px 10px; border-radius: 10px; }
-
-    /* ================================
-       Login pantalla completa
-    ================================ */
-    #login { position: fixed; inset: 0; display: grid; place-items: center; background: linear-gradient(135deg, var(--azul-oscuro), var(--azul)); z-index: 10000; }
-    .login-card { background: var(--card); color: var(--texto); border-radius: 16px; padding: 20px; width: 86%; max-width: 360px; text-align: center; border: 1px solid var(--borde); box-shadow: 0 16px 36px var(--sombra); }
-    #login input { font-size: 1.4rem; padding: 10px; text-align: center; margin: 10px 0; width: 80%; border-radius: 10px; border: 2px solid var(--azul); background: #fff; color: #111; }
-    .teclado-numerico { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5em; }
-    .teclado-numerico button { background: #fff; color: var(--azul-oscuro); border-radius: 10px; padding: .6em 0; width: 100%; font-weight: 800; border: none; cursor: pointer; }
-    #login #error { color: #ef4444; min-height: 1.1em; }
-
-    @media (max-width: 600px) {
-      header h1 { font-size: 1rem; }
-      .menu button { font-size: .95rem; padding: 10px 8px; }
-      #mapaFull { height: 58vh; }
-    }
-  </style>
+  <!-- 🎨 CSS externo actualizado -->
+  <link rel="stylesheet" href="./style.css?v=20251103">
 </head>
+
 <body class="tema-confianza">
   <!-- Login -->
   <div id="login">
@@ -207,9 +48,8 @@
   <header>
     <h1 id="titulo">🧠 App de Vendedores</h1>
     <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
-    <div class="tema-toggle" onclick="toggleTemaMenu(event)">
-      🎨 Temas
-    </div>
+    <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
+
     <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
       <div class="tema-item" onclick="aplicarTema('tema-confianza')">
         <span class="dot" style="background:#0a63ff"></span>
@@ -222,6 +62,10 @@
       <div class="tema-item" onclick="aplicarTema('tema-foco')">
         <span class="dot" style="background:#facc15"></span>
         <span class="nombre">● Foco</span>
+      </div>
+      <div class="tema-item" onclick="aplicarTema('tema-noche')">
+        <span class="dot" style="background:#001b3a"></span>
+        <span class="nombre">● Noche</span>
       </div>
     </div>
   </header>
@@ -261,6 +105,6 @@
   </div>
 
   <!-- App principal -->
-  <script src="./app.js?v=1" defer></script>
+  <script src="./app.js?v=20251103" defer></script>
 </body>
 </html>
