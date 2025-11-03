@@ -170,7 +170,7 @@ async function cargarRuta(clave){
 
 
 /* ================================
-   🧱 Render de tarjetas (sin botón de bloqueo)
+   🧱 Render de tarjetas (sin botón de bloqueo, con bloqueo automático)
 ================================ */
 function renderClientes() {
   const cont = document.getElementById("contenedor");
@@ -193,12 +193,11 @@ function renderClientes() {
         ? distanciaKm(posicionActual.lat, posicionActual.lng, lat, lng)
         : null;
 
+    // Contenido de la tarjeta
     card.innerHTML = `
       <h3>${c.nombre}</h3>
       <div class="fila">
-        <span>📍 ${c.direccion || ""}${
-      c.localidad ? `, ${c.localidad}` : ""
-    }</span>
+        <span>📍 ${c.direccion || ""}${c.localidad ? `, ${c.localidad}` : ""}</span>
         ${dist !== null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
       </div>
       <div class="fila" style="margin-top:6px">
@@ -212,7 +211,22 @@ function renderClientes() {
       </div>
     `;
 
-    // DnD funcional (ordenar tarjetas)
+    // 🔒 Si el cliente ya fue visitado (bloqueado), desactivar campos y aplicar estilo
+    if (c.bloqueado) {
+      card.classList.add("bloqueado");
+      card.querySelectorAll("input, textarea, button").forEach(el => el.disabled = true);
+      card.style.opacity = "0.6";
+
+      // Mostrar etiqueta visual "Visitado"
+      const tag = document.createElement("div");
+      tag.textContent = "✅ Visitado";
+      tag.className = "etiqueta-bloqueado";
+      tag.style = "position:absolute;top:8px;right:10px;font-weight:bold;color:#2ecc71;";
+      card.style.position = "relative";
+      card.appendChild(tag);
+    }
+
+    // 🧱 Drag & Drop funcional
     card.addEventListener("dragstart", (ev) => {
       dragSrcIndex = idx;
       ev.dataTransfer.effectAllowed = "move";
@@ -230,9 +244,7 @@ function renderClientes() {
 
     card.addEventListener("drop", (ev) => {
       ev.preventDefault();
-      document
-        .querySelectorAll(".cliente.drag-over")
-        .forEach((x) => x.classList.remove("drag-over"));
+      document.querySelectorAll(".cliente.drag-over").forEach((x) => x.classList.remove("drag-over"));
 
       const cards = Array.from(cont.querySelectorAll(".cliente"));
       const targetIndex = cards.indexOf(card);
@@ -251,6 +263,7 @@ function renderClientes() {
 
   animarTarjetas();
 }
+
 
 
 /* ================================
