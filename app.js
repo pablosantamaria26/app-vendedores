@@ -15,7 +15,9 @@
    ⚙️ Config principal
 ================================ */
 const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
-const URL_API_BASE = "https://script.google.com/macros/s/AKfycbzUdCXrwY9AkmtOB4T5ycNJKE17-_HeCQIVYZcUXCynNcQy3XQ1n51M5OKBgQoSL-pl/exec";
+// 🔁 Redirige todas las llamadas a través de tu Cloudflare Worker
+const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+
 
 /* Estado global */
 let clientesData = [];
