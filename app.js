@@ -170,37 +170,36 @@ async function cargarRuta(clave){
 
 
 /* ================================
-   🧱 Render de tarjetas + DnD
+   🧱 Render de tarjetas (sin botón de bloqueo)
 ================================ */
-function renderClientes(){
+function renderClientes() {
   const cont = document.getElementById("contenedor");
-  if(!cont) return;
+  if (!cont) return;
   cont.innerHTML = "";
 
   // Filtro + botón “ruta completa”
   insertarBarraHerramientas(cont);
 
-  const mlocks = locks();
-
-  clientesData.forEach((c, idx)=>{
+  clientesData.forEach((c, idx) => {
     const card = document.createElement("div");
     card.className = "cliente";
-    card.id = "c_"+c.numero;
+    card.id = "c_" + c.numero;
 
-    const lat = (c.lat!==undefined && c.lat!==null) ? parseFloat(c.lat) : null;
-    const lng = (c.lng!==undefined && c.lng!==null) ? parseFloat(c.lng) : null;
+    const lat = parseFloat(c.lat);
+    const lng = parseFloat(c.lng);
     const tieneGeo = Number.isFinite(lat) && Number.isFinite(lng);
-    const dist = (posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
-
-    const locked = !!mlocks[c.numero];
-    card.classList.toggle("bloqueado", locked);
-    card.setAttribute("draggable", String(!locked));
+    const dist =
+      posicionActual && tieneGeo
+        ? distanciaKm(posicionActual.lat, posicionActual.lng, lat, lng)
+        : null;
 
     card.innerHTML = `
       <h3>${c.nombre}</h3>
       <div class="fila">
-        <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
-        ${dist!==null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
+        <span>📍 ${c.direccion || ""}${
+      c.localidad ? `, ${c.localidad}` : ""
+    }</span>
+        ${dist !== null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
       </div>
       <div class="fila" style="margin-top:6px">
         <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
@@ -209,54 +208,50 @@ function renderClientes(){
       <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
       <div class="acciones">
         <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-        <button class="btn-secundario" onclick="irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})">🚗 Ir</button>
-        <button class="btn-lock" onclick="toggleLock(${c.numero})">${locked?"🔒 Bloqueado":"🔓 Bloquear"}</button>
+        <button class="btn-secundario" onclick="irCliente(${tieneGeo ? lat : "null"},${tieneGeo ? lng : "null"})">🚗 Ir</button>
       </div>
     `;
 
-card.addEventListener("drop", (ev) => {
-  ev.preventDefault();
-  document.querySelectorAll(".cliente.drag-over").forEach(x => x.classList.remove("drag-over"));
+    // DnD funcional (ordenar tarjetas)
+    card.addEventListener("dragstart", (ev) => {
+      dragSrcIndex = idx;
+      ev.dataTransfer.effectAllowed = "move";
+    });
 
-  const cards = Array.from(cont.querySelectorAll(".cliente")); // solo tarjetas
-  const targetIndex = cards.indexOf(card);
-  if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+    card.addEventListener("dragover", (ev) => {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = "move";
+      card.classList.add("drag-over");
+    });
 
-  const moved = clientesData.splice(dragSrcIndex, 1)[0];
-  clientesData.splice(targetIndex, 0, moved);
-  dragSrcIndex = null;
+    card.addEventListener("dragleave", () =>
+      card.classList.remove("drag-over")
+    );
 
-  guardarOrden(clientesData.map(x => String(x.numero)));
-  renderClientes();
-});
+    card.addEventListener("drop", (ev) => {
+      ev.preventDefault();
+      document
+        .querySelectorAll(".cliente.drag-over")
+        .forEach((x) => x.classList.remove("drag-over"));
 
+      const cards = Array.from(cont.querySelectorAll(".cliente"));
+      const targetIndex = cards.indexOf(card);
+      if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
 
-/* Barra superior: filtro + botón ruta en Google Maps */
-function insertarBarraHerramientas(container){
-  const bar = document.createElement("div");
-  bar.style = "display:flex;gap:8px;align-items:center;justify-content:space-between;margin:6px 0 10px 0;flex-wrap:wrap;";
+      const moved = clientesData.splice(dragSrcIndex, 1)[0];
+      clientesData.splice(targetIndex, 0, moved);
+      dragSrcIndex = null;
 
-  const filtro = document.createElement("input");
-  filtro.id = "filtroLocalidad";
-  filtro.placeholder = "🔍 Filtrar por localidad...";
-  filtro.style = "flex:1;min-width:220px;padding:10px;border:1px solid var(--borde);border-radius:8px;background:transparent;color:var(--texto)";
-  filtro.oninput = () => filtrarClientesPorLocalidad(filtro.value);
+      guardarOrden(clientesData.map((x) => String(x.numero)));
+      renderClientes();
+    });
 
-  const btnRuta = document.createElement("button");
-  btnRuta.textContent = "📍 Ruta completa (Google Maps)";
-  btnRuta.onclick = ()=>abrirRutaEnMapa(clientesData);
+    cont.appendChild(card);
+  });
 
-  bar.appendChild(filtro);
-  bar.appendChild(btnRuta);
-  container.appendChild(bar);
+  animarTarjetas();
 }
 
-function toggleLock(numero){
-  const m=locks(); const now=!m[numero];
-  setLock(numero, now);
-  toast(now?"🔒 Tarjeta bloqueada":"🔓 Tarjeta desbloqueada");
-  renderClientes();
-}
 
 /* ================================
    🗺️ Mapa (vista separada)
@@ -317,13 +312,18 @@ function abrirRutaEnMapa(clientes){
 }
 
 /* ================================
-   💾 Registrar visita (+ offline)
+   💾 Registrar visita (+ offline + bloqueo automático)
 ================================ */
-function getClientePorNumero(num){ return clientesData.find(x=>String(x.numero)===String(num)); }
+function getClientePorNumero(num) {
+  return clientesData.find(x => String(x.numero) === String(num));
+}
 
-async function registrarVisita(numero){
+async function registrarVisita(numero) {
   const c = getClientePorNumero(numero);
-  if(!c){ toast("❌ Cliente no encontrado"); return; }
+  if (!c) {
+    toast("❌ Cliente no encontrado");
+    return;
+  }
 
   const visitado   = document.getElementById(`visitado-${numero}`)?.checked || false;
   const compro     = document.getElementById(`compro-${numero}`)?.checked || false;
@@ -331,46 +331,80 @@ async function registrarVisita(numero){
   const vendedor   = localStorage.getItem("vendedorClave") || "";
 
   const params = new URLSearchParams({
-    accion:"registrarVisita",
-    numero:c.numero, nombre:c.nombre,
-    direccion:c.direccion||"", localidad:c.localidad||"",
-    visitado, compro, comentario, vendedor
+    accion: "registrarVisita",
+    numero: c.numero,
+    nombre: c.nombre,
+    direccion: c.direccion || "",
+    localidad: c.localidad || "",
+    visitado,
+    compro,
+    comentario,
+    vendedor,
   });
 
-  try{
+  let exito = false;
+
+  try {
     const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
     const js = await r.json();
     toast(js.estado || "✅ Visita registrada");
-  }catch{
-    queueOffline({ t:"visita", params:Object.fromEntries(params) });
+    exito = true;
+  } catch {
+    // Guardado offline si no hay conexión
+    queueOffline({ t: "visita", params: Object.fromEntries(params) });
     toast("📶 Sin conexión. Guardado offline y se sincroniza después.");
+    exito = true; // Igual bloqueamos localmente
+  }
+
+  if (exito) {
+    // 🔒 Bloquear tarjeta y moverla al final
+    const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
+    if (idx !== -1) {
+      const cliente = clientesData.splice(idx, 1)[0];
+      cliente.bloqueado = true;
+      clientesData.push(cliente);
+      guardarOrden(clientesData.map(x => String(x.numero)));
+      renderClientes();
+    }
   }
 }
 
-/* Cola offline + sync */
-function queueOffline(item){
-  const k="offlineQueue"; let q=[];
-  try{ q=JSON.parse(localStorage.getItem(k)||"[]"); }catch{}
-  q.push(item); localStorage.setItem(k, JSON.stringify(q));
+/* ================================
+   📶 Cola offline + sincronización automática
+================================ */
+function queueOffline(item) {
+  const k = "offlineQueue";
+  let q = [];
+  try {
+    q = JSON.parse(localStorage.getItem(k) || "[]");
+  } catch {}
+  q.push(item);
+  localStorage.setItem(k, JSON.stringify(q));
 }
-async function syncOffline(){
-  if(!navigator.onLine) return;
-  const k="offlineQueue"; let q=[];
-  try{ q=JSON.parse(localStorage.getItem(k)||"[]"); }catch{}
-  if(!q.length) return;
 
-  const rest=[];
-  for(const it of q){
-    try{
-      if(it.t==="visita"){
+async function syncOffline() {
+  if (!navigator.onLine) return;
+  const k = "offlineQueue";
+  let q = [];
+  try {
+    q = JSON.parse(localStorage.getItem(k) || "[]");
+  } catch {}
+  if (!q.length) return;
+
+  const rest = [];
+  for (const it of q) {
+    try {
+      if (it.t === "visita") {
         const p = new URLSearchParams(it.params);
         const r = await fetch(`${URL_API_BASE}?${p.toString()}`);
         await r.json();
       }
-    }catch{ rest.push(it); }
+    } catch {
+      rest.push(it);
+    }
   }
   localStorage.setItem(k, JSON.stringify(rest));
-  if(q.length && rest.length===0) toast("✅ Sincronización completada");
+  if (q.length && rest.length === 0) toast("✅ Sincronización completada");
 }
 window.addEventListener("online", syncOffline);
 
