@@ -189,10 +189,11 @@ function renderClientes(){
     const tieneGeo=Number.isFinite(lat)&&Number.isFinite(lng);
     const dist=(posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
 
+    // --- 👇 LÍNEAS MODIFICADAS (TÍTULO Y UBICACIÓN) 👇 ---
     card.innerHTML=`
-      <h3>${c.nombre}</h3>
+      <h3>${c.numero} - ${c.nombre}</h3>
       <div class="fila">
-        <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
+        <span>📍 ${c.direccion||""}</span>
         ${dist!==null?`<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
       </div>
       <div class="fila" style="margin-top:6px">
@@ -312,8 +313,7 @@ async function registrarVisita(numero){
     renderClientes();
     
     // --- 👇 LÍNEA MODIFICADA (COMPORTAMIENTO DE SCROLL) 👇 ---
-    // Antes: card?.scrollIntoView({behavior:"smooth", block:"end"});
-    // Ahora: Sube al inicio de la lista
+    // Sube al inicio de la lista (al div "Ruta cargada...")
     document.getElementById('estado')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     // --- --- --- --- --- --- --- --- --- --- --- --- --- ---
   }
@@ -329,7 +329,7 @@ async function registrarVisita(numero){
     numero:c.numero,
     nombre:c.nombre,
     direccion:c.direccion||"",
-    localidad:c.localidad||"",
+    localidad:c.localidad||"", // Se sigue mandando la localidad, aunque no se muestre duplicada
     visitado, compro, comentario, vendedor
   });
 
