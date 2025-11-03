@@ -1,7 +1,21 @@
 // ==================================================
-// 🔔 Service Worker FCM - App Vendedores Inteligente
+// 🔔 Service Worker FCM - App Vendedores Inteligente (versión auto-actualizable)
 // ==================================================
 
+// ✅ Fuerza la actualización inmediata del SW cuando cambia
+self.addEventListener("install", (event) => {
+  console.log("⚡ Nueva versión del Service Worker instalada");
+  self.skipWaiting(); // Evita quedar en estado “waiting”
+});
+
+self.addEventListener("activate", (event) => {
+  console.log("♻️ Activando nueva versión del SW y reclamando clientes...");
+  event.waitUntil(clients.claim()); // Toma control inmediato de las pestañas
+});
+
+// ==================================================
+// 📦 Librerías Firebase
+// ==================================================
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
@@ -24,7 +38,6 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log("📨 Notificación en segundo plano recibida:", payload);
 
-  // Si el payload viene sin el campo `notification`
   const notif = payload.notification || {
     title: "Nueva alerta",
     body: "Tienes una nueva notificación.",
@@ -47,7 +60,7 @@ messaging.onBackgroundMessage((payload) => {
 // 🖱️ Click en la notificación
 // Abre la app si está cerrada o la enfoca si está abierta
 // ==================================================
-self.addEventListener("notificationclick", function(event) {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const targetUrl = "https://pablosantamaria26.github.io/app-vendedores/"; // 🔗 ajustá si cambia el path
