@@ -537,7 +537,7 @@ function inicializarNotificaciones(vendedor) {
 
         console.log("🔑 Obteniendo token FCM...");
         const token = await messaging.getToken({
-          vapidKey: "BICSx_UfEGqKNYrttf3ZNDwmtkKmlRQncGQzz3oZOIUbZ2wxGkPwNteliRw16VUAWXzCVxH-Z4FgL0VtfaiOka0",
+          vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
           serviceWorkerRegistration: registration
         });
 
