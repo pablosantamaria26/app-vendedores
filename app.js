@@ -188,10 +188,9 @@ function renderClientes() {
     const lat = parseFloat(c.lat);
     const lng = parseFloat(c.lng);
     const tieneGeo = Number.isFinite(lat) && Number.isFinite(lng);
-    const dist =
-      posicionActual && tieneGeo
-        ? distanciaKm(posicionActual.lat, posicionActual.lng, lat, lng)
-        : null;
+    const dist = (posicionActual && tieneGeo)
+      ? distanciaKm(posicionActual.lat, posicionActual.lng, lat, lng)
+      : null;
 
     card.innerHTML = `
       <h3>${c.nombre}</h3>
@@ -210,23 +209,25 @@ function renderClientes() {
       </div>
     `;
 
-    // Si está bloqueado (visitado)
+    // Bloqueado: desactivar y estilo
     if (c.bloqueado) {
       card.classList.add("bloqueado");
       card.querySelectorAll("input, textarea, button").forEach(el => el.disabled = true);
       card.style.opacity = "0.6";
-
       const tag = document.createElement("div");
       tag.textContent = "✅ Visitado";
       tag.className = "etiqueta-bloqueado";
       tag.style = "position:absolute;top:8px;right:10px;font-weight:bold;color:#2ecc71;";
       card.style.position = "relative";
       card.appendChild(tag);
+      card.setAttribute("draggable", "false");
+    } else {
+      card.setAttribute("draggable", "true");
     }
 
-    // Drag & drop funcional
+    // DnD
     card.addEventListener("dragstart", (ev) => {
-      dragSrc = idx;
+      dragSrcIndex = idx;
       ev.dataTransfer.effectAllowed = "move";
     });
     card.addEventListener("dragover", (ev) => {
@@ -235,17 +236,20 @@ function renderClientes() {
     });
     card.addEventListener("drop", (ev) => {
       ev.preventDefault();
-      const target = Array.from(cont.children).indexOf(card);
-      if (dragSrc === null || dragSrc === target) return;
-      const moved = clientesData.splice(dragSrc, 1)[0];
-      clientesData.splice(target, 0, moved);
-      dragSrc = null;
+      const cards = Array.from(cont.querySelectorAll(".cliente"));
+      const targetIndex = cards.indexOf(card);
+      if (dragSrcIndex === null || dragSrcIndex === targetIndex) return;
+      const moved = clientesData.splice(dragSrcIndex, 1)[0];
+      clientesData.splice(targetIndex, 0, moved);
+      dragSrcIndex = null;
       guardarOrden(clientesData.map(x => String(x.numero)));
       renderClientes();
     });
 
     cont.appendChild(card);
   });
+
+  animarTarjetas();
 }
 
 
@@ -316,20 +320,17 @@ function getClientePorNumero(num) {
   return clientesData.find(x => String(x.numero) === String(num));
 }
 
-/* ================================
-   💾 Registrar visita (+ offline + bloqueo automático)
-================================ */
 async function registrarVisita(numero) {
   const c = getClientePorNumero(numero);
   if (!c) { toastSuccess("❌ Cliente no encontrado", false); return; }
 
-  // 1) Tomamos datos del UI
+  // 1) Leemos UI
   const visitado   = document.getElementById(`visitado-${numero}`)?.checked || false;
   const compro     = document.getElementById(`compro-${numero}`)?.checked || false;
   const comentario = (document.getElementById(`coment-${numero}`)?.value || "").trim();
   const vendedor   = localStorage.getItem("vendedorClave") || "";
 
-  // 2) UI OPTIMISTA: bloqueamos y mandamos al final YA
+  // 2) UI OPTIMISTA: bloquear y mandar al final YA
   const idx = clientesData.findIndex(x => String(x.numero) === String(numero));
   if (idx !== -1) {
     const cliente = clientesData.splice(idx, 1)[0];
@@ -339,30 +340,28 @@ async function registrarVisita(numero) {
     renderClientes();
   }
 
-function toastSuccess(titulo = "✅ Visita guardada", exito = true) {
-  // Por si quedó alguna abierta
-  document.querySelectorAll(".fullscreen-toast").forEach(n => n.remove());
+  // 3) Toast full-screen instantáneo (1s)
+  toastSuccess("✅ Visita guardada", true);
 
-  const wrap = document.createElement("div");
-  wrap.className = "fullscreen-toast";
-  wrap.innerHTML = `
-    <div class="box">
-      <div class="fst-circle">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="bg"   cx="60" cy="60" r="55"></circle>
-          <circle class="prog" cx="60" cy="60" r="55"></circle>
-        </svg>
-        <div class="fst-check">
-          <svg viewBox="0 0 64 64">
-            <path d="M16 34 L28 46 L48 20"></path>
-          </svg>
-        </div>
-      </div>
-      <div class="fst-title">${exito ? "Visita guardada correctamente" : titulo}</div>
-    </div>
-  `;
-  document.body.appendChild(wrap);
-  setTimeout(() => wrap.remove(), 1000);
+  // 4) Hacemos el request en 2º plano (con fallback offline)
+  const params = new URLSearchParams({
+    accion: "registrarVisita",
+    numero: c.numero,
+    nombre: c.nombre,
+    direccion: c.direccion || "",
+    localidad: c.localidad || "",
+    visitado,
+    compro,
+    comentario,
+    vendedor,
+  });
+
+  try {
+    const r = await fetch(`${URL_API_BASE}?${params.toString()}`);
+    await r.json().catch(()=>{});
+  } catch {
+    queueOffline({ t: "visita", params: Object.fromEntries(params) });
+  }
 }
 
 
