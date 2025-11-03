@@ -244,12 +244,13 @@ h2 {
   flex-wrap: wrap;
 }
 
+
 .cliente .acciones {
   margin-top: 8px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: space-between; /* <-- LÍNEA NUEVA */
+  justify-content: space-between; /* <-- LÍNEA NUEVA (Mueve el 2do botón a la derecha) */
 }
 .cliente.bloqueado {
   filter: grayscale(.75) saturate(.7);
@@ -396,9 +397,11 @@ canvas {
   display: grid;
   place-items: center;
 }
+
 .exito-check svg {
   width: 96px;
   height: 96px;
+  transform: rotate(-45deg); /* <-- LÍNEA NUEVA (Endereza el tilde) */
 }
 .exito-check path {
   stroke: #22c55e;
@@ -502,6 +505,30 @@ canvas {
   header h1 { font-size: 1rem; }
   .menu button { font-size: .95rem; padding: 10px 8px; }
   #mapaFull { height: 58vh; }
+}
+
+/* ===============================
+   Inputs (tamaño grande p/ dedos)
+================================= */
+.cliente input[type="checkbox"] {
+  /* Doble de tamaño */
+  width: 28px;
+  height: 28px;
+  
+  /* Espacio y alineación con el texto */
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -2px; /* Ajuste fino */
+  cursor: pointer;
+}
+
+.cliente .fila label {
+  /* Asegura que la etiqueta y el texto se alineen bien */
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem; /* Opcional: agranda un poco el texto también */
+  cursor: pointer;
 }
 
 /* ===============================
