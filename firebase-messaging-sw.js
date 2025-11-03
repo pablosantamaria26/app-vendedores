@@ -1,7 +1,11 @@
-// firebase-messaging-sw.js
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
+// ==================================================
+// 🔔 Service Worker FCM - App Vendedores Inteligente
+// ==================================================
 
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
+
+// ✅ Configuración Firebase
 firebase.initializeApp({
   apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
   authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -11,12 +15,53 @@ firebase.initializeApp({
   appId: "1:583313989429:web:c4f78617ad957c3b11367c"
 });
 
+// ✅ Inicializa el servicio de mensajería
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
-  console.log("📩 Notificación en segundo plano:", payload);
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: "/ml-icon-192.png"
-  });
+// ==================================================
+// 📩 Manejo de notificaciones en segundo plano
+// ==================================================
+messaging.onBackgroundMessage((payload) => {
+  console.log("📨 Notificación en segundo plano recibida:", payload);
+
+  // Si el payload viene sin el campo `notification`
+  const notif = payload.notification || {
+    title: "Nueva alerta",
+    body: "Tienes una nueva notificación.",
+    icon: "ml-icon-192.png"
+  };
+
+  const notificationTitle = notif.title || "Notificación";
+  const notificationOptions = {
+    body: notif.body || "",
+    icon: notif.icon || "ml-icon-192.png",
+    badge: "ml-icon-192.png",
+    data: payload.data || {}
+  };
+
+  // Muestra la notificación
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// ==================================================
+// 🖱️ Click en la notificación
+// Abre la app si está cerrada o la enfoca si está abierta
+// ==================================================
+self.addEventListener("notificationclick", function(event) {
+  event.notification.close();
+
+  const targetUrl = "https://pablosantamaria26.github.io/app-vendedores/"; // 🔗 ajustá si cambia el path
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === targetUrl && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });
