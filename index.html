@@ -7,22 +7,21 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
   <meta name="theme-color" content="#0a2b57" />
 
+  <!-- Firebase y Leaflet -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <link rel="stylesheet" href="./style.css?v=20251104">
 </head>
 
 <body class="tema-confianza">
+  <!-- LOGIN -->
   <div id="login">
     <div class="login-card">
       <h1>🧠 App de Vendedores</h1>
@@ -46,60 +45,62 @@
     </div>
   </div>
 
+  <!-- CABECERA -->
   <header>
     <h1 id="titulo">🧠 App de Vendedores</h1>
     <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
     <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
-
     <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
       <div class="tema-item" onclick="aplicarTema('tema-confianza')">
-        <span class="dot" style="background:#0a63ff"></span>
-        <span class="nombre">● Confianza</span>
+        <span class="dot" style="background:#0a63ff"></span><span>● Confianza</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-energia')">
-        <span class="dot" style="background: linear-gradient(135deg,#8b5cf6,#22c55e)"></span>
-        <span class="nombre">● Energía</span>
+        <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span><span>● Energía</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-foco')">
-        <span class="dot" style="background:#facc15"></span>
-        <span class="nombre">● Foco</span>
+        <span class="dot" style="background:#facc15"></span><span>● Foco</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-noche')">
-        <span class="dot" style="background:#001b3a"></span>
-        <span class="nombre">● Noche</span>
+        <span class="dot" style="background:#001b3a"></span><span>● Noche</span>
       </div>
     </div>
   </header>
 
+  <!-- CUERPO PRINCIPAL -->
   <main>
+    <!-- 🗺️ RUTA DEL DÍA -->
     <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
-      <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
+      <div id="estadoRuta" class="estado-ruta"></div>
       <div id="contenedor"></div>
     </section>
 
+    <!-- 📍 MAPA -->
     <section id="seccion-mapa" class="seccion">
       <h2>📍 Mapa</h2>
       <div id="mapaFull"></div>
     </section>
 
+    <!-- 📅 CALENDARIO -->
     <section id="seccion-calendario" class="seccion">
       <h2>📅 Calendario</h2>
       <div id="contenedorCalendario"></div>
     </section>
 
+    <!-- 🤖 COACH DE VENTAS IA -->
     <section id="seccion-resumen" class="seccion">
-      <h2>📈 Resumen</h2>
-      <div id="contenedorResumen" class="panel-resumen"></div>
-      <canvas id="graficoResumen"></canvas>
+      <h2>🤖 Coach de Ventas IA</h2>
+      <div id="contenedorCoach" class="panel-resumen"></div>
+      <canvas id="graficoHeatmap" height="300"></canvas>
     </section>
   </main>
-  
+
+  <!-- MENÚ INFERIOR -->
   <div class="menu">
     <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
-    <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
+    <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍</button>
     <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
-    <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
+    <button id="btnResumen" onclick="mostrarSeccion('resumen')">🤖</button>
     <button id="btnLogout" onclick="logout()">🚪</button>
   </div>
 
