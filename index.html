@@ -2,75 +2,129 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>🧠 App de Vendedores Inteligente</title>
 
+  <!-- PWA / Icons -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
   <meta name="theme-color" content="#0a2b57" />
 
+  <!-- Firebase (FCM) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
+  <!-- Leaflet (mapas) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <link rel="stylesheet" href="./style.css?v=20251104">
+  <!-- 🎨 CSS externo actualizado -->
+  <link rel="stylesheet" href="./style.css?v=20251106">
+
+  <!-- Mini estilos puntuales (switch + buscador + safe areas) -->
+  <style>
+    :root { --safe-bottom: env(safe-area-inset-bottom); --safe-top: env(safe-area-inset-top); }
+    header { padding-top: calc(12px + var(--safe-top)); }
+    .menu { padding-bottom: calc(0px + var(--safe-bottom)); }
+
+    /* Switch iOS */
+    .ios-switch {
+      --on:#0a63ff; --off:#cbd5e1; --knob:#fff;
+      width: 74px; height: 32px; border-radius: 999px; position: relative; background: var(--off);
+      border: 1px solid rgba(0,0,0,.08); box-shadow: inset 0 1px 2px rgba(0,0,0,.15); cursor: pointer;
+      display:flex; align-items:center; padding: 0 8px; gap:8px; color:#111; font-weight:700; font-size:12px;
+      user-select:none;
+    }
+    .ios-switch[data-on="1"] { background: var(--on); color:#fff; }
+    .ios-switch .knob {
+      position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--knob);
+      box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .2s ease;
+    }
+    .ios-switch[data-on="1"] .knob { transform: translateX(42px); }
+
+    /* Buscador (modal) */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; place-items: center; z-index: 12000; }
+    .modal.visible { display: grid; }
+    .modal-box { width: min(680px, 92vw); max-height: 80vh; overflow: hidden; background: var(--card); border:1px solid var(--borde);
+      border-radius:16px; box-shadow: 0 18px 48px rgba(0,0,0,.35); display: grid; grid-template-rows: auto 1fr; }
+    .modal-head { padding: 12px; border-bottom:1px solid var(--borde); display:flex; gap:8px; align-items:center; }
+    .modal-head input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--borde); background: #fff; color:#111; }
+    .modal-body { overflow:auto; padding: 10px; }
+    .result { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--borde); }
+    .copy { padding:6px 10px; border-radius:10px; border:none; background:linear-gradient(135deg,#0a63ff,#0e8bff); color:#fff; font-weight:800; }
+
+    /* Calendario scroll */
+    #calScroll { max-height: 65vh; overflow:auto; border:1px solid var(--borde); border-radius:12px; padding:8px; background:var(--card); }
+
+    /* Confirm de mapa (60–70% alto) */
+    .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; place-items:center; z-index:11000; }
+    .confirm-overlay.visible { display:grid; }
+    .confirm-box { width:min(560px,88vw); height:70vh; background:#fff; color:#111; border-radius:22px; box-shadow:0 18px 48px rgba(0,0,0,.35);
+      display:grid; grid-template-rows:auto 1fr auto; padding:18px; }
+    .confirm-box h3 { margin:0; }
+    .confirm-actions { display:flex; gap:10px; justify-content:flex-end; }
+
+    /* Botón flotante del buscador */
+    .fab-search {
+      position: fixed; right: 16px; bottom: 92px; z-index: 1050;
+      width: 56px; height: 56px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b)); color:#fff;
+      font-size: 22px; box-shadow: 0 8px 20px rgba(0,0,0,.35);
+    }
+  </style>
 </head>
 
-<body class="tema-confianza">
+<body class="tema-confianza modo-dia">
+  <!-- Login -->
   <div id="login">
     <div class="login-card">
       <h1>🧠 App de Vendedores</h1>
       <h2>🔐 Ingresá tu código</h2>
       <input type="password" id="clave" maxlength="4" placeholder="••••" />
       <div class="teclado-numerico">
-        <button onclick="agregarDigito('1')">1</button>
-        <button onclick="agregarDigito('2')">2</button>
-        <button onclick="agregarDigito('3')">3</button>
-        <button onclick="agregarDigito('4')">4</button>
-        <button onclick="agregarDigito('5')">5</button>
-        <button onclick="agregarDigito('6')">6</button>
-        <button onclick="agregarDigito('7')">7</button>
-        <button onclick="agregarDigito('8')">8</button>
-        <button onclick="agregarDigito('9')">9</button>
-        <button onclick="borrarDigito()">⌫</button>
-        <button onclick="agregarDigito('0')">0</button>
-        <button onclick="login()">✔️</button>
+        <button onclick="agregarDigito('1')">1</button><button onclick="agregarDigito('2')">2</button><button onclick="agregarDigito('3')">3</button>
+        <button onclick="agregarDigito('4')">4</button><button onclick="agregarDigito('5')">5</button><button onclick="agregarDigito('6')">6</button>
+        <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
+        <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
       </div>
       <p id="error"></p>
     </div>
   </div>
 
+  <!-- Header -->
   <header>
     <h1 id="titulo">🧠 App de Vendedores</h1>
-    <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
-    <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
 
+    <!-- Switch Noche/Día -->
+    <div id="switchModo" class="ios-switch" data-on="0" onclick="toggleModoApple()">
+      <div class="knob"></div><span class="label">Modo día</span>
+    </div>
+
+    <!-- Selector de temas motivacionales -->
+    <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
     <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
       <div class="tema-item" onclick="aplicarTema('tema-confianza')">
-        <span class="dot" style="background:#0a63ff"></span>
-        <span class="nombre">● Confianza</span>
+        <span class="dot" style="background:#0a63ff"></span><span class="nombre">● Confianza</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-energia')">
-        <span class="dot" style="background: linear-gradient(135deg,#8b5cf6,#22c55e)"></span>
-        <span class="nombre">● Energía</span>
+        <span class="dot" style="background: linear-gradient(135deg,#8b5cf6,#22c55e)"></span><span class="nombre">● Energía</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-foco')">
-        <span class="dot" style="background:#facc15"></span>
-        <span class="nombre">● Foco</span>
+        <span class="dot" style="background:#facc15"></span><span class="nombre">● Foco</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-noche')">
-        <span class="dot" style="background:#001b3a"></span>
-        <span class="nombre">● Noche</span>
+        <span class="dot" style="background:#001b3a"></span><span class="nombre">● Noche</span>
       </div>
     </div>
   </header>
 
+  <!-- Contenido principal -->
   <main>
     <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
@@ -85,7 +139,10 @@
 
     <section id="seccion-calendario" class="seccion">
       <h2>📅 Calendario</h2>
-      <div id="contenedorCalendario"></div>
+      <div id="calScroll">
+        <div id="contenedorCalendario"></div>
+      </div>
+      <button class="fab-search" title="Buscar número de cliente" onclick="abrirBuscador()">🔎</button>
     </section>
 
     <section id="seccion-resumen" class="seccion">
@@ -94,7 +151,8 @@
       <canvas id="graficoResumen"></canvas>
     </section>
   </main>
-  
+
+  <!-- Menú inferior -->
   <div class="menu">
     <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
     <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
@@ -103,6 +161,7 @@
     <button id="btnLogout" onclick="logout()">🚪</button>
   </div>
 
-  <script src="./app.js?v=20251104" defer></script>
+  <!-- App principal -->
+  <script src="./app.js?v=20251106" defer></script>
 </body>
 </html>
