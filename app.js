@@ -90,7 +90,10 @@ async function mostrarApp(){
 
   const clientesHoy=await cargarRuta(clave);
   await cargarCoach(clave);
-  if(clientesHoy && clientesHoy.length){ detectarClienteCercano(clave, clientesHoy); }
+  if(clientesHoy && clientesHoy.length){
+  console.log("✅ Ruta cargada con", clientesHoy.length, "clientes.");
+}
+
 }
 
 /* ================================
@@ -188,6 +191,49 @@ function renderClientes(){
   document.getElementById("estadoRuta").innerHTML = 
     `🚗 <b>${restantes}</b> por visitar · ✅ <b>${visitados}</b> visitados · 🛒 <b>${compraron}</b> compraron`;
 }
+
+/* ==================================================
+   💾 Registrar visita / compra
+================================================== */
+async function registrarVisita(numero) {
+  const clave = localStorage.getItem("vendedorClave");
+  const visitado = document.getElementById(`visitado-${numero}`)?.checked || false;
+  const compro = document.getElementById(`compro-${numero}`)?.checked || false;
+  const comentario = document.getElementById(`coment-${numero}`)?.value || "";
+
+  try {
+    const resp = await fetch(`${URL_API_BASE}?accion=registrarVisita`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clave, numero, visitado, compro, comentario })
+    });
+    const data = await resp.json();
+    if (data.exito) mostrarToastExito("✅ Visita registrada");
+    else alert("⚠️ No se pudo guardar.");
+  } catch (e) {
+    console.error(e);
+    alert("❌ Error al guardar la visita");
+  }
+}
+
+/* ==================================================
+   ✨ Toast de éxito animado
+================================================== */
+function mostrarToastExito(texto) {
+  const overlay = document.createElement("div");
+  overlay.className = "exito-overlay";
+  overlay.innerHTML = `
+    <div class="exito-box">
+      <div class="exito-circle">
+        <svg><circle class="bg" cx="90" cy="90" r="90"/><circle class="prog" cx="90" cy="90" r="90"/></svg>
+        <div class="exito-check"><svg><path d="M35 90 l30 30 l60 -60"/></svg></div>
+      </div>
+      <div class="exito-titulo">${texto}</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>overlay.remove(),1800);
+}
+
 
 /* ==================================================
    📍 Modal de confirmación de destino (Mapa)
