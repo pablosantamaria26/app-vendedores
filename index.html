@@ -7,10 +7,10 @@
   <title>🧠 App de Vendedores Inteligente</title>
 
   <!-- PWA / Icons -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png">
-  <link rel="apple-touch-icon" href="ml-icon-192.png">
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png" />
+  <link rel="apple-touch-icon" href="ml-icon-192.png" />
   <meta name="theme-color" content="#0a2b57" />
 
   <!-- Firebase (FCM) -->
@@ -25,109 +25,76 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- 🎨 CSS externo -->
-  <link rel="stylesheet" href="./style.css?v=20251106">
+  <link rel="stylesheet" href="./style.css?v=20251107" />
 
-  <!-- Ajustes puntuales -->
+  <!-- Ajustes rápidos: safe areas + modal + switch -->
   <style>
     :root { --safe-bottom: env(safe-area-inset-bottom); --safe-top: env(safe-area-inset-top); }
     header { padding-top: calc(12px + var(--safe-top)); }
-    .menu { padding-bottom: calc(0px + var(--safe-bottom)); }
+    .menu  { padding-bottom: calc(0px + var(--safe-bottom)); }
 
     /* Switch iOS */
-    .ios-switch {
-      --on:#0a63ff; --off:#cbd5e1; --knob:#fff;
-      width: 90px; height: 32px; border-radius:999px; position:relative; background:var(--off);
-      border:1px solid rgba(0,0,0,.08); box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
-      display:flex; align-items:center; padding:0 8px; gap:8px; color:#111; font-weight:700; font-size:12px; cursor:pointer;
-      user-select:none;
+    .ios-switch{
+      --on: var(--azul); --off:#cbd5e1; --knob:#fff;
+      width:74px;height:32px;border-radius:999px;position:relative;background:var(--off);
+      border:1px solid rgba(0,0,0,.08);box-shadow:inset 0 1px 2px rgba(0,0,0,.15);cursor:pointer;
+      display:flex;align-items:center;padding:0 8px;gap:8px;color:#111;font-weight:700;font-size:12px;user-select:none;
     }
     .ios-switch[data-on="1"]{ background:var(--on); color:#fff; }
-    .ios-switch .knob{ position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff;
-      box-shadow:0 2px 6px rgba(0,0,0,.25); transition: transform .2s ease; }
-    .ios-switch[data-on="1"] .knob{ transform: translateX(58px); }
+    .ios-switch .knob{ position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:var(--knob);
+      box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .2s ease; }
+    .ios-switch[data-on="1"] .knob{ transform:translateX(42px); }
 
-    /* Modal buscador */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; place-items: center; z-index: 12000; }
-    .modal.visible { display: grid; }
-    .modal-box { width: min(680px, 92vw); max-height: 80vh; overflow: hidden; background: var(--card); border:1px solid var(--borde);
-      border-radius:16px; box-shadow: 0 18px 48px rgba(0,0,0,.35); display:grid; grid-template-rows:auto 1fr; }
-    .modal-head { padding: 12px; border-bottom:1px solid var(--borde); display:flex; gap:8px; align-items:center; }
-    .modal-head input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--borde); background:#fff; color:#111; }
-    .modal-body { overflow:auto; padding:10px; }
-    .result { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--borde); }
-    .copy { padding:6px 10px; border-radius:10px; border:none; background:linear-gradient(135deg,#0a63ff,#0e8bff); color:#fff; font-weight:800; }
+    /* Modal genérico (buscador y confirm) */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; place-items:center; z-index:12000; }
+    .modal.visible{ display:grid; }
+    .modal-box{ width:min(700px,92vw); max-height:80vh; overflow:hidden; background:var(--card); border:1px solid var(--borde);
+      border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.35); display:grid; grid-template-rows:auto 1fr; }
+    .modal-head{ padding:12px; border-bottom:1px solid var(--borde); display:flex; gap:8px; align-items:center; }
+    .modal-head input{ flex:1; padding:12px; border-radius:12px; border:1px solid var(--borde); background:#fff; color:#111; }
+    .modal-body{ overflow:auto; padding:10px; }
+    .result{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--borde); }
+    .copy{ padding:6px 10px; border-radius:10px; border:none; background:linear-gradient(135deg,var(--boton-grad-a),var(--boton-grad-b)); color:#fff; font-weight:800; }
 
-    /* Calendario scroll */
-    #calScroll { max-height: 65vh; overflow:auto; border:1px solid var(--borde); border-radius:12px; padding:8px; background:var(--card); }
-
-    /* Confirm mapa */
-    .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; place-items:center; z-index:11000; }
-    .confirm-overlay.visible { display:grid; }
-    .confirm-box { width:min(560px,88vw); height:70vh; background:#fff; color:#111; border-radius:22px; box-shadow:0 18px 48px rgba(0,0,0,.35);
-      display:grid; grid-template-rows:auto 1fr auto; padding:18px; }
-    .confirm-actions { display:flex; gap:10px; justify-content:flex-end; }
-
-    /* FAB buscador */
-    .fab-search {
-      position: fixed; right: 16px; bottom: 92px; z-index: 1050;
-      width: 56px; height: 56px; border-radius: 50%; border: none;
-      background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b)); color:#fff;
-      font-size: 22px; box-shadow: 0 8px 20px rgba(0,0,0,.35);
-    }
-
-    /* Ocultar UI mientras el login está visible */
-    body.login-visible header,
-    body.login-visible main,
-    body.login-visible .menu { visibility: hidden; }
-
-    /* Login simple (sin teclado virtual) */
-    #login { position: fixed; inset: 0; background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
-      z-index: 10000; display: grid; place-items: center; }
-    .login-card { background: var(--card); color: var(--texto); border-radius: 16px; padding: 20px; width: 86%; max-width: 360px;
-      text-align: center; border: 1px solid var(--borde); box-shadow: 0 16px 36px var(--sombra); }
-    #login input { font-size: 1.4rem; padding: 12px; text-align: center; margin: 12px 0; width: 100%;
-      border-radius: 10px; border: 2px solid var(--azul); background: #fff; color: #111; }
-    .login-card button { width: 100%; padding: 10px 12px; }
+    /* Calendario scroll y FAB */
+    #calScroll{ max-height:65vh; overflow:auto; border:1px solid var(--borde); border-radius:12px; padding:8px; background:var(--card); }
+    .fab-search{ position:fixed; right:16px; bottom:92px; z-index:1050; width:56px; height:56px; border-radius:50%;
+      border:none; background:linear-gradient(135deg,var(--boton-grad-a),var(--boton-grad-b)); color:#fff; font-size:22px; box-shadow:0 8px 20px rgba(0,0,0,.35); }
   </style>
 </head>
 
-<!-- arrancamos ocultando la UI hasta confirmar login -->
-<body class="tema-confianza modo-dia login-visible">
+<body class="tema-claro modo-dia">
   <!-- Login -->
-  <div id="login">
-    <form class="login-card" onsubmit="login(); return false;">
+  <div id="login" style="display:grid">
+    <div class="login-card">
       <h1>🧠 App de Vendedores</h1>
       <h2>🔐 Ingresá tu código</h2>
-      <input type="password" id="clave" inputmode="numeric" autocomplete="one-time-code"
-             maxlength="4" placeholder="0001" />
-      <button type="submit">Ingresar</button>
+      <input type="tel" id="clave" inputmode="numeric" maxlength="4" placeholder="0000" />
+      <button class="btn-primario" style="width:84%" onclick="login()">Ingresar</button>
       <p id="error"></p>
-    </form>
+    </div>
   </div>
 
   <!-- Header -->
   <header>
     <h1 id="titulo">🧠 App de Vendedores</h1>
 
-    <!-- Switch Noche/Día -->
+    <!-- Switch Día/Noche -->
     <div id="switchModo" class="ios-switch" data-on="0" onclick="toggleModoApple()">
       <div class="knob"></div><span class="label">Modo día</span>
     </div>
 
-    <!-- Selector de temas -->
+    <!-- Selector de tema -->
     <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
     <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-      <div class="tema-item" onclick="aplicarTema('tema-confianza')">
-        <span class="dot" style="background:#0a63ff"></span><span class="nombre">● Confianza</span>
+      <div class="tema-item" onclick="aplicarTema('tema-claro')">
+        <span class="dot" style="background:#0a63ff"></span><span class="nombre">● Claro</span>
+      </div>
+      <div class="tema-item" onclick="aplicarTema('tema-oceano')">
+        <span class="dot" style="background:linear-gradient(135deg,#0ea5e9,#22c55e)"></span><span class="nombre">● Océano</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-energia')">
-        <span class="dot" style="background: linear-gradient(135deg,#8b5cf6,#22c55e)"></span><span class="nombre">● Energía</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-foco')">
-        <span class="dot" style="background:#facc15"></span><span class="nombre">● Foco</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-noche')">
-        <span class="dot" style="background:#001b3a"></span><span class="nombre">● Noche</span>
+        <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#f43f5e)"></span><span class="nombre">● Energía</span>
       </div>
     </div>
   </header>
@@ -136,7 +103,7 @@
   <main>
     <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
-      <div id="estado" style="text-align:center;margin:6px 0 10px">Iniciando…</div>
+      <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
       <div id="contenedor"></div>
     </section>
 
@@ -147,9 +114,7 @@
 
     <section id="seccion-calendario" class="seccion">
       <h2>📅 Calendario</h2>
-      <div id="calScroll">
-        <div id="contenedorCalendario"></div>
-      </div>
+      <div id="calScroll"><div id="contenedorCalendario"></div></div>
       <button class="fab-search" title="Buscar número de cliente" onclick="abrirBuscador()">🔎</button>
     </section>
 
