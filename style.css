@@ -309,6 +309,13 @@ canvas { max-width: 320px; margin: auto; display: block; }
   z-index: 9999;
   backdrop-filter: blur(6px);
 }
+.cliente.bloqueado {
+  filter: grayscale(0.8);
+  opacity: 0.6;
+  pointer-events: none;
+  transition: all 0.4s ease;
+}
+
 
 
 /* ===============================
