@@ -373,3 +373,5 @@ window.mostrarSeccion = mostrarSeccion;
 window.toggleModoOscuro = toggleModoOscuro;
 window.toggleTemaMenu = toggleTemaMenu;
 window.aplicarTema = aplicarTema;
+window.mostrarToastExito = mostrarToastExito;
+
