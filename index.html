@@ -24,10 +24,10 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- 🎨 CSS externo actualizado -->
+  <!-- 🎨 CSS externo -->
   <link rel="stylesheet" href="./style.css?v=20251106">
 
-  <!-- Ajustes puntuales (safe areas + modal + switch + confirm + calendario) -->
+  <!-- Ajustes puntuales -->
   <style>
     :root { --safe-bottom: env(safe-area-inset-bottom); --safe-top: env(safe-area-inset-top); }
     header { padding-top: calc(12px + var(--safe-top)); }
@@ -36,41 +36,38 @@
     /* Switch iOS */
     .ios-switch {
       --on:#0a63ff; --off:#cbd5e1; --knob:#fff;
-      width: 74px; height: 32px; border-radius: 999px; position: relative; background: var(--off);
-      border: 1px solid rgba(0,0,0,.08); box-shadow: inset 0 1px 2px rgba(0,0,0,.15); cursor: pointer;
-      display:flex; align-items:center; padding: 0 8px; gap:8px; color:#111; font-weight:700; font-size:12px;
+      width: 90px; height: 32px; border-radius:999px; position:relative; background:var(--off);
+      border:1px solid rgba(0,0,0,.08); box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
+      display:flex; align-items:center; padding:0 8px; gap:8px; color:#111; font-weight:700; font-size:12px; cursor:pointer;
       user-select:none;
     }
-    .ios-switch[data-on="1"] { background: var(--on); color:#fff; }
-    .ios-switch .knob {
-      position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:var(--knob);
-      box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .2s ease;
-    }
-    .ios-switch[data-on="1"] .knob { transform: translateX(42px); }
+    .ios-switch[data-on="1"]{ background:var(--on); color:#fff; }
+    .ios-switch .knob{ position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,.25); transition: transform .2s ease; }
+    .ios-switch[data-on="1"] .knob{ transform: translateX(58px); }
 
-    /* Buscador (modal) */
+    /* Modal buscador */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; place-items: center; z-index: 12000; }
     .modal.visible { display: grid; }
     .modal-box { width: min(680px, 92vw); max-height: 80vh; overflow: hidden; background: var(--card); border:1px solid var(--borde);
-      border-radius:16px; box-shadow: 0 18px 48px rgba(0,0,0,.35); display: grid; grid-template-rows: auto 1fr; }
+      border-radius:16px; box-shadow: 0 18px 48px rgba(0,0,0,.35); display:grid; grid-template-rows:auto 1fr; }
     .modal-head { padding: 12px; border-bottom:1px solid var(--borde); display:flex; gap:8px; align-items:center; }
-    .modal-head input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--borde); background: #fff; color:#111; }
-    .modal-body { overflow:auto; padding: 10px; }
+    .modal-head input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--borde); background:#fff; color:#111; }
+    .modal-body { overflow:auto; padding:10px; }
     .result { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--borde); }
     .copy { padding:6px 10px; border-radius:10px; border:none; background:linear-gradient(135deg,#0a63ff,#0e8bff); color:#fff; font-weight:800; }
 
     /* Calendario scroll */
     #calScroll { max-height: 65vh; overflow:auto; border:1px solid var(--borde); border-radius:12px; padding:8px; background:var(--card); }
 
-    /* Confirm de mapa (60–70% alto) */
+    /* Confirm mapa */
     .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; place-items:center; z-index:11000; }
     .confirm-overlay.visible { display:grid; }
     .confirm-box { width:min(560px,88vw); height:70vh; background:#fff; color:#111; border-radius:22px; box-shadow:0 18px 48px rgba(0,0,0,.35);
       display:grid; grid-template-rows:auto 1fr auto; padding:18px; }
-    .confirm-box h3 { margin:0; }
     .confirm-actions { display:flex; gap:10px; justify-content:flex-end; }
 
-    /* Botón flotante del buscador */
+    /* FAB buscador */
     .fab-search {
       position: fixed; right: 16px; bottom: 92px; z-index: 1050;
       width: 56px; height: 56px; border-radius: 50%; border: none;
@@ -78,29 +75,34 @@
       font-size: 22px; box-shadow: 0 8px 20px rgba(0,0,0,.35);
     }
 
-    /* 🔒 Ocultar UI mientras el login está visible */
+    /* Ocultar UI mientras el login está visible */
     body.login-visible header,
     body.login-visible main,
     body.login-visible .menu { visibility: hidden; }
+
+    /* Login simple (sin teclado virtual) */
+    #login { position: fixed; inset: 0; background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
+      z-index: 10000; display: grid; place-items: center; }
+    .login-card { background: var(--card); color: var(--texto); border-radius: 16px; padding: 20px; width: 86%; max-width: 360px;
+      text-align: center; border: 1px solid var(--borde); box-shadow: 0 16px 36px var(--sombra); }
+    #login input { font-size: 1.4rem; padding: 12px; text-align: center; margin: 12px 0; width: 100%;
+      border-radius: 10px; border: 2px solid var(--azul); background: #fff; color: #111; }
+    .login-card button { width: 100%; padding: 10px 12px; }
   </style>
 </head>
 
-<!-- 👇 agrego login-visible al cargar -->
+<!-- arrancamos ocultando la UI hasta confirmar login -->
 <body class="tema-confianza modo-dia login-visible">
   <!-- Login -->
   <div id="login">
-    <div class="login-card">
+    <form class="login-card" onsubmit="login(); return false;">
       <h1>🧠 App de Vendedores</h1>
       <h2>🔐 Ingresá tu código</h2>
-      <input type="password" id="clave" maxlength="4" placeholder="••••" />
-      <div class="teclado-numerico">
-        <button onclick="agregarDigito('1')">1</button><button onclick="agregarDigito('2')">2</button><button onclick="agregarDigito('3')">3</button>
-        <button onclick="agregarDigito('4')">4</button><button onclick="agregarDigito('5')">5</button><button onclick="agregarDigito('6')">6</button>
-        <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
-        <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
-      </div>
+      <input type="password" id="clave" inputmode="numeric" autocomplete="one-time-code"
+             maxlength="4" placeholder="0001" />
+      <button type="submit">Ingresar</button>
       <p id="error"></p>
-    </div>
+    </form>
   </div>
 
   <!-- Header -->
@@ -112,7 +114,7 @@
       <div class="knob"></div><span class="label">Modo día</span>
     </div>
 
-    <!-- Selector de temas motivacionales -->
+    <!-- Selector de temas -->
     <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
     <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
       <div class="tema-item" onclick="aplicarTema('tema-confianza')">
@@ -134,7 +136,7 @@
   <main>
     <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
-      <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
+      <div id="estado" style="text-align:center;margin:6px 0 10px">Iniciando…</div>
       <div id="contenedor"></div>
     </section>
 
@@ -168,6 +170,6 @@
   </div>
 
   <!-- App principal -->
-  <script src="./app.js?v=20251106" defer></script>
+  <script src="./app.js?v=20251107" defer></script>
 </body>
 </html>
