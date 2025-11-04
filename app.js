@@ -90,8 +90,6 @@ async function mostrarApp(){
 
   const clientesHoy=await cargarRuta(clave);
   await cargarCoach(clave);
-
-  // ✅ Notificaciones (solo una vez por dispositivo)
   inicializarNotificaciones(clave);
 
   if(clientesHoy && clientesHoy.length){
@@ -132,7 +130,6 @@ async function cargarRuta(clave) {
     if (local.length) {
       const mapa = new Map(local.map(c => [String(c.numero), c]));
       clientesData = clientesData.map(c => mapa.get(String(c.numero)) || c);
-      console.log("♻️ Estados restaurados desde localStorage");
     }
 
     const orden = cargarOrden();
@@ -160,7 +157,7 @@ async function cargarRuta(clave) {
 
     const todosCompletos = clientesData.every(c => c.bloqueado);
     if (todosCompletos && clientesData.length > 0) {
-      mostrarToastExito("🎉 ¡Ruta completada! Felicitaciones por tu trabajo de hoy 💪");
+      mostrarToastExito("🎉 ¡Ruta completada!");
     }
 
     return clientesData;
@@ -171,9 +168,9 @@ async function cargarRuta(clave) {
   }
 }
 
-/* ================================
+/* ==================================================
    💾 Registrar visita
-================================ */
+================================================== */
 async function registrarVisita(numero) {
   const clave = localStorage.getItem("vendedorClave");
   const cliente = clientesData.find(c => String(c.numero) === String(numero));
@@ -208,15 +205,22 @@ async function registrarVisita(numero) {
         localidad: cliente.localidad || ""
       })
     });
-    console.log("📤 Enviado a hoja:", await resp.json());
+
+    const text = await resp.text();
+    try {
+      const data = JSON.parse(text);
+      console.log("📤 Enviado a hoja:", data);
+    } catch {
+      console.warn("⚠️ Respuesta no JSON:", text.slice(0,100));
+    }
   } catch (e) {
     console.warn("⚠️ Offline, guardando en cola local:", e);
   }
 }
 
-/* ================================
+/* ==================================================
    💾 Persistencia local diaria
-================================ */
+================================================== */
 function guardarLocal(clave, data) {
   const hoy = new Date().toISOString().slice(0,10);
   localStorage.setItem(`data_${clave}_${hoy}`, JSON.stringify(data));
@@ -231,8 +235,6 @@ function cargarLocal(clave) {
    🔔 Notificaciones Firebase (sin duplicar token)
 ================================================== */
 async function inicializarNotificaciones(vendedor) {
-  console.log("🚀 Inicializando notificaciones para", vendedor);
-
   const firebaseConfig = {
     apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
     authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -242,8 +244,7 @@ async function inicializarNotificaciones(vendedor) {
     appId: "1:583313989429:web:c4f78617ad957c3b11367c"
   };
 
-  if (typeof firebase === "undefined") return console.error("⚠️ Firebase no cargado.");
-
+  if (typeof firebase === "undefined") return;
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
   const messaging = firebase.messaging();
 
@@ -259,13 +260,12 @@ async function inicializarNotificaciones(vendedor) {
       serviceWorkerRegistration: registration
     });
 
-    if (!token) return console.warn("⚠️ No se obtuvo token.");
+    if (!token) return;
 
     const oldToken = localStorage.getItem("fcmToken");
     const oldVendor = localStorage.getItem("fcmVendedor");
 
     if (oldToken !== token || oldVendor !== vendedor) {
-      console.log("📬 Enviando token al servidor...");
       localStorage.setItem("fcmToken", token);
       localStorage.setItem("fcmVendedor", vendedor);
 
@@ -274,15 +274,33 @@ async function inicializarNotificaciones(vendedor) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vendedor, token })
       });
-    } else console.log("✅ Token ya registrado localmente.");
+    }
   } catch (err) {
-    console.error("❌ Error inicializando notificaciones:", err);
+    console.error("❌ Error notificaciones:", err);
   }
 }
 
-/* ================================
+/* ==================================================
+   📍 Ir cliente
+================================================== */
+function irCliente(lat,lng){
+  if(!lat||!lng){ alert("📍 Este cliente no tiene coordenadas."); return; }
+  const base="https://www.google.com/maps/dir/?api=1";
+  const dest=`&destination=${lat},${lng}&travelmode=driving`;
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        const org=`&origin=${pos.coords.latitude},${pos.coords.longitude}`;
+        window.open(`${base}${org}${dest}`,"_blank");
+      },
+      ()=>window.open(`${base}${dest}`,"_blank")
+    );
+  } else window.open(`${base}${dest}`,"_blank");
+}
+
+/* ==================================================
    📍 Modal confirm destino
-================================ */
+================================================== */
 function confirmDestino(lat, lng, nombre) {
   const modal = document.getElementById("modalDestino");
   const nombreCliente = document.getElementById("modalNombreCliente");
@@ -301,9 +319,9 @@ function confirmDestino(lat, lng, nombre) {
   btnCancelar.onclick = () => modal.style.display = "none";
 }
 
-/* ================================
+/* ==================================================
    🗺️ Mapa Full
-================================ */
+================================================== */
 function renderMapaFull(){
   if(!document.getElementById("mapaFull")) return;
   if(mapaFull){ mapaFull.remove(); }
@@ -321,9 +339,9 @@ function renderMapaFull(){
   });
 }
 
-/* ================================
+/* ==================================================
    🤖 Coach IA
-================================ */
+================================================== */
 async function cargarCoach(clave) {
   const cont = document.getElementById("contenedorCoach");
   if (!cont) return;
@@ -342,9 +360,9 @@ async function cargarCoach(clave) {
   }
 }
 
-/* ================================
+/* ==================================================
    🔗 Exponer funciones
-================================ */
+================================================== */
 window.agregarDigito = agregarDigito;
 window.borrarDigito = borrarDigito;
 window.login = login;
@@ -353,3 +371,5 @@ window.mostrarSeccion = mostrarSeccion;
 window.toggleModoOscuro = toggleModoOscuro;
 window.toggleTemaMenu = toggleTemaMenu;
 window.aplicarTema = aplicarTema;
+window.registrarVisita = registrarVisita;
+window.irCliente = irCliente;
