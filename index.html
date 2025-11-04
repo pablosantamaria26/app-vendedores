@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="ml-icon-192.png">
   <meta name="theme-color" content="#0a2b57" />
 
-  <!-- Firebase y Leaflet -->
+  <!-- Librerías -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -58,10 +58,10 @@
         <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span><span>● Energía</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-foco')">
-        <span class="dot" style="background:#facc15"></span><span>● Foco</span>
+        <span class="dot" style="background:#f9fafb;border:1px solid #aaa"></span><span>● Día (Claro)</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-noche')">
-        <span class="dot" style="background:#001b3a"></span><span>● Noche</span>
+        <span class="dot" style="background:#001b3a"></span><span>● Noche (Oscuro)</span>
       </div>
     </div>
   </header>
@@ -102,6 +102,18 @@
     <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
     <button id="btnResumen" onclick="mostrarSeccion('resumen')">🤖</button>
     <button id="btnLogout" onclick="logout()">🚪</button>
+  </div>
+
+  <!-- MODAL DE CONFIRMACIÓN (mejorado) -->
+  <div id="modalDestino" class="modal-destino" style="display:none;">
+    <div class="modal-contenido">
+      <h3>📍 ¿Ir hacia este cliente?</h3>
+      <p id="modalNombreCliente">Cliente destino</p>
+      <div class="modal-botones">
+        <button id="btnIr" class="btn-ir">🚗 Ir ahora</button>
+        <button id="btnCancelar" class="btn-cancelar">❌ Cancelar</button>
+      </div>
+    </div>
   </div>
 
   <script src="./app.js?v=20251104" defer></script>
