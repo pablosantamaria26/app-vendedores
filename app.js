@@ -2,7 +2,6 @@
    ⚙️ Config principal
 ================================ */
 const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
-// Proxy Worker (CORS-safe)
 const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
 
 let clientesData = [];
@@ -38,8 +37,6 @@ window.addEventListener("load",()=>{
     document.getElementById("login").style.display="grid"; 
   }
   restaurarTema();
-  syncOffline();
-  notificacionDiaria();
 });
 
 /* ================================
@@ -92,11 +89,7 @@ async function mostrarApp(){
   mostrarSeccion("ruta");
 
   const clientesHoy=await cargarRuta(clave);
-  await cargarResumen(clave);
-  await cargarCalendario();
-  await cargarCoach(clave); // 👈 NUEVO PANEL COACH IA
-  inicializarNotificaciones(clave);
-
+  await cargarCoach(clave);
   if(clientesHoy && clientesHoy.length){ detectarClienteCercano(clave, clientesHoy); }
 }
 
@@ -122,15 +115,10 @@ function guardarOrden(ids){ localStorage.setItem(keyOrden(), JSON.stringify(ids)
 ================================ */
 async function cargarRuta(clave){
   const cont=document.getElementById("contenedor");
-  const estado=document.getElementById("estado");
   cont.innerHTML="⏳ Cargando clientes...";
   try{
-    const [r1,predR]=await Promise.all([
-      fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`),
-      fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`)
-    ]);
+    const r1=await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
     clientesData=await r1.json();
-    const pred=await predR.json();
 
     const orden=cargarOrden();
     if(orden.length){
@@ -145,10 +133,8 @@ async function cargarRuta(clave){
       }, ()=>renderClientes(), {enableHighAccuracy:true, maximumAge:15000, timeout:8000});
     }else{ renderClientes(); }
 
-    if(estado){ const ahora=new Date().toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"}); estado.textContent=`Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`; }
-
     return clientesData;
-  }catch(e){ console.error("❌ Error al cargar datos:", e); estado.textContent="❌ Error al cargar datos."; return []; }
+  }catch(e){ console.error("❌ Error al cargar datos:", e); cont.textContent="❌ Error al cargar datos."; return []; }
 }
 
 /* ================================
@@ -178,7 +164,7 @@ function renderClientes(){
       <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
       <div class="acciones">
         <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-        <button class="btn-secundario" onclick="irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})">🚗 Ir a este cliente</button>
+        <button class="btn-secundario" onclick="confirmDestino(${lat},${lng},'${c.nombre.replace(/'/g,"")}')">🚗 Ir a este cliente</button>
       </div>`;
     card.setAttribute("draggable","true");
     card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
@@ -192,25 +178,15 @@ function renderClientes(){
       clientesData.splice(targetIndex,0,moved);
       dragSrcIndex=null; guardarOrden(clientesData.map(x=>String(x.numero))); renderClientes();
     });
-    if(c.bloqueado){ card.classList.add("bloqueado"); card.querySelectorAll("input,textarea,button").forEach(el=>el.disabled=true); }
     cont.appendChild(card);
   });
 
-  // 🔢 Contador de progreso
-  let visitados = 0, compraron = 0;
-  clientesData.forEach(c => {
-    if (c.bloqueado) visitados++;
-    if (c.compro) compraron++;
-  });
+  // 🔢 Contador
+  const visitados = clientesData.filter(c=>c.bloqueado).length;
   const restantes = clientesData.length - visitados;
-  let estadoRuta = document.getElementById("estadoRuta");
-  if (!estadoRuta) {
-    estadoRuta = document.createElement("div");
-    estadoRuta.id = "estadoRuta";
-    estadoRuta.className = "estado-ruta";
-    cont.parentElement.insertBefore(estadoRuta, cont);
-  }
-  estadoRuta.innerHTML = `🚗 <b>${restantes}</b> por visitar · ✅ <b>${visitados}</b> visitados · 🛒 <b>${compraron}</b> compraron`;
+  const compraron = clientesData.filter(c=>c.compro).length;
+  document.getElementById("estadoRuta").innerHTML = 
+    `🚗 <b>${restantes}</b> por visitar · ✅ <b>${visitados}</b> visitados · 🛒 <b>${compraron}</b> compraron`;
 }
 
 /* ==================================================
@@ -222,24 +198,37 @@ function confirmDestino(lat, lng, nombre) {
   const btnIr = document.getElementById("btnIr");
   const btnCancelar = document.getElementById("btnCancelar");
 
-  if (!modal || !btnIr || !btnCancelar) {
-    console.warn("⚠️ Modal de destino no encontrado en el DOM");
-    return;
-  }
-
+  if (!modal) return;
   nombreCliente.textContent = nombre;
-  modal.style.display = "grid"; // Mostrar modal centrado
+  modal.style.display = "grid";
 
   btnIr.onclick = () => {
-    modal.style.display = "none";
-    irCliente(lat, lng);
+    btnIr.classList.add("rebote");
+    setTimeout(()=>btnIr.classList.remove("rebote"),600);
+    setTimeout(()=>{ modal.style.display="none"; irCliente(lat, lng); },250);
   };
-
-  btnCancelar.onclick = () => {
-    modal.style.display = "none";
-  };
+  btnCancelar.onclick = () => modal.style.display = "none";
 }
 
+/* ==================================================
+   🗺️ Mapa Full
+================================================== */
+function renderMapaFull(){
+  if(!document.getElementById("mapaFull")) return;
+  if(mapaFull){ mapaFull.remove(); }
+
+  mapaFull = L.map("mapaFull").setView([-34.60, -58.38], 11);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(mapaFull);
+
+  clientesData.forEach(c=>{
+    if(!c.lat || !c.lng) return;
+    const mk=L.marker([c.lat, c.lng]).addTo(mapaFull);
+    mk.bindTooltip(c.nombre);
+    mk.on("click", ()=>confirmDestino(c.lat, c.lng, c.nombre));
+  });
+}
 
 /* ==================================================
    🤖 COACH DE VENTAS IA
@@ -278,12 +267,6 @@ async function cargarCoach(clave) {
 }
 
 /* ==================================================
-   📅 Calendario / Resumen / Notificaciones
-   (resto igual a tu versión actual)
-================================================== */
-// ... (mantener tus funciones originales cargarResumen, cargarCalendario, notificaciones, etc.)
-
-/* ==================================================
    🔗 Exponer funciones
 ================================================== */
 window.agregarDigito = agregarDigito;
@@ -291,8 +274,6 @@ window.borrarDigito = borrarDigito;
 window.login = login;
 window.logout = logout;
 window.mostrarSeccion = mostrarSeccion;
-window.registrarVisita = registrarVisita;
-window.irCliente = irCliente;
 window.toggleModoOscuro = toggleModoOscuro;
 window.toggleTemaMenu = toggleTemaMenu;
 window.aplicarTema = aplicarTema;
