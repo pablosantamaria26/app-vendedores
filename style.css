@@ -289,6 +289,18 @@ canvas { max-width: 320px; margin: auto; display: block; }
   font-weight: 600;
   font-size: 1rem;
 }
+/* ===============================
+   Efecto rebote (botón "Ir ahora")
+================================= */
+@keyframes rebote {
+  0%,100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  60% { transform: scale(0.95); }
+}
+.rebote {
+  animation: rebote 0.5s ease;
+}
+
 
 /* ===============================
    Toast de éxito, confirm, login
