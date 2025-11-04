@@ -116,28 +116,65 @@ function guardarOrden(ids){ localStorage.setItem(keyOrden(), JSON.stringify(ids)
 /* ================================
    🚗 Cargar ruta
 ================================ */
-async function cargarRuta(clave){
-  const cont=document.getElementById("contenedor");
-  cont.innerHTML="⏳ Cargando clientes...";
-  try{
-    const r1=await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
-    clientesData=await r1.json();
+async function cargarRuta(clave) {
+  const cont = document.getElementById("contenedor");
+  const estado = document.getElementById("estado");
+  cont.innerHTML = "⏳ Cargando clientes...";
 
-    const orden=cargarOrden();
-    if(orden.length){
-      const map=new Map(clientesData.map(c=>[String(c.numero),c]));
-      clientesData = orden.map(id=>map.get(String(id))).filter(Boolean)
-        .concat(clientesData.filter(c=>!orden.includes(String(c.numero))));
+  try {
+    // 📥 1. Obtener datos base desde la API
+    const r1 = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
+    clientesData = await r1.json();
+
+    // 🔁 2. Restaurar progreso local del día (si existe)
+    const local = cargarLocal(clave);
+    if (local.length) {
+      const mapa = new Map(local.map(c => [String(c.numero), c]));
+      clientesData = clientesData.map(c => mapa.get(String(c.numero)) || c);
+      console.log("♻️ Estados restaurados desde localStorage");
     }
 
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos=>{ 
-        posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude}; renderClientes(); 
-      }, ()=>renderClientes(), {enableHighAccuracy:true, maximumAge:15000, timeout:8000});
-    }else{ renderClientes(); }
+    // 🗂️ 3. Aplicar orden personalizado si existe
+    const orden = cargarOrden();
+    if (orden.length) {
+      const map = new Map(clientesData.map(c => [String(c.numero), c]));
+      clientesData = orden.map(id => map.get(String(id))).filter(Boolean)
+        .concat(clientesData.filter(c => !orden.includes(String(c.numero))));
+    }
+
+    // 📍 4. Obtener ubicación actual y renderizar clientes
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          posicionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          renderClientes();
+        },
+        () => renderClientes(),
+        { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 }
+      );
+    } else {
+      renderClientes();
+    }
+
+    // 🕒 5. Mostrar estado general de carga
+    if (estado) {
+      const ahora = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
+      estado.textContent = `Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`;
+    }
+
+    // 🎯 6. Detectar si la ruta ya está completada
+    const todosCompletos = clientesData.every(c => c.bloqueado);
+    if (todosCompletos && clientesData.length > 0) {
+      mostrarToastExito("🎉 ¡Ruta completada! Felicitaciones por tu trabajo de hoy 💪");
+    }
 
     return clientesData;
-  }catch(e){ console.error("❌ Error al cargar datos:", e); cont.textContent="❌ Error al cargar datos."; return []; }
+
+  } catch (e) {
+    console.error("❌ Error al cargar datos:", e);
+    cont.textContent = "❌ Error al cargar datos.";
+    return [];
+  }
 }
 
 /* ================================
@@ -193,28 +230,71 @@ function renderClientes(){
 }
 
 /* ==================================================
-   💾 Registrar visita / compra
+   💾 Registrar visita y mantener estado
 ================================================== */
 async function registrarVisita(numero) {
   const clave = localStorage.getItem("vendedorClave");
+  const cliente = clientesData.find(c => String(c.numero) === String(numero));
+  if (!cliente) return;
+
+  // Datos del formulario
   const visitado = document.getElementById(`visitado-${numero}`)?.checked || false;
   const compro = document.getElementById(`compro-${numero}`)?.checked || false;
   const comentario = document.getElementById(`coment-${numero}`)?.value || "";
 
+  // Bloquear y mover al final visualmente
+  cliente.visitado = visitado;
+  cliente.compro = compro;
+  cliente.comentario = comentario;
+  cliente.bloqueado = true;
+
+  // Mover al final sin alterar el scroll del usuario
+  const scrollY = window.scrollY;
+  clientesData = clientesData.filter(c => String(c.numero) !== String(numero));
+  clientesData.push(cliente);
+  renderClientes();
+  window.scrollTo({ top: scrollY, behavior: "instant" });
+
+  // Guardar en localStorage para persistencia
+  guardarLocal(clave, clientesData);
+
+  // Mostrar feedback
+  mostrarToastExito("✅ Visita registrada");
+
+  // Enviar al backend (Google Sheets vía Worker)
   try {
     const resp = await fetch(`${URL_API_BASE}?accion=registrarVisita`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clave, numero, visitado, compro, comentario })
+      body: JSON.stringify({
+        clave, numero, visitado, compro, comentario,
+        nombre: cliente.nombre,
+        direccion: cliente.direccion || "",
+        localidad: cliente.localidad || ""
+      })
     });
     const data = await resp.json();
-    if (data.exito) mostrarToastExito("✅ Visita registrada");
-    else alert("⚠️ No se pudo guardar.");
+    console.log("📤 Enviado a hoja:", data);
   } catch (e) {
-    console.error(e);
-    alert("❌ Error al guardar la visita");
+    console.warn("⚠️ Offline, guardando en cola local:", e);
+    queueOffline({ t:"visita", cliente });
   }
 }
+
+/* ==================================================
+   💾 Persistencia local diaria
+================================================== */
+function guardarLocal(clave, data) {
+  const hoy = new Date().toISOString().slice(0,10);
+  localStorage.setItem(`data_${clave}_${hoy}`, JSON.stringify(data));
+}
+
+function cargarLocal(clave) {
+  const hoy = new Date().toISOString().slice(0,10);
+  try { return JSON.parse(localStorage.getItem(`data_${clave}_${hoy}`) || "[]"); }
+  catch { return []; }
+}
+
 
 /* ==================================================
    ✨ Toast de éxito animado
