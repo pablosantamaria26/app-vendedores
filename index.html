@@ -27,7 +27,7 @@
   <!-- 🎨 CSS externo actualizado -->
   <link rel="stylesheet" href="./style.css?v=20251106">
 
-  <!-- Mini estilos puntuales (switch + buscador + safe areas) -->
+  <!-- Ajustes puntuales (safe areas + modal + switch + confirm + calendario) -->
   <style>
     :root { --safe-bottom: env(safe-area-inset-bottom); --safe-top: env(safe-area-inset-top); }
     header { padding-top: calc(12px + var(--safe-top)); }
@@ -77,10 +77,16 @@
       background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b)); color:#fff;
       font-size: 22px; box-shadow: 0 8px 20px rgba(0,0,0,.35);
     }
+
+    /* 🔒 Ocultar UI mientras el login está visible */
+    body.login-visible header,
+    body.login-visible main,
+    body.login-visible .menu { visibility: hidden; }
   </style>
 </head>
 
-<body class="tema-confianza modo-dia">
+<!-- 👇 agrego login-visible al cargar -->
+<body class="tema-confianza modo-dia login-visible">
   <!-- Login -->
   <div id="login">
     <div class="login-card">
