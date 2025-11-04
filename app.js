@@ -38,8 +38,25 @@ function login(){
   if(!vendedores[clave]){ if(error) error.textContent="❌ Clave incorrecta"; return; }
   localStorage.setItem("vendedorClave", clave);
   document.getElementById("login").style.display="none";
+  document.body.classList.remove("login-visible"); // 👈 habilita la UI
   mostrarApp();
 }
+
+window.addEventListener("load",()=>{
+  const c=localStorage.getItem("vendedorClave");
+  if(c && vendedores[c]){
+    document.getElementById("login").style.display="none";
+    document.body.classList.remove("login-visible"); // 👈 habilita la UI
+    mostrarApp();
+  } else {
+    document.getElementById("login").style.display="grid";
+    document.body.classList.add("login-visible");    // 👈 oculta la UI
+  }
+  restaurarTema();
+  restaurarModo();
+  syncOffline();
+});
+
 function logout(){ localStorage.removeItem("vendedorClave"); location.reload(); }
 
 window.addEventListener("load",()=>{
