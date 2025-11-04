@@ -168,6 +168,63 @@ async function cargarRuta(clave) {
   }
 }
 
+
+/* ================================
+   🧱 Render de clientes
+================================ */
+function renderClientes(){
+  const cont=document.getElementById("contenedor"); 
+  if(!cont) return;
+  cont.innerHTML="";
+
+  clientesData.forEach((c,idx)=>{
+    const card=document.createElement("div");
+    card.className="cliente"; card.id="c_"+c.numero;
+    const lat=parseFloat(c.lat), lng=parseFloat(c.lng);
+    const tieneGeo=Number.isFinite(lat)&&Number.isFinite(lng);
+    const dist=(posicionActual&&tieneGeo)?distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng):null;
+    card.innerHTML=`
+      <h3>${c.numero} - ${c.nombre}</h3>
+      <div class="fila">
+        <span>📍 ${c.direccion||""}</span>
+        ${dist!==null?`<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
+      </div>
+      <div class="fila" style="margin-top:6px">
+        <label><input type="checkbox" id="visitado-${c.numero}" ${c.visitado?'checked':''}> Visitado</label>
+        <label><input type="checkbox" id="compro-${c.numero}" ${c.compro?'checked':''}> Compró</label>
+      </div>
+      <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2">${c.comentario||""}</textarea>
+      <div class="acciones">
+        <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
+        <button class="btn-secundario" onclick="confirmDestino(${lat},${lng},'${c.nombre.replace(/'/g,"")}')">🚗 Ir</button>
+      </div>`;
+    card.setAttribute("draggable","true");
+    card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
+    card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
+    card.addEventListener("drop",(ev)=>{
+      ev.preventDefault();
+      const cards=Array.from(cont.querySelectorAll(".cliente"));
+      const targetIndex=cards.indexOf(card);
+      if(dragSrcIndex===null||dragSrcIndex===targetIndex) return;
+      const moved=clientesData.splice(dragSrcIndex,1)[0];
+      clientesData.splice(targetIndex,0,moved);
+      dragSrcIndex=null; guardarOrden(clientesData.map(x=>String(x.numero))); renderClientes();
+    });
+    cont.appendChild(card);
+  });
+
+  // 🔢 Contador dinámico
+  const visitados = clientesData.filter(c=>c.bloqueado).length;
+  const restantes = clientesData.length - visitados;
+  const compraron = clientesData.filter(c=>c.compro).length;
+  const estadoRuta = document.getElementById("estadoRuta");
+  if (estadoRuta) {
+    estadoRuta.innerHTML = 
+      `🚗 <b>${restantes}</b> por visitar · ✅ <b>${visitados}</b> visitados · 🛒 <b>${compraron}</b> compraron`;
+  }
+}
+
+
 /* ==================================================
    💾 Registrar visita
 ================================================== */
