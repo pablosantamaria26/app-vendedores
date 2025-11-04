@@ -5,232 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🧠 App de Vendedores Inteligente</title>
 
-  <!-- Configuración PWA y Tema -->
+  <!-- Manifest e iconos (tus valores) -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
-  <meta name="theme-color" content="#0a2b57" id="theme-color-meta" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a2b57" />
 
-  <!-- Firebase (ya lo tenías) -->
+  <!-- Firebase (tus claves) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
-  <!-- Leaflet (ya lo tenías) -->
+  <!-- Leaflet + Heatmap -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
-  <!-- Chart.js (ya lo tenías) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Estilos -->
-  <link rel="stylesheet" href="./style.css?v=2026.1.0">
+  <!-- Estilos (tu base + mejoras) -->
+  <link rel="stylesheet" href="./style.css?v=20251104">
 </head>
 
-<body class="tema-claro">
-  
-  <!-- ===============================
-       LOGIN
-       Optimizado: sin teclado virtual, usa el numérico del OS.
-  ================================= -->
+<body class="tema-confianza">
+  <!-- LOGIN sin teclado virtual (auto-enter al 4º dígito) -->
   <div id="login">
     <div class="login-card">
       <h1>🧠 App de Vendedores</h1>
       <h2>🔐 Ingresá tu código</h2>
-      <!-- 
-        Input optimizado para móviles:
-        - type="tel" (mejor que number para códigos)
-        - inputmode="numeric" (fuerza teclado numérico)
-        - pattern="[0-9]*" (ayuda de validación)
-        - autocomplete="off" (evita sugerencias)
-      -->
-      <input type="tel" id="clave" maxlength="4" placeholder="••••" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
-      <button onclick="login()" class="btn-login">✔️ Ingresar</button>
+      <input
+        type="password"
+        id="clave"
+        maxlength="4"
+        placeholder="••••"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        aria-label="Código de 4 dígitos"
+      />
       <p id="error"></p>
     </div>
   </div>
 
-  <!-- ===============================
-       HEADER
-       Con nuevo switch de modo oscuro
-  ================================= -->
   <header>
     <h1 id="titulo">🧠 App de Vendedores</h1>
-    
-    <!-- Switch iOS Día/Noche -->
-    <label class="switch-ios">
-      <input type="checkbox" id="modoOscuroToggle" onclick="toggleModoOscuro()">
-      <span class="slider-ios"></span>
-    </label>
-
+    <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
     <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
 
-    <!-- Menú de Temas (actualizado) -->
     <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-      <div class="tema-item" onclick="aplicarTema('tema-claro')">
-        <span class="dot" style="background:#f4f4f4; border: 1px solid #ccc;"></span>
-        <span class="nombre">● Claro</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-oceano')">
+      <div class="tema-item" onclick="aplicarTema('tema-confianza')">
         <span class="dot" style="background:#0a63ff"></span>
-        <span class="nombre">● Océano</span>
+        <span class="nombre">● Confianza</span>
       </div>
       <div class="tema-item" onclick="aplicarTema('tema-energia')">
         <span class="dot" style="background: linear-gradient(135deg,#8b5cf6,#22c55e)"></span>
         <span class="nombre">● Energía</span>
       </div>
-    </div>
-  </header>
-
-  <!-- ===============================
-       CONTENIDO PRINCIPAL
-  ================================= -->
-  <main>
-    <!-- SECCIÓN: RUTA DEL DÍA -->
-    <section id="seccion-ruta" class="seccion visible">
-      <h2>🗺️ Ruta del Día</h2>
-      <div id="estado" class="estado-ruta"></div>
-      <div id="contenedor"></div>
-    </section>
-
-    <!-- SECCIÓN: MAPA -->
-    <section id="seccion-mapa" class="seccion">
-      <h2>📍 Mapa</h2>
-      <div id="mapaFull"></div>
-    </section>
-
-    <!-- SECCIÓN: BUSCADOR (Nueva) -->
-    <section id="seccion-buscador" class="seccion">
-      <h2>🔎 Buscador de Clientes</h2>
-      <div class="search-wrapper">
-        <input type="search" id="inputBuscador" placeholder="Buscar por nombre, dirección, localidad..." autocomplete="off">
-        <span>🔍</span>
+      <div class="tema-item" onclick="aplicarTema('tema-foco')">
+        <span class="dot" style="background:#facc15"></span>
+        <span class="nombre">● Foco</span>
       </div>
-      <div id="contenedorBuscador" class="lista-buscador">
-        <p class="buscador-info">Buscá en toda tu cartera de clientes.</p>
-      </div>
-    </section>
-
-    <!-- SECCIÓN: CALENDARIO (Simplificado) -->
-    <section id="seccion-calendario" class="seccion">
-      <h2>📅 Calendario</h2>
-      <div id="contenedorCalendario"></div>
-    </section>
-
-    <!-- SECCIÓN: RESUMEN (Con Coach IA) -->
-    <section id="seccion-resumen" class="seccion">
-      <h2>📈 Resumen</h2>
-      <div id="contenedorResumen" class="panel-resumen"></div>
-      <canvas id="graficoResumen"></canvas>
-      
-      <!-- Panel del Coach IA (Modificado) -->
-      <div id="coachIA" class="panel-ia">
-        <h3>🤖 Coach de Ventas IA</h3>
-        <p id="coachIA-mensaje">Presioná el botón para un consejo basado en tu día.</p>
-        <button id="btnCoachIA" class="btn-ia" onclick="runCoachIA()">✨ Analizar mi día</button>
-      </div>
-    </section>
-  </main>
-  
-  <!-- ===============================
-       MENÚ DE NAVEGACIÓN
-       Actualizado con Buscador
-  ================================= -->
-  <div class="menu">
-    <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
-    <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
-    <button id="btnBuscador" onclick="mostrarSeccion('buscador')">🔎 Buscar</button>
-    <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
-    <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
-    <button id="btnLogout" onclick="logout()">🚪</button>
-  </div>
-
-  <!-- ===============================
-       MODAL IA (Nuevo)
-  ================================= -->
-  <div id="modal-ia" class="modal-overlay">
-    <div class="modal-content">
-      <h3 id="modal-ia-titulo">Preparando visita...</h3>
-      <div id="modal-ia-body">
-        <div class="spinner"></div>
-        <p style="text-align:center;">Analizando historial...</p>
-      </div>
-      <button onclick="cerrarModalIA()" class="btn-modal-cerrar"></button>
-    </div>
-  </div>
-
-  <!-- JS Principal -->
-  <script src="./app.js?v=2026.1.1" defer></script>
-</body>
-</html>
-
-    .ios-switch{
-      --on: var(--azul); --off:#cbd5e1; --knob:#fff;
-      width:74px;height:32px;border-radius:999px;position:relative;background:var(--off);
-      border:1px solid rgba(0,0,0,.08);box-shadow:inset 0 1px 2px rgba(0,0,0,.15);cursor:pointer;
-      display:flex;align-items:center;padding:0 8px;gap:8px;color:#111;font-weight:700;font-size:12px;user-select:none;
-    }
-    .ios-switch[data-on="1"]{ background:var(--on); color:#fff; }
-    .ios-switch .knob{ position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:var(--knob);
-      box-shadow:0 2px 6px rgba(0,0,0,.25);transition:transform .2s ease; }
-    .ios-switch[data-on="1"] .knob{ transform:translateX(42px); }
-
-    /* Modal genérico (buscador y confirm) */
-    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; place-items:center; z-index:12000; }
-    .modal.visible{ display:grid; }
-    .modal-box{ width:min(700px,92vw); max-height:80vh; overflow:hidden; background:var(--card); border:1px solid var(--borde);
-      border-radius:16px; box-shadow:0 18px 48px rgba(0,0,0,.35); display:grid; grid-template-rows:auto 1fr; }
-    .modal-head{ padding:12px; border-bottom:1px solid var(--borde); display:flex; gap:8px; align-items:center; }
-    .modal-head input{ flex:1; padding:12px; border-radius:12px; border:1px solid var(--borde); background:#fff; color:#111; }
-    .modal-body{ overflow:auto; padding:10px; }
-    .result{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--borde); }
-    .copy{ padding:6px 10px; border-radius:10px; border:none; background:linear-gradient(135deg,var(--boton-grad-a),var(--boton-grad-b)); color:#fff; font-weight:800; }
-
-    /* Calendario scroll y FAB */
-    #calScroll{ max-height:65vh; overflow:auto; border:1px solid var(--borde); border-radius:12px; padding:8px; background:var(--card); }
-    .fab-search{ position:fixed; right:16px; bottom:92px; z-index:1050; width:56px; height:56px; border-radius:50%;
-      border:none; background:linear-gradient(135deg,var(--boton-grad-a),var(--boton-grad-b)); color:#fff; font-size:22px; box-shadow:0 8px 20px rgba(0,0,0,.35); }
-  </style>
-</head>
-
-<body class="tema-claro modo-dia">
-  <!-- Login -->
-  <div id="login" style="display:grid">
-    <div class="login-card">
-      <h1>🧠 App de Vendedores</h1>
-      <h2>🔐 Ingresá tu código</h2>
-      <input type="tel" id="clave" inputmode="numeric" maxlength="4" placeholder="0000" />
-      <button class="btn-primario" style="width:84%" onclick="login()">Ingresar</button>
-      <p id="error"></p>
-    </div>
-  </div>
-
-  <!-- Header -->
-  <header>
-    <h1 id="titulo">🧠 App de Vendedores</h1>
-
-    <!-- Switch Día/Noche -->
-    <div id="switchModo" class="ios-switch" data-on="0" onclick="toggleModoApple()">
-      <div class="knob"></div><span class="label">Modo día</span>
-    </div>
-
-    <!-- Selector de tema -->
-    <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
-    <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-      <div class="tema-item" onclick="aplicarTema('tema-claro')">
-        <span class="dot" style="background:#0a63ff"></span><span class="nombre">● Claro</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-oceano')">
-        <span class="dot" style="background:linear-gradient(135deg,#0ea5e9,#22c55e)"></span><span class="nombre">● Océano</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-energia')">
-        <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#f43f5e)"></span><span class="nombre">● Energía</span>
+      <div class="tema-item" onclick="aplicarTema('tema-noche')">
+        <span class="dot" style="background:#001b3a"></span>
+        <span class="nombre">● Noche</span>
       </div>
     </div>
   </header>
 
-  <!-- Contenido principal -->
   <main>
     <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
@@ -245,18 +86,29 @@
 
     <section id="seccion-calendario" class="seccion">
       <h2>📅 Calendario</h2>
-      <div id="calScroll"><div id="contenedorCalendario"></div></div>
-      <button class="fab-search" title="Buscar número de cliente" onclick="abrirBuscador()">🔎</button>
+      <div id="contenedorCalendario"></div>
     </section>
 
     <section id="seccion-resumen" class="seccion">
       <h2>📈 Resumen</h2>
       <div id="contenedorResumen" class="panel-resumen"></div>
       <canvas id="graficoResumen"></canvas>
+      <!-- Coach IA -->
+      <div id="coach" class="panel-resumen" style="margin-top:14px; text-align:left;"></div>
     </section>
   </main>
 
-  <!-- Menú inferior -->
+  <!-- FAB Buscador -->
+  <button id="fabSearch" class="fab" title="Buscar clientes" aria-label="Buscar" onclick="abrirBuscador()">🔎</button>
+
+  <!-- Modal Buscador -->
+  <div id="modalBuscador" class="modal" onclick="cerrarBuscador(event)">
+    <div class="modal-body" onclick="event.stopPropagation()">
+      <input id="q" type="search" placeholder="Buscar nombre, dirección o localidad…" oninput="buscarEnVivo()" />
+      <div id="resultados"></div>
+    </div>
+  </div>
+
   <div class="menu">
     <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
     <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
@@ -265,7 +117,7 @@
     <button id="btnLogout" onclick="logout()">🚪</button>
   </div>
 
-  <!-- App principal -->
-  <script src="./app.js?v=20251107" defer></script>
+  <!-- Tu lógica (base + mejoras) -->
+  <script src="./app.js?v=20251104" defer></script>
 </body>
 </html>
