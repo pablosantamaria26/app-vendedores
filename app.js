@@ -214,6 +214,34 @@ function renderClientes(){
 }
 
 /* ==================================================
+   📍 Modal de confirmación de destino (Mapa)
+================================================== */
+function confirmDestino(lat, lng, nombre) {
+  const modal = document.getElementById("modalDestino");
+  const nombreCliente = document.getElementById("modalNombreCliente");
+  const btnIr = document.getElementById("btnIr");
+  const btnCancelar = document.getElementById("btnCancelar");
+
+  if (!modal || !btnIr || !btnCancelar) {
+    console.warn("⚠️ Modal de destino no encontrado en el DOM");
+    return;
+  }
+
+  nombreCliente.textContent = nombre;
+  modal.style.display = "grid"; // Mostrar modal centrado
+
+  btnIr.onclick = () => {
+    modal.style.display = "none";
+    irCliente(lat, lng);
+  };
+
+  btnCancelar.onclick = () => {
+    modal.style.display = "none";
+  };
+}
+
+
+/* ==================================================
    🤖 COACH DE VENTAS IA
 ================================================== */
 async function cargarCoach(clave) {
