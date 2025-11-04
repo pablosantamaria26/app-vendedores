@@ -1,325 +1,157 @@
 /* ============================================================
-    🧠 App de Vendedores — Estilos actualizados 2026
-    Temas motivacionales + modo día/noche + diseño moderno
+   ✨ Toast de Éxito Animado (versión 2026)
 ============================================================ */
-
-/* ===============================
-   🎨 Variables base (tema Confianza)
-================================= */
-:root {
-  --azul: #0a63ff;
-  --azul-oscuro: #0a2b57;
-  --ok: #22c55e;
-  --no: #ef4444;
-  --bg: #0b1220;
-  --card: #0f1a2d;
-  --texto: #e6edf3;
-  --borde: #1f2a44;
-  --sombra: rgba(0,0,0,.35);
-  --boton-grad-a: var(--azul);
-  --boton-grad-b: #0e63ff;
-}
-
-/* ===============================
-   🌈 Temas motivacionales
-================================= */
-
-/* Tema 1: Confianza (azul profesional, modo oscuro suave) */
-body.tema-confianza {
-  --azul: #0a63ff;
-  --azul-oscuro: #0a2b57;
-  --bg: #0b1220;
-  --card: #0f1a2d;
-  --texto: #e6edf3;
-  --borde: #1f2a44;
-  --boton-grad-a: #0a63ff;
-  --boton-grad-b: #0e8bff;
-}
-
-/* Tema 2: Energía (violeta + verde) */
-body.tema-energia {
-  --azul: #8b5cf6;
-  --azul-oscuro: #22c55e;
-  --bg: #0f0b1a;
-  --card: #17122b;
-  --texto: #f4f4fd;
-  --borde: #2a214a;
-  --boton-grad-a: #8b5cf6;
-  --boton-grad-b: #22c55e;
-}
-
-/* Tema 3: Foco (modo día / claro brillante) */
-body.tema-foco {
-  --azul: #0a63ff;
-  --azul-oscuro: #004aad;
-  --bg: #f9fafb;           /* Fondo claro */
-  --card: #ffffff;         /* Tarjetas blancas */
-  --texto: #1f2937;        /* Texto oscuro */
-  --borde: #d1d5db;        /* Bordes grises suaves */
-  --boton-grad-a: #0a63ff; /* Azul profesional */
-  --boton-grad-b: #3b82f6;
-}
-
-/* Tema 4: Noche (oscuro real, contraste alto) */
-body.tema-noche {
-  --azul: #0094ff;
-  --azul-oscuro: #00162f;
-  --bg: #000510;           /* Fondo negro azulado */
-  --card: #011024;
-  --texto: #e0e7ff;
-  --borde: #08325e;
-  --boton-grad-a: #0057d9;
-  --boton-grad-b: #0080ff;
-}
-
-/* ===============================
-   Transiciones globales
-================================= */
-html, body, header, .cliente, .menu, .panel-resumen, #mapaFull {
-  transition: background-color .4s ease, color .4s ease, border-color .4s ease;
-}
-
-/* ===============================
-   Layout base
-================================= */
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--texto);
-  overflow-x: hidden;
-}
-
-/* ===============================
-   Header
-================================= */
-header {
-  width: 100%;
-  background: var(--azul-oscuro);
-  color: #fff;
-  padding: 12px 14px;
-  position: sticky;
-  top: 0;
-  z-index: 999;
-  box-shadow: 0 2px 14px var(--sombra);
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-  align-items: center;
-}
-header h1 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-/* ===============================
-   Botones encabezado
-================================= */
-.modo-toggle, .tema-toggle {
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.25);
-  color: #fff;
-  border-radius: 999px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: .95rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.tema-toggle .dot { width: 10px; height: 10px; border-radius: 50%; }
-
-/* ===============================
-   Menú de temas
-================================= */
-.tema-menu {
-  position: absolute;
-  right: 10px;
-  top: 48px;
-  background: var(--card);
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  box-shadow: 0 12px 32px var(--sombra);
-  padding: 8px;
-  display: none;
-  min-width: 220px;
-  z-index: 1000;
-}
-.tema-menu.visible { display: block; }
-.tema-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; cursor: pointer; }
-.tema-item:hover { background: rgba(255,255,255,.06); }
-.tema-item .dot { width: 14px; height: 14px; border-radius: 50%; }
-.tema-item .nombre { font-weight: 700; }
-
-/* ===============================
-   Main y secciones
-================================= */
-main {
-  width: 100%;
-  max-width: 780px;
-  margin: 0 auto 84px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-h2 { text-align: center; color: var(--azul); margin: 10px 0; }
-.seccion { display: none; }
-.seccion.visible { display: block; }
-
-/* ===============================
-   Menú inferior
-================================= */
-.menu {
+.exito-overlay {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  background: var(--card);
-  border-top: 1px solid var(--borde);
-  z-index: 1000;
-}
-.menu button {
-  flex: 1;
-  padding: 10px;
-  background: transparent;
-  border: none;
-  color: var(--texto);
-  cursor: pointer;
-  font-size: 1rem;
-}
-.menu button.activo {
-  background: var(--azul);
-  color: #fff;
-  font-weight: 800;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 99999;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.3s ease;
 }
 
-/* ===============================
-   Clientes
-================================= */
-.cliente {
+.exito-box {
   background: var(--card);
   color: var(--texto);
-  border: 1px solid var(--borde);
-  border-left: 6px solid var(--azul);
-  border-radius: 14px;
-  padding: 14px;
-  margin: 10px 0;
-  box-shadow: 0 4px 14px var(--sombra);
+  border-radius: 18px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  padding: 20px 28px;
+  max-width: 260px;
+  border: 2px solid var(--borde);
+  transform: scale(0.9);
+  animation: popIn 0.35s ease forwards;
+}
+
+.exito-circle {
   position: relative;
-}
-.cliente h3 { margin: 0 0 6px 0; color: var(--azul); }
-.cliente .fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.cliente .acciones { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; }
-.cliente.bloqueado { filter: grayscale(.75) saturate(.7); opacity: .65; pointer-events: none; }
-.cliente[draggable="true"] { cursor: grab; }
-
-/* ===============================
-   Botones
-================================= */
-button {
-  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 6px 16px var(--sombra);
-  transition: transform .2s ease, filter .2s ease;
-}
-button:hover { filter: brightness(1.05); transform: translateY(-1px); }
-button:disabled { background: var(--borde); filter: grayscale(1); cursor: not-allowed; }
-.btn-secundario { background: linear-gradient(135deg, #22c55e, #16a34a); }
-
-/* ===============================
-   Textarea
-================================= */
-.cliente textarea {
-  width: 100%;
-  margin-top: 6px;
-  background: transparent;
-  color: var(--texto);
-  border: 1px solid var(--borde);
-  border-radius: 8px;
-  padding: 8px;
-  outline: none;
-  box-sizing: border-box;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 14px;
 }
 
-/* ===============================
-   Mapa
-================================= */
-#mapaFull {
-  height: 68vh;
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px var(--sombra);
-  border: 1px solid var(--borde);
+.exito-circle svg {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
 }
 
-/* ===============================
-   Panel resumen / Coach IA
-================================= */
-.panel-resumen {
-  text-align: center;
-  background: var(--card);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px var(--sombra);
-  border: 1px solid var(--borde);
-  margin-bottom: 20px;
+.exito-circle circle.bg {
+  fill: none;
+  stroke: var(--borde);
+  stroke-width: 12;
 }
-canvas { max-width: 320px; margin: auto; display: block; }
 
-.coach-item {
-  background: var(--card);
-  border: 1px solid var(--borde);
-  border-radius: 10px;
-  padding: 10px;
-  margin: 6px 0;
-  font-size: 0.95rem;
-  line-height: 1.3em;
+.exito-circle circle.prog {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 12;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 565;
+  animation: dash 1.1s ease-out forwards;
 }
-.estado-ruta {
-  text-align: center;
-  margin: 8px 0;
-  font-weight: 600;
+
+.exito-check {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.exito-check svg {
+  width: 70px;
+  height: 70px;
+  stroke: var(--ok);
+  stroke-width: 8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 150;
+  stroke-dashoffset: 150;
+  animation: draw 0.6s ease 0.45s forwards;
+}
+
+.exito-titulo {
+  font-weight: 700;
   font-size: 1rem;
+  color: var(--ok);
+  text-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
 }
-/* ===============================
-   Efecto rebote (botón "Ir ahora")
-================================= */
+
+@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+@keyframes popIn { 0% {transform: scale(0.8);} 100% {transform: scale(1);} }
+@keyframes dash { to { stroke-dashoffset: 0; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* ============================================================
+   🧭 Modal de Confirmación (“Ir ahora”)
+============================================================ */
+.modal-destino {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  place-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.25s ease forwards;
+}
+
+.modal-contenido {
+  background: var(--card);
+  color: var(--texto);
+  padding: 20px 22px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px var(--sombra);
+  border: 1px solid var(--borde);
+  text-align: center;
+  animation: popIn 0.3s ease;
+}
+
+.modal-contenido h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: var(--azul);
+}
+
+.modal-contenido p {
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.modal-botones {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-ir {
+  background: linear-gradient(135deg, var(--azul), var(--boton-grad-b));
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 10px 18px;
+  border-radius: 12px;
+}
+
+.btn-cancelar {
+  background: linear-gradient(135deg, var(--no), #b91c1c);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 10px 18px;
+  border-radius: 12px;
+}
+
+/* Rebote al presionar */
+.rebote {
+  animation: rebote 0.5s ease;
+}
 @keyframes rebote {
   0%,100% { transform: scale(1); }
   30% { transform: scale(1.15); }
   60% { transform: scale(0.95); }
 }
-.rebote {
-  animation: rebote 0.5s ease;
-}
-.modal-destino {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  display: grid;
-  place-items: center;
-  z-index: 9999;
-  backdrop-filter: blur(6px);
-}
-.cliente.bloqueado {
-  filter: grayscale(0.8);
-  opacity: 0.6;
-  pointer-events: none;
-  transition: all 0.4s ease;
-}
-
-
-
-/* ===============================
-   Toast de éxito, confirm, login
-   (idéntico a tu versión anterior)
-================================= */
-/* ... (mantiene tus animaciones y responsive que ya estaban) ... */
