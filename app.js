@@ -90,10 +90,13 @@ async function mostrarApp(){
 
   const clientesHoy=await cargarRuta(clave);
   await cargarCoach(clave);
-  if(clientesHoy && clientesHoy.length){
-  console.log("✅ Ruta cargada con", clientesHoy.length, "clientes.");
-}
 
+  // ✅ Notificaciones (solo una vez por dispositivo)
+  inicializarNotificaciones(clave);
+
+  if(clientesHoy && clientesHoy.length){
+    console.log("✅ Ruta cargada con", clientesHoy.length, "clientes.");
+  }
 }
 
 /* ================================
@@ -122,11 +125,9 @@ async function cargarRuta(clave) {
   cont.innerHTML = "⏳ Cargando clientes...";
 
   try {
-    // 📥 1. Obtener datos base desde la API
     const r1 = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
     clientesData = await r1.json();
 
-    // 🔁 2. Restaurar progreso local del día (si existe)
     const local = cargarLocal(clave);
     if (local.length) {
       const mapa = new Map(local.map(c => [String(c.numero), c]));
@@ -134,7 +135,6 @@ async function cargarRuta(clave) {
       console.log("♻️ Estados restaurados desde localStorage");
     }
 
-    // 🗂️ 3. Aplicar orden personalizado si existe
     const orden = cargarOrden();
     if (orden.length) {
       const map = new Map(clientesData.map(c => [String(c.numero), c]));
@@ -142,7 +142,6 @@ async function cargarRuta(clave) {
         .concat(clientesData.filter(c => !orden.includes(String(c.numero))));
     }
 
-    // 📍 4. Obtener ubicación actual y renderizar clientes
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -152,24 +151,19 @@ async function cargarRuta(clave) {
         () => renderClientes(),
         { enableHighAccuracy: true, maximumAge: 15000, timeout: 8000 }
       );
-    } else {
-      renderClientes();
-    }
+    } else renderClientes();
 
-    // 🕒 5. Mostrar estado general de carga
     if (estado) {
       const ahora = new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
       estado.textContent = `Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`;
     }
 
-    // 🎯 6. Detectar si la ruta ya está completada
     const todosCompletos = clientesData.every(c => c.bloqueado);
     if (todosCompletos && clientesData.length > 0) {
       mostrarToastExito("🎉 ¡Ruta completada! Felicitaciones por tu trabajo de hoy 💪");
     }
 
     return clientesData;
-
   } catch (e) {
     console.error("❌ Error al cargar datos:", e);
     cont.textContent = "❌ Error al cargar datos.";
@@ -178,90 +172,31 @@ async function cargarRuta(clave) {
 }
 
 /* ================================
-   🧱 Render de clientes
+   💾 Registrar visita
 ================================ */
-function renderClientes(){
-  const cont=document.getElementById("contenedor"); 
-  if(!cont) return;
-  cont.innerHTML="";
-
-  clientesData.forEach((c,idx)=>{
-    const card=document.createElement("div");
-    card.className="cliente"; card.id="c_"+c.numero;
-    const lat=parseFloat(c.lat), lng=parseFloat(c.lng);
-    const tieneGeo=Number.isFinite(lat)&&Number.isFinite(lng);
-    const dist=(posicionActual&&tieneGeo)?distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng):null;
-    card.innerHTML=`
-      <h3>${c.numero} - ${c.nombre}</h3>
-      <div class="fila">
-        <span>📍 ${c.direccion||""}</span>
-        ${dist!==null?`<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
-      </div>
-      <div class="fila" style="margin-top:6px">
-        <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
-        <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
-      </div>
-      <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
-      <div class="acciones">
-        <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-        <button class="btn-secundario" onclick="confirmDestino(${lat},${lng},'${c.nombre.replace(/'/g,"")}')">🚗 Ir a este cliente</button>
-      </div>`;
-    card.setAttribute("draggable","true");
-    card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
-    card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
-    card.addEventListener("drop",(ev)=>{
-      ev.preventDefault();
-      const cards=Array.from(cont.querySelectorAll(".cliente"));
-      const targetIndex=cards.indexOf(card);
-      if(dragSrcIndex===null||dragSrcIndex===targetIndex) return;
-      const moved=clientesData.splice(dragSrcIndex,1)[0];
-      clientesData.splice(targetIndex,0,moved);
-      dragSrcIndex=null; guardarOrden(clientesData.map(x=>String(x.numero))); renderClientes();
-    });
-    cont.appendChild(card);
-  });
-
-  // 🔢 Contador
-  const visitados = clientesData.filter(c=>c.bloqueado).length;
-  const restantes = clientesData.length - visitados;
-  const compraron = clientesData.filter(c=>c.compro).length;
-  document.getElementById("estadoRuta").innerHTML = 
-    `🚗 <b>${restantes}</b> por visitar · ✅ <b>${visitados}</b> visitados · 🛒 <b>${compraron}</b> compraron`;
-}
-
-/* ==================================================
-   💾 Registrar visita y mantener estado
-================================================== */
 async function registrarVisita(numero) {
   const clave = localStorage.getItem("vendedorClave");
   const cliente = clientesData.find(c => String(c.numero) === String(numero));
   if (!cliente) return;
 
-  // Datos del formulario
   const visitado = document.getElementById(`visitado-${numero}`)?.checked || false;
   const compro = document.getElementById(`compro-${numero}`)?.checked || false;
   const comentario = document.getElementById(`coment-${numero}`)?.value || "";
 
-  // Bloquear y mover al final visualmente
   cliente.visitado = visitado;
   cliente.compro = compro;
   cliente.comentario = comentario;
   cliente.bloqueado = true;
 
-  // Mover al final sin alterar el scroll del usuario
   const scrollY = window.scrollY;
   clientesData = clientesData.filter(c => String(c.numero) !== String(numero));
   clientesData.push(cliente);
   renderClientes();
   window.scrollTo({ top: scrollY, behavior: "instant" });
 
-  // Guardar en localStorage para persistencia
   guardarLocal(clave, clientesData);
-
-  // Mostrar feedback
   mostrarToastExito("✅ Visita registrada");
 
-  // Enviar al backend (Google Sheets vía Worker)
   try {
     const resp = await fetch(`${URL_API_BASE}?accion=registrarVisita`, {
       method: "POST",
@@ -273,51 +208,81 @@ async function registrarVisita(numero) {
         localidad: cliente.localidad || ""
       })
     });
-    const data = await resp.json();
-    console.log("📤 Enviado a hoja:", data);
+    console.log("📤 Enviado a hoja:", await resp.json());
   } catch (e) {
     console.warn("⚠️ Offline, guardando en cola local:", e);
-    queueOffline({ t:"visita", cliente });
   }
 }
 
-/* ==================================================
+/* ================================
    💾 Persistencia local diaria
-================================================== */
+================================ */
 function guardarLocal(clave, data) {
   const hoy = new Date().toISOString().slice(0,10);
   localStorage.setItem(`data_${clave}_${hoy}`, JSON.stringify(data));
 }
-
 function cargarLocal(clave) {
   const hoy = new Date().toISOString().slice(0,10);
   try { return JSON.parse(localStorage.getItem(`data_${clave}_${hoy}`) || "[]"); }
   catch { return []; }
 }
 
-
 /* ==================================================
-   ✨ Toast de éxito animado
+   🔔 Notificaciones Firebase (sin duplicar token)
 ================================================== */
-function mostrarToastExito(texto) {
-  const overlay = document.createElement("div");
-  overlay.className = "exito-overlay";
-  overlay.innerHTML = `
-    <div class="exito-box">
-      <div class="exito-circle">
-        <svg><circle class="bg" cx="90" cy="90" r="90"/><circle class="prog" cx="90" cy="90" r="90"/></svg>
-        <div class="exito-check"><svg><path d="M35 90 l30 30 l60 -60"/></svg></div>
-      </div>
-      <div class="exito-titulo">${texto}</div>
-    </div>`;
-  document.body.appendChild(overlay);
-  setTimeout(()=>overlay.remove(),1800);
+async function inicializarNotificaciones(vendedor) {
+  console.log("🚀 Inicializando notificaciones para", vendedor);
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+    authDomain: "app-vendedores-inteligente.firebaseapp.com",
+    projectId: "app-vendedores-inteligente",
+    storageBucket: "app-vendedores-inteligente.appspot.com",
+    messagingSenderId: "583313989429",
+    appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+  };
+
+  if (typeof firebase === "undefined") return console.error("⚠️ Firebase no cargado.");
+
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  try {
+    const registration = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    await navigator.serviceWorker.ready;
+
+    const permiso = await Notification.requestPermission();
+    if (permiso !== "granted") return;
+
+    const token = await messaging.getToken({
+      vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) return console.warn("⚠️ No se obtuvo token.");
+
+    const oldToken = localStorage.getItem("fcmToken");
+    const oldVendor = localStorage.getItem("fcmVendedor");
+
+    if (oldToken !== token || oldVendor !== vendedor) {
+      console.log("📬 Enviando token al servidor...");
+      localStorage.setItem("fcmToken", token);
+      localStorage.setItem("fcmVendedor", vendedor);
+
+      await fetch(URL_API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendedor, token })
+      });
+    } else console.log("✅ Token ya registrado localmente.");
+  } catch (err) {
+    console.error("❌ Error inicializando notificaciones:", err);
+  }
 }
 
-
-/* ==================================================
-   📍 Modal de confirmación de destino (Mapa)
-================================================== */
+/* ================================
+   📍 Modal confirm destino
+================================ */
 function confirmDestino(lat, lng, nombre) {
   const modal = document.getElementById("modalDestino");
   const nombreCliente = document.getElementById("modalNombreCliente");
@@ -336,9 +301,9 @@ function confirmDestino(lat, lng, nombre) {
   btnCancelar.onclick = () => modal.style.display = "none";
 }
 
-/* ==================================================
+/* ================================
    🗺️ Mapa Full
-================================================== */
+================================ */
 function renderMapaFull(){
   if(!document.getElementById("mapaFull")) return;
   if(mapaFull){ mapaFull.remove(); }
@@ -356,9 +321,9 @@ function renderMapaFull(){
   });
 }
 
-/* ==================================================
-   🤖 COACH DE VENTAS IA
-================================================== */
+/* ================================
+   🤖 Coach IA
+================================ */
 async function cargarCoach(clave) {
   const cont = document.getElementById("contenedorCoach");
   if (!cont) return;
@@ -366,35 +331,20 @@ async function cargarCoach(clave) {
   try {
     const resp = await fetch(`${URL_API_BASE}?accion=getConsejosVendedor&clave=${clave}`);
     const data = await resp.json();
-
-    if (!data || !data.sugerencias || !data.sugerencias.length) {
+    if (!data || !data.sugerencias?.length) {
       cont.innerHTML = "✅ Sin alertas ni recomendaciones por ahora.";
       return;
     }
-
     cont.innerHTML = data.sugerencias.map(s => `<div class="coach-item">💡 ${s}</div>`).join("");
-
-    if (data.estadisticas && data.estadisticas.zonas) {
-      const zonas = data.estadisticas.zonas;
-      const labels = Object.keys(zonas);
-      const valores = labels.map(z => zonas[z].monto);
-      const ctx = document.getElementById("graficoHeatmap").getContext("2d");
-      if (ctx._chart) ctx._chart.destroy();
-      ctx._chart = new Chart(ctx, {
-        type: "bar",
-        data: { labels, datasets: [{ label: "💰 Ventas por zona", data: valores, borderWidth: 1 }] },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-      });
-    }
   } catch (e) {
     cont.innerHTML = "❌ Error cargando Coach IA.";
     console.error(e);
   }
 }
 
-/* ==================================================
+/* ================================
    🔗 Exponer funciones
-================================================== */
+================================ */
 window.agregarDigito = agregarDigito;
 window.borrarDigito = borrarDigito;
 window.login = login;
