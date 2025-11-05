@@ -3,7 +3,8 @@
 ================================ */
 const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
 // ⬇️ Esta URL apunta al Worker de Cloudflare
-const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+const URL_API_BASE = "https://script.google.com/macros/s/AKfycbz289_bgRPR7mLAe4-LbuePcHaepAMkhosIozkUDu4vhCR1qjM4cJ0INirCOO389f1n/exec";
+
 
 let clientesData = [];
 let posicionActual = null;
