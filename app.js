@@ -29,12 +29,17 @@ function login(){
 function logout(){ localStorage.removeItem("vendedorClave"); location.reload(); }
 
 window.addEventListener("load",()=>{
-  const c=localStorage.getItem("vendedorClave");
-  if(c && vendedores[c]) document.getElementById("login").style.display="none", mostrarApp();
+  const clave = localStorage.getItem("vendedorClave");
   restaurarTema();
-  syncOffline();
-  notificacionDiaria();
+
+  if(clave && vendedores[clave]){
+    document.getElementById("login").style.display="none";
+    mostrarApp();
+  } else {
+    document.getElementById("login").style.display = "block";
+  }
 });
+
 
 /* ================================
    🎨 Temas (3 DUOTONO)
