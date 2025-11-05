@@ -1,8 +1,11 @@
-/* =========================================================
-   🧠 APP DE VENDEDORES – ESTILOS FINALES 2026
-========================================================= */
+/* ============================================================
+    🧠 App de Vendedores — Estilos actualizados 2026
+    Temas motivacionales + animaciones + diseño moderno
+============================================================ */
 
-/* ===== VARIABLES BASE (Tema Confianza por defecto) ===== */
+/* ===============================
+   🎨 Variables base (tema Confianza)
+================================= */
 :root {
   --azul: #0a63ff;
   --azul-oscuro: #0a2b57;
@@ -17,8 +20,23 @@
   --boton-grad-b: #0e63ff;
 }
 
-/* ===== TEMAS ===== */
+/* ===============================
+   🌈 Temas motivacionales
+================================= */
 
+/* Tema 1: Confianza (azul profesional) */
+body.tema-confianza {
+  --azul: #0a63ff;
+  --azul-oscuro: #0a2b57;
+  --bg: #0b1220;
+  --card: #0f1a2d;
+  --texto: #e6edf3;
+  --borde: #1f2a44;
+  --boton-grad-a: #0a63ff;
+  --boton-grad-b: #0e8bff;
+}
+
+/* Tema 2: Energía (violeta + verde, animado) */
 body.tema-energia {
   --azul: #8b5cf6;
   --azul-oscuro: #22c55e;
@@ -30,6 +48,7 @@ body.tema-energia {
   --boton-grad-b: #22c55e;
 }
 
+/* Tema 3: Foco (negro + amarillo contrastante) */
 body.tema-foco {
   --azul: #facc15;
   --azul-oscuro: #111827;
@@ -41,8 +60,9 @@ body.tema-foco {
   --boton-grad-b: #fde047;
 }
 
+/* Tema 4: Noche (negro + azul suave, minimal) */
 body.tema-noche {
-  --azul: #007bff;
+  --azul: #0066ff;
   --azul-oscuro: #001b3a;
   --bg: #000a1a;
   --card: #021024;
@@ -52,139 +72,485 @@ body.tema-noche {
   --boton-grad-b: #007bff;
 }
 
-/* ===== BASE ===== */
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--texto);
-  font-family: Inter, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-  transition: background .3s, color .3s;
+/* ===============================
+   Transiciones globales
+================================= */
+html, body, header, .cliente, .menu, .panel-resumen, #mapaFull {
+  transition: background-color .4s ease, color .4s ease, border-color .4s ease;
 }
 
+/* ===============================
+   Layout base
+================================= */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--texto);
+  overflow-x: hidden;
+}
+
+/* ===============================
+   Header
+================================= */
 header {
   width: 100%;
   background: var(--azul-oscuro);
-  padding: 12px 16px;
   color: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 12px 14px;
   position: sticky;
   top: 0;
-  z-index: 900;
-  box-shadow: 0 3px 14px var(--sombra);
+  z-index: 999;
+  box-shadow: 0 2px 14px var(--sombra);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
 }
 
+header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ===============================
+   Botones del encabezado
+================================= */
 .modo-toggle, .tema-toggle {
-  background: rgba(255,255,255,.15);
+  background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.25);
-  border-radius: 14px;
-  padding: 6px 14px;
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: .95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tema-toggle .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ===============================
+   Menú de temas
+================================= */
+.tema-menu {
+  position: absolute;
+  right: 10px;
+  top: 48px;
+  background: var(--card);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px var(--sombra);
+  padding: 8px;
+  display: none;
+  min-width: 220px;
+  z-index: 1000; /* Asegurar que esté sobre el contenido */
+}
+.tema-menu.visible { display: block; }
+
+.tema-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
   cursor: pointer;
 }
+.tema-item:hover { background: rgba(255,255,255,.06); }
 
-/* ===== LOGIN ===== */
+.tema-item .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.tema-item .nombre { font-weight: 700; }
+
+/* ===============================
+   Main y secciones
+================================= */
+main {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto 84px;
+  padding: 10px;
+  box-sizing: border-box; /* Añadido para consistencia */
+}
+h2 {
+  text-align: center;
+  color: var(--azul);
+  margin: 10px 0;
+}
+.seccion { display: none; }
+.seccion.visible { display: block; }
+
+/* ===============================
+   Menú inferior
+================================= */
+.menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  background: var(--card);
+  border-top: 1px solid var(--borde);
+  z-index: 1000;
+}
+.menu button {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  color: var(--texto);
+  cursor: pointer;
+  font-size: 1rem; /* Asegurar tamaño */
+}
+.menu button.activo {
+  background: var(--azul);
+  color: #fff; /* Mejor contraste */
+  font-weight: 800;
+}
+
+/* ===============================
+   Clientes y tarjetas
+================================= */
+.cliente {
+  background: var(--card);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-left: 6px solid var(--azul);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 10px 0;
+  box-shadow: 0 4px 14px var(--sombra);
+  position: relative; /* Para la etiqueta de bloqueado */
+}
+.cliente h3 {
+  margin: 0 0 6px 0;
+  color: var(--azul);
+}
+.cliente .fila {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+
+.cliente .acciones {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: space-between; /* <-- LÍNEA NUEVA (Mueve el 2do botón a la derecha) */
+}
+.cliente.bloqueado {
+  filter: grayscale(.75) saturate(.7);
+  opacity: .65;
+  pointer-events: none;
+}
+.cliente[draggable="true"] {
+  cursor: grab;
+}
+
+/* ===============================
+   Botones
+================================= */
+button {
+  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 16px var(--sombra);
+  transition: transform .2s ease, filter .2s ease;
+}
+button:hover { filter: brightness(1.05); transform: translateY(-1px); }
+button:disabled {
+  background: var(--borde);
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.btn-secundario {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+/* ===============================
+   Textarea
+================================= */
+.cliente textarea {
+  width: 100%;
+  margin-top: 6px;
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 8px;
+  outline: none;
+  box-sizing: border-box; /* Añadido para consistencia */
+}
+
+/* ===============================
+   Mapa
+================================= */
+#mapaFull {
+  height: 68vh;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--sombra);
+  border: 1px solid var(--borde);
+}
+
+/* ===============================
+   Panel resumen
+================================= */
+.panel-resumen {
+  text-align: center;
+  background: var(--card);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--sombra);
+  border: 1px solid var(--borde);
+  margin-bottom: 20px;
+}
+canvas {
+  max-width: 320px;
+  margin: auto;
+  display: block;
+}
+
+/* ===============================
+   Toast de éxito animado
+================================= */
+.exito-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.45);
+  z-index: 9999;
+  animation: exito-fade 1s forwards;
+  opacity: 0; /* Empezar invisible */
+}
+.exito-box {
+  width: min(560px, 88vw);
+  height: 80vh;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 22px;
+  box-shadow: 0 18px 48px rgba(0,0,0,.35);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: center;
+  justify-items: center;
+  padding: 20px;
+  box-sizing: border-box; /* Añadido */
+  transform: scale(0.9); /* Animación de entrada */
+  animation: exito-pop-in 0.2s 0.05s forwards;
+}
+.exito-titulo {
+  font-weight: 800;
+  font-size: 1.2rem;
+  margin-top: 6px;
+  color: #111827; /* Asegurar color */
+}
+.exito-circle {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin-top: 10px;
+}
+.exito-circle svg {
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
+}
+.exito-circle .bg {
+  stroke: #e5e7eb;
+  stroke-width: 12;
+  fill: none;
+}
+.exito-circle .prog {
+  stroke: #22c55e;
+  stroke-width: 12;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 565;
+  animation: exito-progress .7s ease-out forwards;
+}
+.exito-check {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.exito-check svg {
+  width: 96px;
+  height: 96px;
+  transform: rotate(-45deg); /* <-- LÍNEA NUEVA (Endereza el tilde) */
+}
+.exito-check path {
+  stroke: #22c55e;
+  stroke-width: 10;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: exito-check .25s ease-out forwards .65s;
+  filter: drop-shadow(0 0 10px rgba(34,197,94,.45));
+}
+@keyframes exito-fade { 0%{opacity:0} 10%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+@keyframes exito-pop-in { to { transform: scale(1); } }
+@keyframes exito-progress { to { stroke-dashoffset: 0; } }
+@keyframes exito-check { to { stroke-dashoffset: 0; } }
+
+/* ===============================
+   Confirm de destino
+================================= */
+.confirm-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 90px; /* Subido para no tapar el menú */
+  transform: translateX(-50%);
+  background: var(--card);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  box-shadow: 0 12px 24px var(--sombra);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 9500;
+}
+.confirm-toast button {
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+.confirm-toast button:last-child {
+  background: var(--no); /* Botón "No" en rojo */
+}
+
+/* ===============================
+   Login pantalla completa
+================================= */
 #login {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
-  z-index: 9999;
+  z-index: 10000;
+  transition: opacity 0.3s ease; /* Transición para ocultar */
 }
-
 .login-card {
   background: var(--card);
-  border: 1px solid var(--borde);
+  color: var(--texto);
+  border-radius: 16px;
   padding: 20px;
-  border-radius: 14px;
   width: 86%;
-  max-width: 340px;
+  max-width: 360px;
   text-align: center;
-  box-shadow: 0 12px 28px var(--sombra);
+  border: 1px solid var(--borde);
+  box-shadow: 0 16px 36px var(--sombra);
 }
-
 #login input {
+  font-size: 1.4rem;
+  padding: 10px;
+  text-align: center;
+  margin: 10px 0;
   width: 80%;
-  padding: 12px;
   border-radius: 10px;
   border: 2px solid var(--azul);
-  font-size: 1.4rem;
-  text-align: center;
-  margin: 12px 0;
   background: #fff;
   color: #111;
+  box-sizing: border-box; /* Añadido */
 }
-
 .teclado-numerico {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: .5em;
 }
-
 .teclado-numerico button {
-  font-size: 1.4rem;
-  padding: .7em;
-  border-radius: 10px;
-  border: none;
   background: #fff;
   color: var(--azul-oscuro);
-  cursor: pointer;
-}
-
-/* ===== SECCIONES ===== */
-.seccion { display: none; padding: 14px; }
-.seccion.visible { display: block; }
-
-/* ===== CARDS CLIENTE ===== */
-.cliente {
-  background: var(--card);
-  border-left: 6px solid var(--azul);
-  border-radius: 16px;
-  padding: 14px;
-  margin: 12px 0;
-  box-shadow: 0 4px 18px var(--sombra);
-}
-
-.cliente.bloqueado {
-  opacity: .6;
-  filter: grayscale(.9);
-  pointer-events: none;
-}
-
-/* ===== BOTONES ===== */
-button {
-  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
-  color: #fff;
+  border-radius: 10px;
+  padding: .6em 0;
+  width: 100%;
+  font-weight: 800;
   border: none;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: bold;
   cursor: pointer;
-  width: 100%;
+}
+#login #error {
+  color: #ef4444;
+  min-height: 1.1em;
 }
 
-.btn-secundario {
-  background: linear-gradient(135deg,#22c55e,#16a34a);
+@media (max-width: 600px) {
+  header h1 { font-size: 1rem; }
+  .menu button { font-size: .95rem; padding: 10px 8px; }
+  #mapaFull { height: 58vh; }
 }
 
-/* ===== MENÚ INFERIOR ===== */
-.menu {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
+/* ===============================
+   Inputs (tamaño grande p/ dedos)
+================================= */
+.cliente input[type="checkbox"] {
+  /* Doble de tamaño */
+  width: 28px;
+  height: 28px;
+  
+  /* Espacio y alineación con el texto */
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -2px; /* Ajuste fino */
+  cursor: pointer;
+}
+
+.cliente .fila label {
+  /* Asegura que la etiqueta y el texto se alineen bien */
   display: flex;
-  background: var(--card);
-  border-top: 1px solid var(--borde);
-  z-index: 950;
+  align-items: center;
+  font-size: 1.1rem; /* Opcional: agranda un poco el texto también */
+  cursor: pointer;
 }
-.menu button {
-  flex: 1;
-  background: none;
-  border-radius: 0;
+
+/* ===============================
+   Inputs (tamaño grande p/ dedos)
+================================= */
+.cliente input[type="checkbox"] {
+  /* Doble de tamaño */
+  width: 28px;
+  height: 28px;
+  
+  /* Espacio y alineación con el texto */
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+  top: -2px; /* Ajuste fino */
+  cursor: pointer;
 }
-.menu button.activo {
-  background: var(--azul);
-  color: #fff;
+
+.cliente .fila label {
+  /* Asegura que la etiqueta y el texto se alineen bien */
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem; /* Opcional: agranda un poco el texto también */
+  cursor: pointer;
 }
