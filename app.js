@@ -28,8 +28,6 @@ window.addEventListener("load",()=>{
   const c=localStorage.getItem("vendedorClave");
   if(c && vendedores[c]){ document.getElementById("login").style.display="none"; mostrarApp(); }
   restaurarTema();
-  syncOffline();
-  notificacionDiaria();
 });
 
 /* ================================
@@ -72,12 +70,10 @@ async function mostrarApp(){
   const clave=localStorage.getItem("vendedorClave");
   document.getElementById("titulo").textContent=`👋 Hola, ${vendedores[clave]}`;
 
-  const clientesHoy=await cargarRuta(clave);
+  await cargarRuta(clave);
   await cargarResumen(clave);
   await cargarCalendario();
   inicializarNotificaciones(clave);
-
-  if(clientesHoy?.length) detectarClienteCercano(clave, clientesHoy);
 }
 
 /* ================================
@@ -100,127 +96,105 @@ function guardarOrden(ids){ localStorage.setItem(keyOrden(), JSON.stringify(ids)
 /* ================================
    🚗 Cargar ruta del día
 ================================ */
-
 async function cargarRuta(clave){
   const cont=document.getElementById("contenedor");
-  const estado=document.getElementById("estado");
-  if(cont) cont.innerHTML="⏳ Cargando clientes...";
+  if(cont) cont.innerHTML="⏳ Cargando...";
 
-  try{
-    const r = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
-    clientesData = await r.json();
+  const r = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
+  clientesData = await r.json();
 
-    // Distancia + render
-    const afterGeo = () => {
-      ordenarPorDistancia();
-      aplicarOrdenManualSiExiste();   // 👈 nuevo
-      renderClientes();
-      if(estado){
-        const ahora=new Date().toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
-        estado.textContent=`Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`;
-      }
-    };
+  const afterGeo = () => {
+    ordenarPorDistancia();
+    aplicarOrdenManualSiExiste();
+    renderClientes();
+    actualizarPanelIA();
+    alertasIA();
+  };
 
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(
-        pos => { posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude}; afterGeo(); },
-        () => afterGeo(),
-        {enableHighAccuracy:true, maximumAge:15000, timeout:8000}
-      );
-    } else { afterGeo(); }
-
-    return clientesData;
-  }catch(e){
-    console.error("❌ Error al cargar datos:", e);
-    if(estado) estado.textContent="❌ Error al cargar datos.";
-    return [];
-  }
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => { posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude}; afterGeo(); },
+      ()=> afterGeo(),
+      {enableHighAccuracy:true, maximumAge:15000, timeout:8000}
+    );
+  } else afterGeo();
 }
 
+/* ================================
+   🧭 Ordenar
+================================ */
 function ordenarPorDistancia(){
   if(!posicionActual) return;
   clientesData.sort((a,b)=>{
-    const da = (Number.isFinite(+a.lat)&&Number.isFinite(+a.lng)) ? distanciaKm(posicionActual.lat,posicionActual.lng,+a.lat,+a.lng) : Number.POSITIVE_INFINITY;
-    const db = (Number.isFinite(+b.lat)&&Number.isFinite(+b.lng)) ? distanciaKm(posicionActual.lat,posicionActual.lng,+b.lat,+b.lng) : Number.POSITIVE_INFINITY;
-    return da - db;
+    const da = a.lat&&a.lng ? distanciaKm(posicionActual.lat,posicionActual.lng,+a.lat,+a.lng) : 9999;
+    const db = b.lat&&b.lng ? distanciaKm(posicionActual.lat,posicionActual.lng,+b.lat,+b.lng) : 9999;
+    return da-db;
   });
 }
 
-// Aplica el orden arrastrado si existe
 function aplicarOrdenManualSiExiste(){
-  const orden = cargarOrden(); // ['123','456',...]
-  if(!Array.isArray(orden) || !orden.length) return;
-  const map = new Map(clientesData.map(c=>[String(c.numero), c]));
-  const reordenados = orden.map(id=>map.get(String(id))).filter(Boolean);
-  const restantes = clientesData.filter(c=>!orden.includes(String(c.numero)));
-  clientesData = [...reordenados, ...restantes];
+  const orden=cargarOrden();
+  if(!orden.length) return;
+  const map = new Map(clientesData.map(c=>[String(c.numero),c]));
+  clientesData = orden.map(id=>map.get(String(id))).filter(Boolean).concat(
+    clientesData.filter(c=>!orden.includes(String(c.numero)))
+  );
 }
 
-
 /* ================================
-   🧱 Render tarjetas
+   🧱 UI Clientes
 ================================ */
 function renderClientes(){
   const cont=document.getElementById("contenedor"); if(!cont) return;
   cont.innerHTML="";
 
   clientesData.forEach((c,idx)=>{
-    const lat = Number(c.lat), lng = Number(c.lng);
-    const tieneGeo = Number.isFinite(lat) && Number.isFinite(lng);
-    const dist = (posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
-    c._dist = dist; // 👈 para IA
+    const lat=+c.lat, lng=+c.lng;
+    const dist = (posicionActual && lat&&lng)? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng):null;
+    c._dist = dist;
 
-    const card = document.createElement("div");
+    const card=document.createElement("div");
     card.className="cliente";
     card.id="c_"+c.numero;
-    card.setAttribute("draggable","true");           // 👈 DnD
-    card.dataset.index = idx;
+    card.setAttribute("draggable","true");
+    card.dataset.index=idx;
 
-    card.innerHTML = `
+    card.innerHTML=`
       <h3>${c.numero} - ${c.nombre}</h3>
       <div class="fila">
         <span>📍 ${c.direccion||""}</span>
-        ${dist!==null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
+        ${dist!==null? `<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
       </div>
-
       <div class="fila check-grande">
         <button onclick="toggleVisita(${c.numero})" id="btnV_${c.numero}" class="btn-visita">No Visitado</button>
         <button onclick="toggleCompra(${c.numero})" id="btnC_${c.numero}" class="btn-compra">No Compró</button>
       </div>
-
       <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
-
       <div class="acciones">
         <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-        ${tieneGeo ? `<button class="btn-secundario" onclick="irCliente(${lat},${lng})">🚗 Ir</button>` : `<button class="btn-secundario" disabled title="Sin ubicación">🚗 Ir</button>`}
+        ${lat&&lng? `<button class="btn-secundario" onclick="irCliente(${lat},${lng})">🚗 Ir</button>`:`<button class="btn-secundario" disabled>🚫 Sin mapa</button>`}
       </div>
     `;
 
-    // DnD handlers
-    card.addEventListener("dragstart",(ev)=>{ dragSrcIndex = idx; ev.dataTransfer.effectAllowed="move"; });
-    card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
-    card.addEventListener("drop",(ev)=>{
-      ev.preventDefault();
-      const cards = Array.from(cont.querySelectorAll(".cliente"));
-      const targetIndex = cards.indexOf(card);
-      if(dragSrcIndex===null || dragSrcIndex===targetIndex) return;
-
-      const moved = clientesData.splice(dragSrcIndex,1)[0];
-      clientesData.splice(targetIndex,0,moved);
-      cont.insertBefore(cards[dragSrcIndex], cards[targetIndex]);
-      dragSrcIndex=null;
-
-      // guardar orden
-      guardarOrden(clientesData.map(x=>String(x.numero)));
+    card.addEventListener("dragstart",e=>{ dragSrcIndex=idx; });
+    card.addEventListener("dragover",e=>e.preventDefault());
+    card.addEventListener("drop",e=>{
+      e.preventDefault();
+      const cards=[...cont.querySelectorAll(".cliente")];
+      const targetIndex=cards.indexOf(card);
+      if(dragSrcIndex===targetIndex) return;
+      const mov=clientesData.splice(dragSrcIndex,1)[0];
+      clientesData.splice(targetIndex,0,mov);
+      guardarOrden(clientesData.map(c=>String(c.numero)));
+      renderClientes();
     });
 
     cont.appendChild(card);
   });
 }
 
-
 /* ================================
-   ✅ Botones táctiles (no checkbox)
+   ✅ Botones táctiles
 ================================ */
 function toggleVisita(n){
   const b=document.getElementById("btnV_"+n);
@@ -237,152 +211,74 @@ function toggleCompra(n){
    💾 Registrar visita
 ================================ */
 async function registrarVisita(num){
-  const c = clientesData.find(x=>x.numero==num);
-  const visitado = document.getElementById("btnV_"+num).classList.contains("on");
-  const compro   = document.getElementById("btnC_"+num).classList.contains("on");
-  const comentario = document.getElementById(`coment-${num}`).value;
+  const c=clientesData.find(x=>x.numero==num);
+  const visitado=document.getElementById("btnV_"+num).classList.contains("on");
+  const compro=document.getElementById("btnC_"+num).classList.contains("on");
+  const comentario=document.getElementById(`coment-${num}`).value;
 
   await fetch(`${URL_API_BASE}?accion=registrarVisita&numero=${num}&vendedor=${localStorage.getItem("vendedorClave")}&nombre=${c.nombre}&direccion=${c.direccion}&localidad=${c.localidad}&visitado=${visitado}&compro=${compro}&comentario=${encodeURIComponent(comentario)}`);
 
-  if(visitado && compro){
+  if(visitado&&compro){
     clientesData = clientesData.filter(x=>x.numero!=num).concat([c]);
   }
   renderClientes();
   registrarInteraccionIA("✅ Visita registrada. ¡Seguimos!");
-
 }
-
-/* ================================
-   🚗 Ir al mapa
-================================ */
-function irCliente(lat,lng){ if(lat&&lng) window.open(`https://www.google.com/maps?q=${lat},${lng}`); }
-
-/* ================================
-   🌤️ IA minimalista (notificación suave)
-================================ */
-function mostrarConsejoIA(txt){
-  if(Notification.permission==="granted"){
-    new Notification("💡 Consejo", { body:txt, icon:"ml-icon-192.png" });
-  }
-}
-
-/* ================================
-   📡 Inicializar notificaciones
-================================ */
-function inicializarNotificaciones(v){ /* se mantiene igual */ }
-function syncOffline(){ /* se mantiene igual */ }
-function cargarResumen(){ /* se mantiene igual */ }
-function cargarCalendario(){ /* se mantiene igual */ }
-function notificacionDiaria(){ /* se mantiene igual */ }
-function detectarClienteCercano(){ /* se mantiene igual */ }
 
 /* ================================
    🌍 Mapa
 ================================ */
-function renderMapaFull(){ /* sin cambios */ }
+function irCliente(lat,lng){ window.open(`https://www.google.com/maps?q=${lat},${lng}`); }
+function renderMapaFull(){}
 
-
-/* =========================================================
-   🧠 IA — Reglas Simples y Consejos
-========================================================= */
-
+/* ================================
+   🧠 IA Coach (C + D)
+================================ */
 function generarConsejosIA(clientes){
-  const consejos = [];
-
-  clientes.forEach(c => {
-
-    // 🔥 Cliente con alta probabilidad de compra hoy
-    if(c.frecuenciaCompraDias && c.ultCompraDias >= c.frecuenciaCompraDias - 1){
-      consejos.push(`🟢 Hoy ${c.nombre} está listo para mover mercadería. ¡Pasá y cerrá venta! 💥`);
-    }
-
-    // ⏱️ Cliente olvidado / dormido
-    if(c.ultCompraDias && c.frecuenciaCompraDias && c.ultCompraDias > c.frecuenciaCompraDias * 2){
-      consejos.push(`🕓 ${c.nombre} hace rato que no compra (${c.ultCompraDias} días). ¡Es hoy o nunca! Traé tu mejor charla 💬🔥`);
-    }
-
-    // 🏆 Cliente clave / rentable
-    if(c.esClienteClave){
-      consejos.push(`⭐ ${c.nombre} es de los que te suben el promedio. Pasalo temprano mientras tenés energía 💪😎`);
-    }
-
-    // 🎯 Cliente cerca + fresco para romper hielo
-    if(c._dist && c._dist < 1.2){
-      consejos.push(`🚶‍♂️ ${c.nombre} está cerquita (${c._dist.toFixed(1)} km). Pasá a ganar ritmo y arrancar el día con confianza ⚡`);
-    }
-
+  const out=[];
+  clientes.forEach(c=>{
+    if(c.frecuenciaCompraDias && c.ultCompraDias >= c.frecuenciaCompraDias - 1)
+      out.push(`🟢 Hoy ${c.nombre} está listo para mover mercadería. ¡Pasá y cerrá venta! 💥`);
+    if(c.ultCompraDias && c.frecuenciaCompraDias && c.ultCompraDias > c.frecuenciaCompraDias * 2)
+      out.push(`🕓 ${c.nombre} hace rato que no compra (${c.ultCompraDias} días). ¡Es hoy o nunca! 💬🔥`);
+    if(c.esClienteClave)
+      out.push(`⭐ ${c.nombre} es cliente clave. Pasalo temprano mientras hay energía 💪😎`);
+    if(c._dist && c._dist<1.2)
+      out.push(`🚶‍♂️ ${c.nombre} está cerquita (${c._dist.toFixed(1)} km). Ideal para arrancar el día con confianza ⚡`);
   });
-
-  // Si no hubo nada especial, motivación base
-  if(consejos.length === 0){
-    consejos.push(`✨ Todo tranqui por ahora. Vos marcás el ritmo hoy. ¡Vamos con actitud vendedor callejero premium! 😎🔥`);
-  }
-
-  // Mezclar un poco para que no siempre salga igual
-  return consejos.sort(() => Math.random() - 0.5);
+  return out.length? out.sort(()=>Math.random()-0.5) : [`✨ Todo tranqui hoy. Entramos confiados 😎🔥`];
 }
 
-
-/* =========================================================
-   💡 Mostrar consejos en el panel IA
-========================================================= */
 function actualizarPanelIA(){
-  const panel = document.getElementById("iaPanel");
-  if(!panel) return;
+  const p=document.getElementById("iaPanel");
+  if(!p) return;
+  const c=generarConsejosIA(clientesData);
+  p.innerHTML = c.map(txt=>`<div class="bubble-ia">${txt}</div>`).join("");
+}
 
-  const consejos = generarConsejosIA(clientesData);
+function registrarInteraccionIA(txt){
+  const p=document.getElementById("iaPanel");
+  if(!p) return;
+  p.insertAdjacentHTML("beforeend", `<div class="bubble-user">${txt}</div>`);
+  p.scrollTo({ top:p.scrollHeight, behavior:'smooth' });
+}
 
-  panel.innerHTML = "";
+/* ================================
+   🔔 Alertas IA automáticas
+================================ */
+function alertasIA(){
+  const c=generarConsejosIA(clientesData);
+  const importante = c.find(t=> t.includes("⭐") || t.includes("🔥") );
+  if(importante) mostrarConsejoIA(importante);
+}
 
-  if(!consejos.length){
-    panel.innerHTML = `<div class="bubble-ia">✨ Sin recomendaciones por ahora. Buen ritmo.</div>`;
+function mostrarConsejoIA(txt){
+  if(Notification.permission!=="granted"){
+    Notification.requestPermission();
     return;
   }
-
-  consejos.forEach(texto=>{
-    const div = document.createElement("div");
-    div.className = "bubble-ia";
-    div.textContent = texto;
-    panel.appendChild(div);
-  });
+  new Notification("💡 Consejo IA", { body:txt, icon:"ml-icon-192.png" });
 }
-
-// Opcional: cuando el vendedor toca algo que demuestra acción → mostramos motivación
-function registrarInteraccionIA(texto){
-  const panel = document.getElementById("iaPanel");
-  const div = document.createElement("div");
-  div.className = "bubble-user";
-  div.textContent = texto;
-  panel.appendChild(div);
-  panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
-}
-
-
-/* =========================================================
-   🔔 Alertas automáticas IA (cuando hay algo importante)
-========================================================= */
-function alertasIA(){
-  const consejos = generarConsejosIA(clientesData);
-
-  // Solo disparar alertas si hay algo importante
-  const alertaClave = consejos.find(c => c.includes("⚠️") || c.includes("⭐"));
-
-  if(alertaClave){
-    mostrarConsejoIA(alertaClave);
-  }
-}
-
-/* =========================================================
-   🟢 Integración automática al cargar la ruta
-========================================================= */
-const _cargarRutaOriginal = cargarRuta;
-cargarRuta = async function(clave){
-  const data = await _cargarRutaOriginal(clave);
-  actualizarPanelIA();
-  alertasIA();
-  return data;
-};
-
 
 /* ================================
    🔗 Exponer funciones
