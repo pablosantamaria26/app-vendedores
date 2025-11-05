@@ -1,6 +1,7 @@
-/* =========================================================
-   🎨 VARIABLES DE TEMA
-========================================================= */
+/*****************************************************
+ 🎨 TEMAS — SOLO 3, DUO TONO
+*****************************************************/
+
 :root {
   --card: #ffffff;
   --borde: #d0d7e2;
@@ -9,47 +10,46 @@
   --sombra: rgba(0,0,0,0.15);
 }
 
-/* Tema Energía */
-body.tema-energia {
+/* Tema 1 — Cálido (ventas dinámicas, energía social) */
+body.tema-calido {
+  --card: #fff6e9;
+  --borde: #f0c8a0;
+  --texto: #402200;
+  --azul: #ff7a32;
+  --sombra: rgba(255,122,50,0.35);
+}
+
+/* Tema 2 — Océano (limpio, profesional) */
+body.tema-oceano {
   --card: #ffffff;
-  --borde: #c9b6ff;
-  --texto: #111;
-  --azul: #8b5cf6;
-  --sombra: rgba(139,92,246,0.25);
+  --borde: #bcd9ff;
+  --texto: #002247;
+  --azul: #0a63ff;
+  --sombra: rgba(10,99,255,0.25);
 }
 
-/* Tema Foco */
-body.tema-foco {
-  --card: #fff8c3;
-  --borde: #e3d17a;
-  --texto: #2a2100;
-  --azul: #facc15;
-  --sombra: rgba(250,204,21,0.35);
-}
-
-/* Tema Noche */
+/* Tema 3 — Noche (modo oscuro premium) */
 body.tema-noche {
-  --card: #00172e;
-  --borde: #00325e;
+  --card: #02111f;
+  --borde: #003c66;
   --texto: #e6eef8;
   --azul: #4ea3ff;
-  --sombra: rgba(0,0,0,0.45);
+  --sombra: rgba(0,0,0,0.55);
 }
 
-/* =========================================================
-   🧱 BASE GENERAL
-========================================================= */
+/*****************************************************
+ 🧱 BASE DE ESTILO
+*****************************************************/
 body {
   margin: 0;
   background: var(--card);
   color: var(--texto);
   font-family: 'Inter', sans-serif;
   -webkit-tap-highlight-color: transparent;
+  transition: background .3s, color .3s;
 }
 
-h1, h2, h3 {
-  margin: 0 0 10px;
-}
+h1, h2, h3 { margin-bottom: 10px; }
 
 .seccion {
   display: none;
@@ -57,7 +57,6 @@ h1, h2, h3 {
 }
 .seccion.visible { display: block; }
 
-/* Header */
 header {
   display: flex;
   justify-content: space-between;
@@ -70,37 +69,54 @@ header {
   z-index: 900;
 }
 
-/* Menú inferior */
-.menu {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--card);
-  display: flex;
-  border-top: 1px solid var(--borde);
-}
-.menu button {
-  flex: 1;
-  padding: 12px 0;
-  font-size: 1.2rem;
-  border: none;
-  background: transparent;
-  color: var(--texto);
+/*****************************************************
+ 🎨 Selector de Tema — Mini Menú
+*****************************************************/
+.tema-toggle {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--borde);
   cursor: pointer;
-}
-.menu button.activo {
-  background: var(--azul);
-  color: white;
+  font-size: .9rem;
 }
 
-/* =========================================================
-   🧱 TARJETAS DE CLIENTE
-========================================================= */
+.tema-menu {
+  position: absolute;
+  top: 52px;
+  right: 16px;
+  background: var(--card);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px var(--sombra);
+  padding: 8px 0;
+  display: none;
+  z-index: 2000;
+}
+
+.tema-menu.visible { display: block; }
+
+.tema-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  gap: 8px;
+  cursor: pointer;
+}
+.tema-item:hover { background: rgba(0,0,0,0.06); }
+
+.dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+/*****************************************************
+ 🧱 Tarjetas de Cliente
+*****************************************************/
 .cliente {
   background: var(--card);
   border: 1px solid var(--borde);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 12px;
   margin-bottom: 14px;
   box-shadow: 0 4px 14px var(--sombra);
@@ -111,7 +127,6 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 6px;
 }
 
 .badge {
@@ -122,40 +137,58 @@ header {
   border-radius: 8px;
 }
 
-/* =========================================================
-   ➕ CONTROLES TÁCTILES GRANDES
-========================================================= */
+/*****************************************************
+ ✅ BOTONES TÁCTILES (A: Compra solo si Visitado ON)
+*****************************************************/
 .check-grande {
   display: flex;
   gap: 10px;
   margin-top: 8px;
 }
 
-.btn-visita, .btn-compra {
+.btn-visita,
+.btn-compra {
   flex: 1;
-  padding: 12px 0;
-  font-size: 1.05rem;
-  border-radius: 10px;
+  padding: 14px 0;
+  border-radius: 12px;
   border: 2px solid var(--borde);
   background: var(--card);
   color: var(--texto);
-  cursor: pointer;
-  transition: all .25s;
+  font-size: 1.2rem;
+  text-align: center;
+  user-select: none;
+  transition: all .25s ease;
 }
 
-.btn-visita.on, .btn-compra.on {
-  border-color: var(--azul);
+.btn-visita::before { content: "✅ "; }
+.btn-compra::before { content: "🛒 "; }
+
+/* Encendido */
+.btn-visita.on {
   background: var(--azul);
+  border-color: var(--azul);
   color: #fff;
-  box-shadow: 0 4px 14px var(--sombra);
 }
 
-/* =========================================================
-   📝 TEXTAREA
-========================================================= */
+.btn-compra {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.btn-visita.on + .btn-compra {
+  opacity: 1;
+  pointer-events: auto;
+}
+.btn-compra.on {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: #fff;
+}
+
+/*****************************************************
+ 📝 Textarea
+*****************************************************/
 textarea {
   width: 100%;
-  font-size: 1rem;
   border-radius: 8px;
   border: 1px solid var(--borde);
   background: var(--card);
@@ -164,30 +197,25 @@ textarea {
   margin-top: 10px;
 }
 
-/* =========================================================
-   🎯 BOTÓN GUARDAR + ACCIONES
-========================================================= */
-.acciones {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
+/*****************************************************
+ 💾 Botón Guardar
+*****************************************************/
+.acciones { display: flex; gap: 8px; margin-top: 10px; }
 .acciones button {
   flex: 1;
   padding: 10px 0;
   border-radius: 8px;
-  cursor: pointer;
   border: 2px solid var(--borde);
   background: var(--card);
   color: var(--texto);
+  cursor: pointer;
   transition: .25s;
 }
 .acciones button:hover { filter: brightness(1.1); }
 
-/* =========================================================
-   💡 IA — BOTÓN FLOTANTE + PANEL CHAT
-========================================================= */
+/*****************************************************
+ 💡 IA flotante + panel chat
+*****************************************************/
 .floating-ia {
   position: fixed;
   bottom: 86px;
@@ -215,42 +243,35 @@ textarea {
   background: var(--card);
   border: 1px solid var(--borde);
   border-radius: 12px;
+  padding: 12px 14px;
   max-width: 260px;
   max-height: 260px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 14px;
   box-shadow: 0 8px 28px var(--sombra);
   z-index: 1200;
 }
 .ia-panel.oculto { display: none; }
 
-/* Burbujas */
+.bubble-ia,
+.bubble-user {
+  padding: 10px 14px;
+  animation: aparecer .25s ease-out;
+}
 .bubble-ia {
   background: var(--card);
   border: 1px solid var(--borde);
-  padding: 10px 14px;
   border-radius: 14px 14px 14px 4px;
-  animation: aparecer .25s ease-out;
 }
-
 .bubble-user {
   align-self: flex-end;
   background: var(--azul);
   color: #fff;
-  padding: 10px 14px;
   border-radius: 14px 14px 4px 14px;
-  animation: aparecer .25s ease-out;
 }
 
-@keyframes aparecer {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/*****************************************************/
+@keyframes aparecer { from { opacity: 0; transform: translateY(6px); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } }
