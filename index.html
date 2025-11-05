@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
-  <title>🧠 App de Vendedores Inteligente</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
+<title>🧠 App de Vendedores</title>
 
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
-  <link rel="apple-touch-icon" href="ml-icon-192.png">
-  <meta name="theme-color" content="#0a63ff" />
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
+<link rel="apple-touch-icon" href="ml-icon-192.png">
+<meta name="theme-color" content="#0a63ff" />
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Chart -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
-  <!-- Estilos -->
-  <link rel="stylesheet" href="./style.css?v=20251105">
+<!-- Estilos -->
+<link rel="stylesheet" href="./style.css?v=20251105">
 </head>
 
-<body>
+<body class="tema-confianza">
 
-<!-- ======================= Login ======================= -->
+<!-- =================== LOGIN =================== -->
 <div id="login">
   <div class="login-card">
     <h1>🧠 App de Vendedores</h1>
@@ -40,34 +40,39 @@
       <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
       <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
     </div>
+
     <p id="error"></p>
   </div>
 </div>
 
-<!-- ======================= Header ======================= -->
+<!-- =================== HEADER =================== -->
 <header>
   <h1 id="titulo">🧠 App de Vendedores</h1>
 
   <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Tema</div>
 
   <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-    <div class="tema-item" onclick="aplicarTema('tema-calido')">
-      <span class="dot" style="background:#ff7a32"></span> Cálido
+    <div class="tema-item" onclick="aplicarTema('tema-confianza')">
+      <span class="dot" style="background:#0a63ff"></span> Confianza
     </div>
-    <div class="tema-item" onclick="aplicarTema('tema-oceano')">
-      <span class="dot" style="background:#0a63ff"></span> Océano
+    <div class="tema-item" onclick="aplicarTema('tema-energia')">
+      <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> Energía
     </div>
-    <div class="tema-item" onclick="aplicarTema('tema-noche')">
-      <span class="dot" style="background:#0b1f33"></span> Noche
+    <div class="tema-item" onclick="aplicarTema('tema-foco')">
+      <span class="dot" style="background:#facc15"></span> Foco
     </div>
   </div>
 </header>
 
-<!-- ======================= Main ======================= -->
+<!-- =================== MAIN =================== -->
 <main>
-  <section id="seccion-ruta" class="seccion">
+  <section id="seccion-ruta" class="seccion visible">
     <h2>🗺️ Ruta del Día</h2>
-    <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
+
+    <div id="panelRuta" class="panel-resumen" style="margin-bottom:12px;">
+      Cargando datos...
+    </div>
+
     <div id="contenedor"></div>
   </section>
 
@@ -88,26 +93,15 @@
   </section>
 </main>
 
-<!-- ======================= Menú inferior ======================= -->
+<!-- =================== MENU =================== -->
 <div class="menu">
-  <button onclick="mostrarSeccion('ruta')" class="activo">🗺️ Ruta</button>
+  <button onclick="mostrarSeccion('ruta')" class="activo">🗺️</button>
   <button onclick="mostrarSeccion('mapa')">📍</button>
   <button onclick="mostrarSeccion('calendario')">📅</button>
   <button onclick="mostrarSeccion('resumen')">📈</button>
   <button onclick="logout()">🚪</button>
 </div>
 
-<!-- ======================= IA ======================= -->
-<button id="iaTipBtn" class="floating-ia">💡</button>
-<div id="iaPanel" class="ia-panel oculto"></div>
-
-<script>
-document.getElementById("iaTipBtn").addEventListener("click", ()=>{
-  document.getElementById("iaPanel").classList.toggle("oculto");
-});
-</script>
-
 <script src="./app.js?v=20251105" defer></script>
-
 </body>
 </html>
