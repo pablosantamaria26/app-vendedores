@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
-  <meta name="theme-color" content="#0a2b57" />
+  <meta name="theme-color" content="#0a63ff" />
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -22,10 +22,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Estilos -->
-  <link rel="stylesheet" href="./style.css?v=20251104">
+  <link rel="stylesheet" href="./style.css?v=20251105">
 </head>
 
-<body class="tema-confianza">
+<body>
 
 <!-- ======================= Login ======================= -->
 <div id="login">
@@ -33,20 +33,12 @@
     <h1>🧠 App de Vendedores</h1>
     <h2>🔐 Ingresá tu código</h2>
     <input type="password" id="clave" maxlength="4" autocomplete="off" placeholder="••••" />
-    
+
     <div class="teclado-numerico">
-      <button onclick="agregarDigito('1')">1</button>
-      <button onclick="agregarDigito('2')">2</button>
-      <button onclick="agregarDigito('3')">3</button>
-      <button onclick="agregarDigito('4')">4</button>
-      <button onclick="agregarDigito('5')">5</button>
-      <button onclick="agregarDigito('6')">6</button>
-      <button onclick="agregarDigito('7')">7</button>
-      <button onclick="agregarDigito('8')">8</button>
-      <button onclick="agregarDigito('9')">9</button>
-      <button onclick="borrarDigito()">⌫</button>
-      <button onclick="agregarDigito('0')">0</button>
-      <button onclick="login()">✔️</button>
+      <button onclick="agregarDigito('1')">1</button><button onclick="agregarDigito('2')">2</button><button onclick="agregarDigito('3')">3</button>
+      <button onclick="agregarDigito('4')">4</button><button onclick="agregarDigito('5')">5</button><button onclick="agregarDigito('6')">6</button>
+      <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
+      <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
     </div>
     <p id="error"></p>
   </div>
@@ -55,21 +47,18 @@
 <!-- ======================= Header ======================= -->
 <header>
   <h1 id="titulo">🧠 App de Vendedores</h1>
-  <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
-  <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
+
+  <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Tema</div>
 
   <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-    <div class="tema-item" onclick="aplicarTema('tema-confianza')">
-      <span class="dot" style="background:#0a63ff"></span> Confianza
+    <div class="tema-item" onclick="aplicarTema('tema-calido')">
+      <span class="dot" style="background:#ff7a32"></span> Cálido
     </div>
-    <div class="tema-item" onclick="aplicarTema('tema-energia')">
-      <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> Energía
-    </div>
-    <div class="tema-item" onclick="aplicarTema('tema-foco')">
-      <span class="dot" style="background:#facc15"></span> Foco
+    <div class="tema-item" onclick="aplicarTema('tema-oceano')">
+      <span class="dot" style="background:#0a63ff"></span> Océano
     </div>
     <div class="tema-item" onclick="aplicarTema('tema-noche')">
-      <span class="dot" style="background:#001b3a"></span> Noche
+      <span class="dot" style="background:#0b1f33"></span> Noche
     </div>
   </div>
 </header>
@@ -101,14 +90,14 @@
 
 <!-- ======================= Menú inferior ======================= -->
 <div class="menu">
-  <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
-  <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
-  <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
-  <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
-  <button id="btnLogout" onclick="logout()">🚪</button>
+  <button onclick="mostrarSeccion('ruta')" class="activo">🗺️ Ruta</button>
+  <button onclick="mostrarSeccion('mapa')">📍</button>
+  <button onclick="mostrarSeccion('calendario')">📅</button>
+  <button onclick="mostrarSeccion('resumen')">📈</button>
+  <button onclick="logout()">🚪</button>
 </div>
 
-<!-- ======================= IA mínima ======================= -->
+<!-- ======================= IA ======================= -->
 <button id="iaTipBtn" class="floating-ia">💡</button>
 <div id="iaPanel" class="ia-panel oculto"></div>
 
@@ -118,7 +107,7 @@ document.getElementById("iaTipBtn").addEventListener("click", ()=>{
 });
 </script>
 
-<script src="./app.js?v=20251104" defer></script>
+<script src="./app.js?v=20251105" defer></script>
 
 </body>
 </html>
