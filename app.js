@@ -10,7 +10,6 @@ let mapaFull = null;
 
 /* =======================================
     🔐 Login & sesión (NATIVO / API)
-   (Este bloque reemplaza tu login original)
 ======================================= */
 
 // La función de logout se mantiene
@@ -105,38 +104,48 @@ function inicializarLoginNativo() {
     /**
      * Valida el PIN contra el Worker (Apps Script)
      */
-   async function validatePin(pin) {
-    showLoading(true);
-    errorMessage.classList.remove('visible');
+    async function validatePin(pin) {
+      showLoading(true);
+      errorMessage.classList.remove('visible');
 
-    try {
-        const response = await fetch(URL_API_BASE + "?action=autenticarVendedor", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin }) // 👈 SOLO el pin en el cuerpo
-        });
+      try {
+          // ================================================================
+          // AQUÍ ESTÁ LA CORRECCIÓN:
+          // 1. La 'action' va DENTRO del JSON.
+          // 2. La URL_API_BASE se llama limpia (sin ?action=)
+          // ================================================================
+          const response = await fetch(URL_API_BASE, { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  action: "autenticarVendedor", // <-- La 'action' debe ir aquí
+                  pin: pin 
+              }) 
+          });
 
-        const result = await response.json();
+          const result = await response.json();
 
-        if (result.estado === "ok" && result.vendedor) {
-            localStorage.setItem("vendedorClave", result.vendedor.clave);
+          if (result.estado === "ok" && result.vendedor) {
+              localStorage.setItem("vendedorClave", result.vendedor.clave);
 
-            document.getElementById("login").style.opacity = "0";
-            setTimeout(() => {
-                document.getElementById("login").style.display = "none";
-            }, 300);
+              document.getElementById("login").style.opacity = "0";
+              setTimeout(() => {
+                  document.getElementById("login").style.display = "none";
+              }, 300);
 
-            mostrarApp();
-        } else {
-            handleLoginError(result.mensaje || "PIN incorrecto");
-        }
-    } catch (err) {
-        handleLoginError("Error de conexión con el servidor.");
-    } finally {
-        showLoading(false);
+              mostrarApp();
+          } else {
+              handleLoginError(result.mensaje || "PIN incorrecto");
+          }
+      } catch (err) {
+          // Este 'catch' se activa por el error de CORS (Failed to fetch)
+          // O si el JSON está mal (como el <!DOCTYPE>)
+          console.error("Error de red o JSON:", err);
+          handleLoginError("Error de conexión. Revisa el worker.");
+      } finally {
+          showLoading(false);
+      }
     }
-}
-
 
 
     function handleLoginError(message) {
@@ -240,6 +249,7 @@ async function cargarRuta(clave){
   const estado=document.getElementById("estado");
   cont.innerHTML="⏳ Cargando clientes...";
   try{
+    // Las peticiones GET están bien como las tenías
     const r1 = await fetch(`${URL_API_BASE}?action=getRutaDelDiaPorVendedor&clave=${clave}`);
     clientesData = await r1.json();
 
@@ -284,7 +294,7 @@ function renderClientes(){
 
     card.innerHTML=`
       <h3>${c.nombre}</h3>
-      <div class="fila">
+      <div classa="fila">
         <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
         ${dist? `<span class="badge">📏 ${dist} km</span>`:""}
       </div>
@@ -362,28 +372,33 @@ async function registrarVisita(numero){
   c.bloqueado=true;
   renderClientes(); // REPINTA AUTOMÁTICO
 
-  const params=new URLSearchParams({
+  // 'params' ahora es un objeto simple, no URLSearchParams
+  const params = {
       action:"registrarVisita",
       numero:c.numero,
       nombre:c.nombre,
       direccion:c.direccion||"",
       localidad:c.localidad||"",
-      visitado,
-      compro,
+      visitado: visitado.toString(), // Convertir a string
+      compro: compro.toString(),   // Convertir a string
       comentario,
       vendedor
-  });
+  };
   
-  // Usamos POST para registrar, es más robusto que GET
+  // ================================================================
+  // AQUÍ ESTÁ LA CORRECCIÓN:
+  // 1. La 'action' va DENTRO del JSON (params ya la tiene).
+  // 2. La URL_API_BASE se llama limpia.
+  // ================================================================
   try{ 
-   await fetch(URL_API_BASE + "?action=registrarVisita", {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.fromEntries(params))
-});
- 
+    await fetch(URL_API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params) // Enviamos el objeto 'params' directamente
+    });
+  
   } catch(e) { 
-    queueOffline({t:"visita",params:Object.fromEntries(params)}); 
+    queueOffline({t:"visita",params:params}); 
   }
 }
 
