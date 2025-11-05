@@ -234,29 +234,39 @@ function renderMapaFull(){ /* sin cambios */ }
 function generarConsejosIA(clientes){
   const consejos = [];
 
-  const hoy = new Date();
-
   clientes.forEach(c => {
-    // Días sin comprar
-    if(c.ultCompraDias && c.ultCompraDias > 10){
-      consejos.push(`⚠️ El cliente ${c.numero} (${c.nombre}) no compra hace ${c.ultCompraDias} días.`);
+
+    // 🔥 Cliente con alta probabilidad de compra hoy
+    if(c.frecuenciaCompraDias && c.ultCompraDias >= c.frecuenciaCompraDias - 1){
+      consejos.push(`🟢 Hoy ${c.nombre} está listo para mover mercadería. ¡Pasá y cerrá venta! 💥`);
     }
 
-    // Si suele comprar cada X días (predicción desde backend)
-    if(c.frecuenciaCompraDias && c.ultCompraDias){
-      if(c.ultCompraDias >= c.frecuenciaCompraDias - 1){
-        consejos.push(`🟢 Probabilidad de compra HOY en ${c.numero} (${c.nombre}).`);
-      }
+    // ⏱️ Cliente olvidado / dormido
+    if(c.ultCompraDias && c.frecuenciaCompraDias && c.ultCompraDias > c.frecuenciaCompraDias * 2){
+      consejos.push(`🕓 ${c.nombre} hace rato que no compra (${c.ultCompraDias} días). ¡Es hoy o nunca! Traé tu mejor charla 💬🔥`);
     }
 
-    // Clientes grandes primero
+    // 🏆 Cliente clave / rentable
     if(c.esClienteClave){
-      consejos.push(`⭐ ${c.nombre} es cliente importante → Priorizar hoy.`);
+      consejos.push(`⭐ ${c.nombre} es de los que te suben el promedio. Pasalo temprano mientras tenés energía 💪😎`);
     }
+
+    // 🎯 Cliente cerca + fresco para romper hielo
+    if(c._dist && c._dist < 1.2){
+      consejos.push(`🚶‍♂️ ${c.nombre} está cerquita (${c._dist.toFixed(1)} km). Pasá a ganar ritmo y arrancar el día con confianza ⚡`);
+    }
+
   });
 
-  return consejos;
+  // Si no hubo nada especial, motivación base
+  if(consejos.length === 0){
+    consejos.push(`✨ Todo tranqui por ahora. Vos marcás el ritmo hoy. ¡Vamos con actitud vendedor callejero premium! 😎🔥`);
+  }
+
+  // Mezclar un poco para que no siempre salga igual
+  return consejos.sort(() => Math.random() - 0.5);
 }
+
 
 /* =========================================================
    💡 Mostrar consejos en el panel IA
