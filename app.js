@@ -106,47 +106,40 @@ function inicializarLoginNativo() {
      * Valida el PIN contra el Worker (Apps Script)
      */
     async function validatePin(pin) {
-        showLoading(true);
-        errorMessage.classList.remove('visible');
+    showLoading(true);
+    errorMessage.classList.remove('visible');
 
-        try {
-            // Usamos tu variable global URL_API_BASE
-            const response = await fetch(URL_API_BASE, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'autenticarVendedor', // La acción que creamos en el worker
-                    pin: pin
-                }),
-                headers: { 'Content-Type': 'application/json' }
-            });
+    try {
+        const response = await fetch(URL_API_BASE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: "autenticarVendedor",
+                pin: pin
+            })
+        });
 
-            const result = await response.json();
+        const result = await response.json();
 
-            if (result.estado === 'ok' && result.vendedor) {
-                // ÉXITO: Conectamos con tu lógica existente
-                
-                // 1. Guardamos la clave
-                localStorage.setItem("vendedorClave", result.vendedor.clave);
-                
-                // 2. Ocultamos el login con transición
-                document.getElementById("login").style.opacity = "0";
-                setTimeout(() => {
-                    document.getElementById("login").style.display = "none";
-                }, 300);
-                
-                // 3. LLAMAMOS A TU FUNCIÓN PRINCIPAL
-                mostrarApp();
-                
-            } else {
-                handleLoginError(result.mensaje || 'PIN incorrecto');
-            }
-        } catch (error) {
-            console.error('Error de red:', error);
-            handleLoginError('Error de conexión.');
-        } finally {
-            showLoading(false);
+        if (result.estado === 'ok' && result.vendedor) {
+            localStorage.setItem("vendedorClave", result.vendedor.clave);
+
+            document.getElementById("login").style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById("login").style.display = "none";
+            }, 300);
+
+            mostrarApp();
+        } else {
+            handleLoginError(result.mensaje || 'PIN incorrecto');
         }
+    } catch (err) {
+        handleLoginError('Error de conexión con el servidor.');
+    } finally {
+        showLoading(false);
     }
+}
+
 
     function handleLoginError(message) {
         errorMessage.textContent = message;
