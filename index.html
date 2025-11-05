@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
   <title>🧠 App de Vendedores Inteligente</title>
 
   <link rel="manifest" href="manifest.json">
@@ -10,112 +10,115 @@
   <link rel="apple-touch-icon" href="ml-icon-192.png">
   <meta name="theme-color" content="#0a2b57" />
 
-  <!-- Librerías -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
+
+  <!-- Leaflet (Mapa) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Estilos -->
   <link rel="stylesheet" href="./style.css?v=20251104">
 </head>
 
 <body class="tema-confianza">
-  <!-- LOGIN -->
-  <div id="login">
-    <div class="login-card">
-      <h1>🧠 App de Vendedores</h1>
-      <h2>🔐 Ingresá tu código</h2>
-      <input type="password" id="clave" maxlength="4" placeholder="••••" />
-      <div class="teclado-numerico">
-        <button onclick="agregarDigito('1')">1</button>
-        <button onclick="agregarDigito('2')">2</button>
-        <button onclick="agregarDigito('3')">3</button>
-        <button onclick="agregarDigito('4')">4</button>
-        <button onclick="agregarDigito('5')">5</button>
-        <button onclick="agregarDigito('6')">6</button>
-        <button onclick="agregarDigito('7')">7</button>
-        <button onclick="agregarDigito('8')">8</button>
-        <button onclick="agregarDigito('9')">9</button>
-        <button onclick="borrarDigito()">⌫</button>
-        <button onclick="agregarDigito('0')">0</button>
-        <button onclick="login()">✔️</button>
-      </div>
-      <p id="error"></p>
+
+<!-- ======================= Login ======================= -->
+<div id="login">
+  <div class="login-card">
+    <h1>🧠 App de Vendedores</h1>
+    <h2>🔐 Ingresá tu código</h2>
+    <input type="password" id="clave" maxlength="4" placeholder="••••" />
+    <div class="teclado-numerico">
+      <button onclick="agregarDigito('1')">1</button>
+      <button onclick="agregarDigito('2')">2</button>
+      <button onclick="agregarDigito('3')">3</button>
+      <button onclick="agregarDigito('4')">4</button>
+      <button onclick="agregarDigito('5')">5</button>
+      <button onclick="agregarDigito('6')">6</button>
+      <button onclick="agregarDigito('7')">7</button>
+      <button onclick="agregarDigito('8')">8</button>
+      <button onclick="agregarDigito('9')">9</button>
+      <button onclick="borrarDigito()">⌫</button>
+      <button onclick="agregarDigito('0')">0</button>
+      <button onclick="login()">✔️</button>
+    </div>
+    <p id="error"></p>
+  </div>
+</div>
+
+<!-- ======================= Header ======================= -->
+<header>
+  <h1 id="titulo">🧠 App de Vendedores</h1>
+  <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
+  <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
+
+  <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
+    <div class="tema-item" onclick="aplicarTema('tema-confianza')">
+      <span class="dot" style="background:#0a63ff"></span> <span class="nombre">● Confianza</span>
+    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-energia')">
+      <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> <span class="nombre">● Energía</span>
+    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-foco')">
+      <span class="dot" style="background:#facc15"></span> <span class="nombre">● Foco</span>
+    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-noche')">
+      <span class="dot" style="background:#001b3a"></span> <span class="nombre">● Noche</span>
     </div>
   </div>
+</header>
 
-  <!-- CABECERA -->
-  <header>
-    <h1 id="titulo">🧠 App de Vendedores</h1>
-    <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
-    <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
-    <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-      <div class="tema-item" onclick="aplicarTema('tema-confianza')">
-        <span class="dot" style="background:#0a63ff"></span><span>● Confianza</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-energia')">
-        <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span><span>● Energía</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-foco')">
-        <span class="dot" style="background:#f9fafb;border:1px solid #aaa"></span><span>● Día (Claro)</span>
-      </div>
-      <div class="tema-item" onclick="aplicarTema('tema-noche')">
-        <span class="dot" style="background:#001b3a"></span><span>● Noche (Oscuro)</span>
-      </div>
-    </div>
-  </header>
+<!-- ======================= Main ======================= -->
+<main>
+  <section id="seccion-ruta" class="seccion visible">
+    <h2>🗺️ Ruta del Día</h2>
+    <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
+    <div id="contenedor"></div>
+  </section>
 
-  <!-- CUERPO PRINCIPAL -->
-  <main>
-    <!-- 🗺️ RUTA DEL DÍA -->
-    <section id="seccion-ruta" class="seccion visible">
-      <h2>🗺️ Ruta del Día</h2>
-      <div id="estadoRuta" class="estado-ruta"></div>
-      <div id="contenedor"></div>
-    </section>
+  <section id="seccion-mapa" class="seccion">
+    <h2>📍 Mapa</h2>
+    <div id="mapaFull"></div>
+  </section>
 
-    <!-- 📍 MAPA -->
-    <section id="seccion-mapa" class="seccion">
-      <h2>📍 Mapa</h2>
-      <div id="mapaFull"></div>
-    </section>
+  <section id="seccion-calendario" class="seccion">
+    <h2>📅 Calendario</h2>
+    <div id="contenedorCalendario"></div>
+  </section>
 
-    <!-- 📅 CALENDARIO -->
-    <section id="seccion-calendario" class="seccion">
-      <h2>📅 Calendario</h2>
-      <div id="contenedorCalendario"></div>
-    </section>
+  <section id="seccion-resumen" class="seccion">
+    <h2>📈 Resumen</h2>
+    <div id="contenedorResumen" class="panel-resumen"></div>
+    <canvas id="graficoResumen"></canvas>
+  </section>
+</main>
 
-    <!-- 🤖 COACH DE VENTAS IA -->
-    <section id="seccion-resumen" class="seccion">
-      <h2>🤖 Coach de Ventas IA</h2>
-      <div id="contenedorCoach" class="panel-resumen"></div>
-      <canvas id="graficoHeatmap" height="300"></canvas>
-    </section>
-  </main>
+<!-- ======================= Menú inferior ======================= -->
+<div class="menu">
+  <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
+  <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
+  <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
+  <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
+  <button id="btnLogout" onclick="logout()">🚪</button>
+</div>
 
-  <!-- MENÚ INFERIOR -->
-  <div class="menu">
-    <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
-    <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍</button>
-    <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
-    <button id="btnResumen" onclick="mostrarSeccion('resumen')">🤖</button>
-    <button id="btnLogout" onclick="logout()">🚪</button>
-  </div>
+<!-- ======================= IA Mínima ======================= -->
+<button id="iaTipBtn" class="floating-ia">💡</button>
+<div id="iaPanel" class="ia-panel oculto"></div>
 
-  <!-- MODAL DE CONFIRMACIÓN (mejorado) -->
-  <div id="modalDestino" class="modal-destino" style="display:none;">
-    <div class="modal-contenido">
-      <h3>📍 ¿Ir hacia este cliente?</h3>
-      <p id="modalNombreCliente">Cliente destino</p>
-      <div class="modal-botones">
-        <button id="btnIr" class="btn-ir">🚗 Ir ahora</button>
-        <button id="btnCancelar" class="btn-cancelar">❌ Cancelar</button>
-      </div>
-    </div>
-  </div>
+<script>
+document.getElementById("iaTipBtn").addEventListener("click", ()=>{
+  const p=document.getElementById("iaPanel");
+  p.classList.toggle("oculto");
+});
+</script>
 
-  <script src="./app.js?v=20251104" defer></script>
+<script src="./app.js?v=20251104" defer></script>
+
 </body>
 </html>
