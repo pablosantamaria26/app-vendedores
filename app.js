@@ -1,375 +1,283 @@
 /* ================================
     ⚙️ Config principal
 ================================ */
-const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
-// ⬇️ Esta URL apunta al Worker de Cloudflare
-const URL_API_BASE = "https://script.google.com/macros/s/AKfycbz289_bgRPR7mLAe4-LbuePcHaepAMkhosIozkUDu4vhCR1qjM4cJ0INirCOO389f1n/exec";
-
+const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
 let clientesData = [];
 let posicionActual = null;
 let mapaFull = null;
 
-/* =======================================
-    🔐 Login & sesión (NATIVO / API)
-======================================= */
-
-function logout(){ 
-  localStorage.removeItem("vendedorClave"); 
-  location.reload(); 
-}
-
+/* ================================
+ 🔐 Login & sesión
+================================ */
 window.addEventListener("DOMContentLoaded", () => {
-    restaurarTema();
-    syncOffline();
-    notificacionDiaria();
-
-    const claveGuardada = localStorage.getItem("vendedorClave");
-    if (claveGuardada && vendedores[claveGuardada]) {
-        document.getElementById("login").style.display = "none";
-        mostrarApp(); 
-    } else {
-        document.getElementById("login").style.display = "grid";
-        inicializarLoginNativo();
-    }
+  restaurarTema();
+  const claveGuardada = localStorage.getItem("vendedorClave");
+  if (claveGuardada) {
+    document.getElementById("login").style.display = "none";
+    mostrarApp();
+  } else {
+    document.getElementById("login").style.display = "grid";
+    inicializarLoginNativo();
+  }
 });
 
+function logout() {
+  localStorage.removeItem("vendedorClave");
+  location.reload();
+}
+
+/* ---- LOGIN UI ---- */
 function inicializarLoginNativo() {
-    const hiddenInput = document.getElementById('hidden-pin-input');
-    const pinDots = document.querySelectorAll('.pin-dot');
-    const pinDisplay = document.querySelector('.pin-display');
-    const errorMessage = document.getElementById('error');
-    const loader = document.getElementById('loader');
-    if (!hiddenInput) return;
-    let currentPin = '';
+  const hiddenInput = document.getElementById('hidden-pin-input');
+  const pinDots = document.querySelectorAll('.pin-dot');
+  const pinDisplay = document.querySelector('.pin-display');
+  const errorMessage = document.getElementById('error');
+  const loader = document.getElementById('loader');
+  let currentPin = "";
 
-    function focusInput() { hiddenInput.focus(); }
-    focusInput();
-    document.body.addEventListener('click', () => {
-        if (document.getElementById('login').style.display === 'grid') focusInput();
-    });
-    document.body.addEventListener('touchstart', () => {
-        if (document.getElementById('login').style.display === 'grid') focusInput();
-    });
+  function focusInput(){ hiddenInput.focus(); }
+  focusInput();
 
-    hiddenInput.addEventListener('input', (e) => {
-        currentPin = e.target.value.trim().substring(0, 4);
-        e.target.value = currentPin;
-        updatePinDisplay(currentPin.length);
-        vibrate(50); 
-        if (currentPin.length === 4) {
-            hiddenInput.blur();
-            validatePin(currentPin);
-        }
-    });
-
-    function updatePinDisplay(length) {
-        pinDisplay.classList.remove('error');
-        errorMessage.classList.remove('visible');
-        pinDots.forEach((dot, index) => {
-            dot.classList.toggle('active', index < length);
-        });
+  hiddenInput.addEventListener('input', async (e) => {
+    currentPin = e.target.value.slice(0,4);
+    e.target.value = currentPin;
+    pinDots.forEach((dot,i)=>dot.classList.toggle("active", i < currentPin.length));
+    if(currentPin.length === 4){
+      loader.classList.add("visible");
+      pinDisplay.style.display="none";
+      await validarLogin(currentPin);
+      loader.classList.remove("visible");
+      pinDisplay.style.display="flex";
     }
+  });
 
-    async function validatePin(pin) {
-      showLoading(true);
-      errorMessage.classList.remove('visible');
-      try {
-          // ✅ CORRECTO: Llama al worker (URL_API_BASE)
-          // y envía la 'action' DENTRO del body.
-          const response = await fetch(URL_API_BASE, { 
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                  action: "autenticarVendedor", // <-- La 'action' va aquí
-                  pin: pin 
-              }) 
-          });
-
-          // Si el worker falla o Google falla, esto dará el error
-          const result = await response.json(); 
-
-          if (result.estado === "ok" && result.vendedor) {
-              localStorage.setItem("vendedorClave", result.vendedor.clave);
-              document.getElementById("login").style.opacity = "0";
-              setTimeout(() => {
-                  document.getElementById("login").style.display = "none";
-              }, 300);
-              mostrarApp();
-          } else {
-              handleLoginError(result.mensaje || "PIN incorrecto");
-          }
-      } catch (err) {
-          // Este es el error que estás viendo
-          console.error("Error de red o JSON:", err); 
-          handleLoginError("Error de conexión. Revisa el worker.");
-      } finally {
-          showLoading(false);
+  async function validarLogin(pin){
+    try{
+      const res = await fetch(URL_API_BASE, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ action:"autenticarVendedor", pin })
+      });
+      const r = await res.json();
+      if(r.estado === "ok"){
+        localStorage.setItem("vendedorClave", r.vendedor.clave);
+        document.getElementById("login").style.display="none";
+        mostrarApp();
+      } else {
+        errorMessage.textContent = r.mensaje || "PIN incorrecto";
+        errorMessage.classList.add("visible");
+        currentPin="";
+        hiddenInput.value="";
+        pinDots.forEach(dot=>dot.classList.remove("active"));
       }
+    }catch(err){
+      errorMessage.textContent = "Error de conexión";
+      errorMessage.classList.add("visible");
     }
-
-    function handleLoginError(message) {
-        errorMessage.textContent = message;
-        errorMessage.classList.add('visible');
-        pinDisplay.classList.add('error');
-        vibrate([100, 50, 100]); 
-        currentPin = '';
-        hiddenInput.value = '';
-        setTimeout(() => {
-            updatePinDisplay(0);
-            focusInput(); 
-        }, 1000);
-    }
-
-    function showLoading(isLoading) {
-        loader.classList.toggle('visible', isLoading);
-        pinDisplay.style.display = isLoading ? 'none' : 'flex';
-    }
-
-    function vibrate(pattern) {
-        if (window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate(pattern);
-        }
-    }
+  }
 }
-/* ================================
-    (Fin del bloque de Login)
-================================ */
-
 
 /* ================================
-    🎨 Temas
+ 🎨 Temas (Modo Día / Modo Noche)
 ================================ */
-function toggleTemaMenu(ev){
-  ev.stopPropagation();
-  const m=document.getElementById("temaMenu");
-  m.classList.toggle("visible");
-  const close=()=>{ m.classList.remove("visible"); document.removeEventListener("click", close); };
-  setTimeout(()=>document.addEventListener("click", close), 0);
+
+function aplicarTema(nombre){
+  document.body.classList.remove("tema-dia","tema-noche");
+  document.body.classList.add(nombre);
+  localStorage.setItem("temaPreferido", nombre);
 }
-function aplicarTema(clase){
-  const b=document.body;
-  b.classList.remove("tema-confianza","tema-energia","tema-foco");
-  b.classList.add(clase);
-  localStorage.setItem("temaPreferido", clase);
+
+function restaurarTema(){
+  aplicarTema(localStorage.getItem("temaPreferido") || "tema-dia");
 }
-function restaurarTema(){ aplicarTema(localStorage.getItem("temaPreferido")||"tema-confianza"); }
+
 function toggleModoOscuro(){
-  const actual=document.body.classList.contains("tema-foco");
-  aplicarTema(actual? (localStorage.getItem("temaPreferido")||"tema-confianza") : "tema-foco");
+  if(document.body.classList.contains("tema-noche")){
+    aplicarTema("tema-dia");
+  } else {
+    aplicarTema("tema-noche");
+  }
 }
 
 /* ================================
-    🧭 Navegación
+ 🧭 Navegación entre secciones
 ================================ */
 function mostrarSeccion(s){
   document.querySelectorAll(".seccion").forEach(sec=>sec.classList.remove("visible"));
   document.getElementById("seccion-"+s)?.classList.add("visible");
   document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("activo"));
-  document.querySelector(`.menu button[onclick="mostrarSeccion('${s}')"]`)?.classList.add("activo");
+  document.querySelector(`.menu button[data-seccion="${s}"]`)?.classList.add("activo");
   if(s==="mapa") renderMapaFull();
 }
 
 /* ================================
-    🚀 App principal
+ 🚀 Inicio de la App
 ================================ */
 async function mostrarApp(){
-  const clave=localStorage.getItem("vendedorClave");
-  document.getElementById("titulo").textContent=`👋 Hola, ${vendedores[clave]}`;
+  const clave = localStorage.getItem("vendedorClave");
   mostrarSeccion("ruta");
-  const clientesHoy=await cargarRuta(clave);
+  await cargarRuta(clave);
   await cargarResumen(clave);
-  await cargarCalendario();
-  inicializarNotificaciones(clave);
-  if(clientesHoy.length) detectarClienteCercano(clave, clientesHoy);
+  await cargarCalendario(clave);
+  inicializarNotificaciones(clave); // ✅ ahora sí se envía token al backend
 }
 
 /* ================================
-    📍 Distancias
-================================ */
-const toRad = d => d*Math.PI/180;
-function distanciaKm(aLat,aLng,bLat,bLng){
-  const R=6371, dLat=toRad(bLat-aLat), dLng=toRad(bLng-aLng);
-  const A=Math.sin(dLat/2)**2 + Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLng/2)**2;
-  return R*2*Math.atan2(Math.sqrt(A), Math.sqrt(1-A));
-}
-
-/* ================================
-    🚗 Cargar ruta
+ 🚗 Ruta del día
 ================================ */
 async function cargarRuta(clave){
   const cont=document.getElementById("contenedor");
-  const estado=document.getElementById("estado");
   cont.innerHTML="⏳ Cargando clientes...";
   try{
-    // ✅ CORRECTO: Las peticiones GET (para data) están bien como las tenías.
-    const r1 = await fetch(`${URL_API_BASE}?action=getRutaDelDiaPorVendedor&clave=${clave}`);
-    clientesData = await r1.json();
-
+    const r = await fetch(`${URL_API_BASE}?action=getRutaDelDiaPorVendedor&clave=${clave}`);
+    clientesData = await r.json();
     if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos=>{ posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude}; renderClientes(); });
-    }
-
-    estado.textContent=`Ruta cargada (${clientesData.length} clientes)`;
-    renderClientes();
-    return clientesData;
+      navigator.geolocation.getCurrentPosition(pos=>{
+        posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude};
+        renderClientes();
+      });
+    } else { renderClientes(); }
   }catch(e){
-    estado.textContent="❌ Error al cargar datos.";
-    return [];
+    cont.innerHTML="❌ Error al cargar ruta.";
   }
+  return clientesData;
 }
 
 /* ================================
-    ✅ RENDER CLIENTES
+ 🧱 Render de tarjetas de clientes
 ================================ */
+function distanciaKm(aLat,aLng,bLat,bLng){
+  const R=6371, dLat=(bLat-aLat)*Math.PI/180, dLng=(bLng-aLng)*Math.PI/180;
+  const A=Math.sin(dLat/2)**2 + Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(A),Math.sqrt(1-A));
+}
+
 function renderClientes(){
-  const cont = document.getElementById("contenedor");
-  if(!cont) return;
-  cont.innerHTML = "";
-  let lista = [...clientesData];
+  const cont=document.getElementById("contenedor");
+  cont.innerHTML="";
+  let lista=[...clientesData];
 
   if(posicionActual){
     lista.sort((a,b)=>{
-      const da = distanciaKm(posicionActual.lat,posicionActual.lng,parseFloat(a.lat),parseFloat(a.lng)) || 9999;
-      const db = distanciaKm(posicionActual.lat,posicionActual.lng,parseFloat(b.lat),parseFloat(b.lng)) || 9999;
-      return da - db;
+      const da=distanciaKm(posicionActual.lat,posicionActual.lng,Number(a.lat),Number(a.lng))||999;
+      const db=distanciaKm(posicionActual.lat,posicionActual.lng,Number(b.lat),Number(b.lng))||999;
+      return da-db;
     });
   }
 
-  lista.forEach((c)=>{
+  lista.forEach(c=>{
     const card=document.createElement("div");
-    card.className="cliente"; card.id="c_"+c.numero;
-    const lat=parseFloat(c.lat), lng=parseFloat(c.lng);
-    const dist = posicionActual && !isNaN(lat) && !isNaN(lng) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng).toFixed(1) : null;
-    const visitadoHecho = !!c.bloqueado;
-
+    card.className="cliente";
     card.innerHTML=`
       <h3>${c.nombre}</h3>
+      <p>📍 ${c.direccion || ""} ${c.localidad ? "("+c.localidad+")":""}</p>
+      <textarea id="coment-${c.numero}" placeholder="Comentario..."></textarea>
       <div class="fila">
-        <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
-        ${dist? `<span class="badge">📏 ${dist} km</span>`:""}
-      </div>
-      <div class="fila" style="margin-top:6px; gap:10px;">
-        <button id="btn-visita-${c.numero}" class="btn-visita ${visitadoHecho?"hecho":""}">
-          ${visitadoHecho?"✅ Visitado":"Aún sin visitar"}
-        </button>
-        <button id="btn-compro-${c.numero}" class="btn-compro" ${visitadoHecho?"":"disabled"}>
-          🛒 Compró
-        </button>
-      </div>
-      <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
-      <div class="acciones">
-        <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-        <button class="btn-secundario" onclick="irCliente(${lat},${lng})">🚗 Ir</button>
+        <button onclick="marcarVisita('${c.numero}')">✅ Visitado</button>
+        <button onclick="marcarCompra('${c.numero}')">🛒 Compró</button>
+        <button onclick="irCliente(${c.lat},${c.lng})">🚗 Ir</button>
       </div>`;
-
-    const btnVisita = card.querySelector(`#btn-visita-${c.numero}`);
-    const btnCompro = card.querySelector(`#btn-compro-${c.numero}`);
-    btnVisita.onclick=()=>{ btnVisita.classList.add("hecho"); btnVisita.textContent="✅ Visitado"; btnCompro.removeAttribute("disabled"); };
-    btnCompro.onclick=()=>{ btnCompro.classList.toggle("hecho"); };
-    if(c.bloqueado) card.classList.add("bloqueado");
     cont.appendChild(card);
   });
 }
 
 function irCliente(lat,lng){
-  if(!lat || !lng){ alert("📍 Este cliente no tiene coordenadas."); return; }
-  const dest = `&destination=${lat},${lng}&travelmode=driving`;
-  window.open(`https://www.google.com/maps/dir/?api=1${dest}`,"_blank");
+  if(!lat||!lng) return alert("Cliente sin coordenadas");
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,"_blank");
 }
 
 /* ================================
-    🗺️ Mapa
+ 💾 Registrar Visita
+================================ */
+async function marcarVisita(num){
+  await guardarVisita(num,true,false);
+}
+async function marcarCompra(num){
+  await guardarVisita(num,true,true);
+}
+
+async function guardarVisita(numero,visitado,compro){
+  const c = clientesData.find(x=>String(x.numero)===String(numero));
+  const vendedor = localStorage.getItem("vendedorClave");
+  const comentario=(document.getElementById(`coment-${numero}`)?.value||"").trim();
+  const params={
+    action:"registrarVisita",
+    numero:c.numero, nombre:c.nombre,
+    direccion:c.direccion, localidad:c.localidad,
+    visitado, compro, comentario, vendedor
+  };
+  try{
+    await fetch(URL_API_BASE,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(params)
+    });
+  }catch(err){}
+}
+
+/* ================================
+ 🗺️ Mapa
 ================================ */
 function renderMapaFull(){
-  const el=document.getElementById("mapaFull");
-  if(!el) return;
   if(mapaFull){ mapaFull.remove(); mapaFull=null; }
   mapaFull=L.map("mapaFull").setView([-34.7,-58.4],11);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapaFull);
   clientesData.forEach(c=>{
-    if(c.lat&&c.lng) L.marker([c.lat,c.lng]).addTo(mapaFull).bindPopup(c.nombre);
+    if(c.lat && c.lng){
+      L.marker([c.lat,c.lng]).addTo(mapaFull).bindPopup(c.nombre);
+    }
   });
 }
 
 /* ================================
-    💾 Registrar visita
+ 📊 Pendientes
 ================================ */
-function getClientePorNumero(num){ return clientesData.find(x=>String(x.numero)===String(num)); }
+async function cargarResumen(){ }
+async function cargarCalendario(){ }
 
-async function registrarVisita(numero){
-  mostrarExito(); 
-  const visitado = document.getElementById(`btn-visita-${numero}`)?.classList.contains("hecho");
-  const compro    = document.getElementById(`btn-compro-${numero}`)?.classList.contains("hecho");
-  const comentario=(document.getElementById(`coment-${numero}`)?.value||"").trim();
-  const c=getClientePorNumero(numero);
-  const vendedor=localStorage.getItem("vendedorClave");
-  c.bloqueado=true;
-  renderClientes(); 
-
-  const params = {
-      action:"registrarVisita",
-      numero:c.numero,
-      nombre:c.nombre,
-      direccion:c.direccion||"",
-      localidad:c.localidad||"",
-      visitado: visitado.toString(),
-      compro: compro.toString(),
-      comentario,
-      vendedor
+/* ================================
+ 🔔 Notificaciones Push (FCM)
+================================ */
+async function inicializarNotificaciones(vendedorClave) {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+    authDomain: "app-vendedores-inteligente.firebaseapp.com",
+    projectId: "app-vendedores-inteligente",
+    storageBucket: "app-vendedores-inteligente.appspot.com",
+    messagingSenderId: "583313989429",
+    appId: "1:583313989429:web:c4f78617ad957c3b11367c",
+    vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o"
   };
-  
-  // ✅ CORRECTO: Llama al worker (URL_API_BASE)
-  // y envía 'params' (que incluye la 'action') DENTRO del body.
-  try{ 
-    await fetch(URL_API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params) 
+
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  try {
+    await Notification.requestPermission();
+    const token = await messaging.getToken({ vapidKey: firebaseConfig.vapidKey });
+    if (!token) return;
+    await fetch(URL_API_BASE,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ action:"registrarToken", vendedor:vendedorClave, token })
     });
-  } catch(e) { 
-    queueOffline({t:"visita",params:params}); 
-  }
+  } catch(err){ console.warn("Notificaciones no habilitadas:",err); }
+}
+
+if (typeof firebase !== "undefined") {
+  const messaging = firebase.messaging();
+  messaging.onMessage((payload) => {
+    alert(`🔔 ${payload.notification.title}\n${payload.notification.body}`);
+  });
 }
 
 /* ================================
-    🔔 Overlay Éxito
+ Exponer funciones
 ================================ */
-function mostrarExito(){
-  const prev=document.querySelector(".exito-overlay"); if(prev) prev.remove();
-  const wrap=document.createElement("div");
-  wrap.className="exito-overlay";
-  wrap.innerHTML=`
-    <div class="exito-box">
-      <div class="exito-circle">
-        <svg><circle class="bg" cx="90" cy="90" r="84"></circle><circle class="prog" cx="90" cy="90" r="84"></circle></svg>
-        <div class="exito-check">
-          <svg><path d="M26 48 L44 68 L70 34"></path></svg>
-        </div>
-      </div>
-      <div class="exito-titulo">Visita registrada</div>
-    </div>`;
-  document.body.appendChild(wrap);
-  setTimeout(()=>wrap.remove(), 900);
-}
-
-/* ================================
-    📶 Cola Offline y Stubs
-================================ */
-function queueOffline(item){ const k="offlineQueue"; let q=JSON.parse(localStorage.getItem(k)||"[]"); q.push(item); localStorage.setItem(k,JSON.stringify(q)); }
-async function syncOffline(){}
-async function cargarResumen(clave){}
-async function cargarCalendario(clave){} 
-function inicializarNotificaciones(clave){} 
-function notificacionDiaria(){}
-function detectarClienteCercano(clave, clientesHoy){}
-function toast(msg){}
-
-/* Exponer funciones al window */
 window.logout=logout;
 window.mostrarSeccion=mostrarSeccion;
-window.registrarVisita=registrarVisita;
+window.toggleModoOscuro=toggleModoOscuro;
+window.marcarVisita=marcarVisita;
+window.marcarCompra=marcarCompra;
 window.irCliente=irCliente;
-window.aplicarTema = aplicarTema;
-window.toggleModoOscuro = toggleModoOscuro;
-window.toggleTemaMenu = toggleTemaMenu;
