@@ -105,23 +105,20 @@ function inicializarLoginNativo() {
     /**
      * Valida el PIN contra el Worker (Apps Script)
      */
-    async function validatePin(pin) {
+   async function validatePin(pin) {
     showLoading(true);
     errorMessage.classList.remove('visible');
 
     try {
-        const response = await fetch(URL_API_BASE, {
+        const response = await fetch(URL_API_BASE + "?action=autenticarVendedor", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: "autenticarVendedor",
-                pin: pin
-            })
+            body: JSON.stringify({ pin })
         });
 
         const result = await response.json();
 
-        if (result.estado === 'ok' && result.vendedor) {
+        if (result.estado === "ok" && result.vendedor) {
             localStorage.setItem("vendedorClave", result.vendedor.clave);
 
             document.getElementById("login").style.opacity = "0";
@@ -131,10 +128,10 @@ function inicializarLoginNativo() {
 
             mostrarApp();
         } else {
-            handleLoginError(result.mensaje || 'PIN incorrecto');
+            handleLoginError(result.mensaje || "PIN incorrecto");
         }
     } catch (err) {
-        handleLoginError('Error de conexión con el servidor.');
+        handleLoginError("Error de conexión con el servidor.");
     } finally {
         showLoading(false);
     }
