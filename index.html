@@ -7,11 +7,10 @@
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0a63ff" />
-
-  <!-- Iconos -->
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="ml-favicon-16.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
+  <meta name="theme-color" content="#0a2b57" />
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -21,90 +20,108 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- ChartJS -->
+  <!-- Chart -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Estilos -->
   <link rel="stylesheet" href="style.css">
 </head>
 
-<!-- 👇 Ahora usamos tema-dia por defecto -->
-<body class="tema-dia">
+<body class="tema-confianza">
 
-  <!-- ================= LOGIN ================= -->
+  <!-- LOGIN -->
   <div id="login">
     <div class="login-card">
-      
-      <h1>Mercado Limpio</h1>
+      <h1>🧠 App de Vendedores</h1>
       <h2>🔐 Ingresá tu PIN</h2>
-      
+
       <input type="number" id="hidden-pin-input" pattern="[0-9]*" inputmode="numeric">
 
       <div class="pin-display">
-          <div class="pin-dot" id="dot-0"></div>
-          <div class="pin-dot" id="dot-1"></div>
-          <div class="pin-dot" id="dot-2"></div>
-          <div class="pin-dot" id="dot-3"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
       </div>
-      
-      <p id="error">PIN incorrecto</p>
-      <div class="loader" id="loader"></div>
 
+      <p id="error">PIN incorrecto.</p>
+      <div class="loader" id="loader"></div>
     </div>
   </div>
 
-  <!-- ================= HEADER ================= -->
+  <!-- HEADER -->
   <header>
-    <h1 id="titulo">👋 Hola vendedor...</h1>
+    <h1 id="titulo">🧠 App de Vendedores</h1>
+    <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
+    <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
 
-    <!-- Botón modo oscuro -->
-    <button class="modo-toggle" onclick="toggleModoOscuro()">🌗</button>
+    <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
+      <div class="tema-item" onclick="aplicarTema('tema-confianza')">
+        <span class="dot" style="background:#0a63ff"></span> <span class="nombre">Confianza</span>
+      </div>
+      <div class="tema-item" onclick="aplicarTema('tema-energia')">
+        <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> <span class="nombre">Energía</span>
+      </div>
+      <div class="tema-item" onclick="aplicarTema('tema-foco')">
+        <span class="dot" style="background:#facc15"></span> <span class="nombre">Foco</span>
+      </div>
+    </div>
   </header>
 
-  <!-- ================= MAIN ================= -->
+  <!-- MAIN -->
   <main>
-    
-    <!-- RUTA -->
     <section id="seccion-ruta" class="seccion visible">
       <h2>🗺️ Ruta del Día</h2>
       <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
       <div id="contenedor"></div>
     </section>
 
-    <!-- MAPA -->
     <section id="seccion-mapa" class="seccion">
       <h2>📍 Mapa</h2>
       <div id="mapaFull"></div>
     </section>
 
-    <!-- CALENDARIO -->
     <section id="seccion-calendario" class="seccion">
       <h2>📅 Calendario</h2>
       <div id="contenedorCalendario"></div>
     </section>
 
-    <!-- RESUMEN -->
     <section id="seccion-resumen" class="seccion">
       <h2>📈 Resumen</h2>
       <div id="contenedorResumen" class="panel-resumen"></div>
       <canvas id="graficoResumen"></canvas>
     </section>
-
-    <p style="text-align:center;margin-top:28px;opacity:.45;">
-      Distribuidora Mercado Limpio
-    </p>
   </main>
 
-  <!-- ================= MENÚ INFERIOR ================= -->
+  <!-- MENU INFERIOR -->
   <div class="menu">
-    <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
-    <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
-    <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
-    <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
-    <button id="btnLogout" onclick="logout()">🚪</button>
+    <button onclick="mostrarSeccion('ruta')" class="activo">🗺️ Ruta</button>
+    <button onclick="mostrarSeccion('mapa')">📍 Mapa</button>
+    <button onclick="mostrarSeccion('calendario')">📅</button>
+    <button onclick="mostrarSeccion('resumen')">📈</button>
+    <button onclick="logout()">🚪</button>
   </div>
 
-  <!-- ================= APP JS ================= -->
+  <!-- ✅ Inicialización Firebase -->
+  <script>
+    firebase.initializeApp({
+      apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+      authDomain: "app-vendedores-inteligente.firebaseapp.com",
+      projectId: "app-vendedores-inteligente",
+      storageBucket: "app-vendedores-inteligente.appspot.com",
+      messagingSenderId: "583313989429",
+      appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+    });
+  </script>
+
+  <!-- ✅ Registrar Service Worker -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("firebase-messaging-sw.js")
+        .then(() => console.log("✅ Service Worker registrado"))
+        .catch(err => console.warn("❌ Error registrando Service Worker:", err));
+    }
+  </script>
+
   <script src="app.js"></script>
 
 </body>
