@@ -1,15 +1,136 @@
 /* =========================================================
-   ➕ NUEVOS CONTROLES TÁCTILES — Minimal & Mobile
+   🎨 VARIABLES DE TEMA
 ========================================================= */
+:root {
+  --card: #ffffff;
+  --borde: #d0d7e2;
+  --texto: #081526;
+  --azul: #0a63ff;
+  --sombra: rgba(0,0,0,0.15);
+}
 
-/* Contenedor de botones grandes */
+/* Tema Energía */
+body.tema-energia {
+  --card: #ffffff;
+  --borde: #c9b6ff;
+  --texto: #111;
+  --azul: #8b5cf6;
+  --sombra: rgba(139,92,246,0.25);
+}
+
+/* Tema Foco */
+body.tema-foco {
+  --card: #fff8c3;
+  --borde: #e3d17a;
+  --texto: #2a2100;
+  --azul: #facc15;
+  --sombra: rgba(250,204,21,0.35);
+}
+
+/* Tema Noche */
+body.tema-noche {
+  --card: #00172e;
+  --borde: #00325e;
+  --texto: #e6eef8;
+  --azul: #4ea3ff;
+  --sombra: rgba(0,0,0,0.45);
+}
+
+/* =========================================================
+   🧱 BASE GENERAL
+========================================================= */
+body {
+  margin: 0;
+  background: var(--card);
+  color: var(--texto);
+  font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3 {
+  margin: 0 0 10px;
+}
+
+.seccion {
+  display: none;
+  padding: 16px;
+}
+.seccion.visible { display: block; }
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--borde);
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+
+/* Menú inferior */
+.menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  display: flex;
+  border-top: 1px solid var(--borde);
+}
+.menu button {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 1.2rem;
+  border: none;
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+}
+.menu button.activo {
+  background: var(--azul);
+  color: white;
+}
+
+/* =========================================================
+   🧱 TARJETAS DE CLIENTE
+========================================================= */
+.cliente {
+  background: var(--card);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px var(--sombra);
+  animation: fadeIn .25s ease-out;
+}
+
+.fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.badge {
+  background: var(--azul);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+/* =========================================================
+   ➕ CONTROLES TÁCTILES GRANDES
+========================================================= */
 .check-grande {
   display: flex;
   gap: 10px;
   margin-top: 8px;
 }
 
-/* Botones táctiles reemplazando checkbox */
 .btn-visita, .btn-compra {
   flex: 1;
   padding: 12px 0;
@@ -18,13 +139,10 @@
   border: 2px solid var(--borde);
   background: var(--card);
   color: var(--texto);
-  text-align: center;
   cursor: pointer;
-  user-select: none;
-  transition: all .25s ease;
+  transition: all .25s;
 }
 
-/* Estado activo (ON) */
 .btn-visita.on, .btn-compra.on {
   border-color: var(--azul);
   background: var(--azul);
@@ -32,39 +150,64 @@
   box-shadow: 0 4px 14px var(--sombra);
 }
 
-/* Hover suave */
-.btn-visita:hover, .btn-compra:hover {
-  filter: brightness(1.15);
+/* =========================================================
+   📝 TEXTAREA
+========================================================= */
+textarea {
+  width: 100%;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--card);
+  color: var(--texto);
+  padding: 8px;
+  margin-top: 10px;
 }
 
 /* =========================================================
-   💡 BOTÓN IA FLOTANTE + PANEL
+   🎯 BOTÓN GUARDAR + ACCIONES
 ========================================================= */
+.acciones {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
 
+.acciones button {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid var(--borde);
+  background: var(--card);
+  color: var(--texto);
+  transition: .25s;
+}
+.acciones button:hover { filter: brightness(1.1); }
+
+/* =========================================================
+   💡 IA — BOTÓN FLOTANTE + PANEL CHAT
+========================================================= */
 .floating-ia {
   position: fixed;
   bottom: 86px;
   right: 16px;
-  width: 52px;
-  height: 52px;
-  background: var(--card);
-  border: 2px solid var(--borde);
+  width: 56px;
+  height: 56px;
+  background: var(--azul);
   border-radius: 50%;
+  color: white;
   display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--texto);
+  align-items: center;
+  font-size: 1.6rem;
   box-shadow: 0 6px 24px var(--sombra);
-  transition: all .25s ease;
-  z-index: 1100;
+  cursor: pointer;
+  z-index: 1200;
+  transition: .25s;
 }
-.floating-ia:hover {
-  transform: scale(1.08);
-}
+.floating-ia:hover { transform: scale(1.08); }
 
-/* Panel IA minimalista */
 .ia-panel {
   position: fixed;
   bottom: 150px;
@@ -72,64 +215,33 @@
   background: var(--card);
   border: 1px solid var(--borde);
   border-radius: 12px;
-  padding: 12px 14px;
   max-width: 260px;
-  font-size: .95rem;
-  box-shadow: 0 8px 28px var(--sombra);
-  z-index: 1100;
-}
-.ia-panel.oculto { display: none; }
-
-/* =========================================================
-   📝 Mejor tacto en textarea
-========================================================= */
-textarea {
-  font-size: 1rem;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid var(--borde);
-  background: var(--card);
-  color: var(--texto);
-  width: 100%;
-  resize: vertical;
-}
-
-/* =========================================================
-   🧠 IA Chat — Burbujas tipo WhatsApp
-========================================================= */
-
-.ia-panel {
+  max-height: 260px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 6px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 28px var(--sombra);
+  z-index: 1200;
 }
+.ia-panel.oculto { display: none; }
 
-/* Burbuja de la IA */
+/* Burbujas */
 .bubble-ia {
   background: var(--card);
   border: 1px solid var(--borde);
   padding: 10px 14px;
   border-radius: 14px 14px 14px 4px;
-  font-size: 0.96rem;
-  line-height: 1.25rem;
-  box-shadow: 0 4px 14px var(--sombra);
   animation: aparecer .25s ease-out;
 }
 
-/* Burbuja de "vos" */
 .bubble-user {
   align-self: flex-end;
   background: var(--azul);
   color: #fff;
   padding: 10px 14px;
   border-radius: 14px 14px 4px 14px;
-  font-size: 0.96rem;
-  line-height: 1.25rem;
-  max-width: 85%;
-  box-shadow: 0 4px 14px var(--sombra);
   animation: aparecer .25s ease-out;
 }
 
@@ -138,3 +250,7 @@ textarea {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
