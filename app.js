@@ -100,34 +100,62 @@ function guardarOrden(ids){ localStorage.setItem(keyOrden(), JSON.stringify(ids)
 /* ================================
    🚗 Cargar ruta del día
 ================================ */
+
 async function cargarRuta(clave){
   const cont=document.getElementById("contenedor");
-  cont.innerHTML="⏳ Cargando...";
-  const r=await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
-  clientesData = await r.json();
+  const estado=document.getElementById("estado");
+  if(cont) cont.innerHTML="⏳ Cargando clientes...";
 
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude};
+  try{
+    const r = await fetch(`${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`);
+    clientesData = await r.json();
+
+    // Distancia + render
+    const afterGeo = () => {
       ordenarPorDistancia();
+      aplicarOrdenManualSiExiste();   // 👈 nuevo
       renderClientes();
-    },()=>{ ordenarPorDistancia(); renderClientes(); });
-  } else { ordenarPorDistancia(); renderClientes(); }
+      if(estado){
+        const ahora=new Date().toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires"});
+        estado.textContent=`Ruta cargada (${clientesData.length} clientes) — Última actualización: ${ahora}`;
+      }
+    };
 
-  return clientesData;
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        pos => { posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude}; afterGeo(); },
+        () => afterGeo(),
+        {enableHighAccuracy:true, maximumAge:15000, timeout:8000}
+      );
+    } else { afterGeo(); }
+
+    return clientesData;
+  }catch(e){
+    console.error("❌ Error al cargar datos:", e);
+    if(estado) estado.textContent="❌ Error al cargar datos.";
+    return [];
+  }
 }
 
-/* ================================
-   🧭 Ordenar automáticamente por distancia
-================================ */
 function ordenarPorDistancia(){
   if(!posicionActual) return;
   clientesData.sort((a,b)=>{
-    const da = distanciaKm(posicionActual.lat,posicionActual.lng,parseFloat(a.lat),parseFloat(a.lng))||999;
-    const db = distanciaKm(posicionActual.lat,posicionActual.lng,parseFloat(b.lat),parseFloat(b.lng))||999;
-    return da-db;
+    const da = (Number.isFinite(+a.lat)&&Number.isFinite(+a.lng)) ? distanciaKm(posicionActual.lat,posicionActual.lng,+a.lat,+a.lng) : Number.POSITIVE_INFINITY;
+    const db = (Number.isFinite(+b.lat)&&Number.isFinite(+b.lng)) ? distanciaKm(posicionActual.lat,posicionActual.lng,+b.lat,+b.lng) : Number.POSITIVE_INFINITY;
+    return da - db;
   });
 }
+
+// Aplica el orden arrastrado si existe
+function aplicarOrdenManualSiExiste(){
+  const orden = cargarOrden(); // ['123','456',...]
+  if(!Array.isArray(orden) || !orden.length) return;
+  const map = new Map(clientesData.map(c=>[String(c.numero), c]));
+  const reordenados = orden.map(id=>map.get(String(id))).filter(Boolean);
+  const restantes = clientesData.filter(c=>!orden.includes(String(c.numero)));
+  clientesData = [...reordenados, ...restantes];
+}
+
 
 /* ================================
    🧱 Render tarjetas
