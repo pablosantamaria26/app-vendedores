@@ -1,13 +1,3 @@
-App.js
-/* ================================================
-   🧠 App de Vendedores — 2026 (UI renovada)
-   - Temas motivacionales (Confianza / Energía / Foco) con persistencia
-   - Toast de éxito 80% pantalla (instantáneo, 1s, círculo + tilde)
-   - Mapa recargable al volver de pestañas + confirm toast para abrir destino
-   - Lógica intacta (ruta, resumen, calendario, offline queue, FCM, etc.)
-   - Geofencing básico + notificación diaria (como en tu versión)
-================================================= */
-
 /* ================================
    ⚙️ Config principal
 ================================ */
@@ -166,50 +156,100 @@ function renderClientes(){
   const cont=document.getElementById("contenedor"); if(!cont) return;
   cont.innerHTML="";
 
-  clientesData.forEach((c,idx)=>{
-    const card=document.createElement("div");
-    card.className="cliente"; card.id="c_"+c.numero;
+  // aplicar filtros si tuvieras
+  let lista = clientesData.slice();
+  if(typeof filtroLocalidad!=="undefined" && filtroLocalidad){
+    lista = lista.filter(c => String(c.localidad||"") === String(filtroLocalidad));
+  }
+  if(typeof ordenarPorDistancia!=="undefined" && ordenarPorDistancia && posicionActual){
+    lista.sort((a,b)=>{
+      const la=parseFloat(a?.lat), loa=parseFloat(a?.lng), lb=parseFloat(b?.lat), lob=parseFloat(b?.lng);
+      const da = (Number.isFinite(la)&&Number.isFinite(loa))? distanciaKm(posicionActual.lat,posicionActual.lng,la,loa) : Infinity;
+      const db = (Number.isFinite(lb)&&Number.isFinite(lob))? distanciaKm(posicionActual.lat,posicionActual.lng,lb,lob) : Infinity;
+      return da - db;
+    });
+  }
 
-    const lat=parseFloat(c.lat); const lng=parseFloat(c.lng);
+  lista.forEach((c,idx)=>{
+    const card=document.createElement("div");
+    card.className="cliente"; card.id="c_"+(c?.numero ?? idx);
+
+    const lat=parseFloat(c?.lat); const lng=parseFloat(c?.lng);
     const tieneGeo=Number.isFinite(lat)&&Number.isFinite(lng);
     const dist=(posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
 
+    // ⬇️ NUEVO bloque de botones en lugar de checkboxes
+    const visitadoHecho = !!c?.bloqueado; // si ya vino bloqueado lo mostramos como visitado
     card.innerHTML=`
-      <h3>${c.nombre}</h3>
-      <div class=\"fila\">
-        <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
-        ${dist!==null?`<span class=\"badge\">📏 ${dist.toFixed(1)} km</span>`:""}
+      <h3>${c?.nombre||"(sin nombre)"}</h3>
+      <div class="fila">
+        <span>📍 ${(c?.direccion||"")}${c?.localidad?`, ${c.localidad}`:""}</span>
+        ${dist!==null?`<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
       </div>
-      <div class=\"fila\" style=\"margin-top:6px\">
-        <label><input type=\"checkbox\" id=\"visitado-${c.numero}\"> Visitado</label>
-        <label><input type=\"checkbox\" id=\"compro-${c.numero}\"> Compró</label>
+
+      <div class="fila" style="margin-top:6px; gap:10px;">
+        <button id="btn-visita-${c?.numero}" class="btn-visita ${visitadoHecho ? "hecho" : ""}">
+          ${visitadoHecho ? "✅ Visitado" : "Aún sin visitar"}
+        </button>
+
+        <button id="btn-compro-${c?.numero}" class="btn-compro" ${visitadoHecho ? "" : "disabled"}>
+          🛒 Compró
+        </button>
       </div>
-      <textarea id=\"coment-${c.numero}\" placeholder=\"Comentario...\" rows=\"2\"></textarea>
-      <div class=\"acciones\">
-        <button onclick=\"registrarVisita(${c.numero})\">💾 Guardar</button>
-        <button class=\"btn-secundario\" onclick=\"irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})\">🚗 Ir</button>
+
+      <textarea id="coment-${c?.numero}" placeholder="Comentario..." rows="2"></textarea>
+
+      <div class="acciones">
+        <button onclick="registrarVisita(${c?.numero})">💾 Guardar</button>
+        <button class="btn-secundario" onclick="irCliente(${tieneGeo?lat:"null"},${tieneGeo?lng:"null"})">🚗 Ir</button>
       </div>`;
 
-    // DnD
-    card.setAttribute("draggable","true");
-    card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
-    card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
-    card.addEventListener("drop",(ev)=>{
-      ev.preventDefault();
-      const cards=Array.from(cont.querySelectorAll(".cliente"));
-      const targetIndex=cards.indexOf(card);
-      if(dragSrcIndex===null||dragSrcIndex===targetIndex) return;
-      const moved=clientesData.splice(dragSrcIndex,1)[0];
-      clientesData.splice(targetIndex,0,moved);
-      dragSrcIndex=null; guardarOrden(clientesData.map(x=>String(x.numero))); renderClientes();
-    });
+    // Drag & Drop (solo si NO está ordenando por distancia)
+    const draggable = !(typeof ordenarPorDistancia!=="undefined" && ordenarPorDistancia);
+    card.setAttribute("draggable", String(draggable));
+    if(draggable){
+      card.addEventListener("dragstart",(ev)=>{ dragSrcIndex=idx; ev.dataTransfer.effectAllowed="move"; });
+      card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
+      card.addEventListener("drop",(ev)=>{
+        ev.preventDefault();
+        const cards=Array.from(cont.querySelectorAll(".cliente"));
+        const targetIndex=cards.indexOf(card);
+        if(dragSrcIndex===null||dragSrcIndex===targetIndex) return;
+        const moved=clientesData.splice(dragSrcIndex,1)[0];
+        clientesData.splice(targetIndex,0,moved);
+        dragSrcIndex=null; guardarOrden(clientesData.map(x=>String(x.numero))); renderClientes();
+      });
+    }
+
+    // 🔘 Lógica de botones "Visitado" / "Compró"
+    const btnVisita = card.querySelector(`#btn-visita-${c?.numero}`);
+    const btnCompro = card.querySelector(`#btn-compro-${c?.numero}`);
+
+    if(btnVisita){
+      btnVisita.addEventListener("click", () => {
+        // marcar como visitado visualmente
+        btnVisita.classList.add("hecho");
+        btnVisita.textContent = "✅ Visitado";
+        btnCompro?.removeAttribute("disabled");
+      });
+    }
+    if(btnCompro){
+      btnCompro.addEventListener("click", () => {
+        // toggle "compró"
+        btnCompro.classList.toggle("hecho");
+      });
+    }
 
     // bloquear si viene marcado
-    if(c.bloqueado){ card.classList.add("bloqueado"); card.querySelectorAll("input,textarea,button").forEach(el=>el.disabled=true); }
+    if(c?.bloqueado){
+      card.classList.add("bloqueado");
+      card.querySelectorAll("input,textarea,button").forEach(el=>el.disabled=true);
+    }
 
     cont.appendChild(card);
   });
 }
+
 
 /* ================================
    🗺️ Mapa (recreación al entrar) + confirm TOAST
@@ -267,10 +307,16 @@ async function registrarVisita(numero){
   const c=getClientePorNumero(numero);
   if(!c){ toast("❌ Cliente no encontrado"); return; }
 
-  // 1) Mostrar éxito inmediato (1s) — ANTES del fetch
+  // ✅ ÉXITO INSTANTÁNEO (1s) ANTES DEL FETCH
   mostrarExito();
 
-  // 2) Bloquear tarjeta y enviar al final (priorizar siguiente)
+  // 🔘 Leer estados desde los botones (no checkboxes)
+  const visitado = document.getElementById(`btn-visita-${numero}`)?.classList.contains("hecho") || false;
+  const compro   = document.getElementById(`btn-compro-${numero}`)?.classList.contains("hecho") || false;
+  const comentario=(document.getElementById(`coment-${numero}`)?.value||"").trim();
+  const vendedor=localStorage.getItem("vendedorClave")||"";
+
+  // 🔒 Bloquear tarjeta y mandarla al final YA (UI optimista)
   const idx=clientesData.findIndex(x=>String(x.numero)===String(numero));
   if(idx!==-1){
     const cliente=clientesData.splice(idx,1)[0];
@@ -278,15 +324,10 @@ async function registrarVisita(numero){
     clientesData.push(cliente);
     guardarOrden(clientesData.map(x=>String(x.numero)));
     renderClientes();
-    const card=document.getElementById(`c_${numero}`); card?.scrollIntoView({behavior:"smooth", block:"end"});
+    document.getElementById(`c_${numero}`)?.scrollIntoView({behavior:"smooth", block:"end"});
   }
 
-  // 3) Enviar en segundo plano (con offline queue)
-  const visitado=document.getElementById(`visitado-${numero}`)?.checked||false;
-  const compro=document.getElementById(`compro-${numero}`)?.checked||false;
-  const comentario=(document.getElementById(`coment-${numero}`)?.value||"").trim();
-  const vendedor=localStorage.getItem("vendedorClave")||"";
-
+  // 📡 Enviar en segundo plano (queue offline si falla)
   const params=new URLSearchParams({
     accion:"registrarVisita",
     numero:c.numero,
@@ -296,8 +337,12 @@ async function registrarVisita(numero){
     visitado, compro, comentario, vendedor
   });
 
-  try{ const r=await fetch(`${URL_API_BASE}?${params.toString()}`); await r.json(); }
-  catch{ queueOffline({ t:"visita", params:Object.fromEntries(params) }); }
+  try{
+    const r=await fetch(`${URL_API_BASE}?${params.toString()}`);
+    await r.json().catch(()=>{});
+  }catch{
+    queueOffline({ t:"visita", params:Object.fromEntries(params) });
+  }
 }
 
 /* ================================
