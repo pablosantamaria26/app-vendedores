@@ -376,11 +376,12 @@ async function registrarVisita(numero){
   
   // Usamos POST para registrar, es más robusto que GET
   try{ 
-    await fetch(URL_API_BASE, {
-        method: 'POST',
-        body: JSON.stringify(Object.fromEntries(params)), // Convierte params a objeto JSON
-        headers: { 'Content-Type': 'application/json' }
-    }); 
+   await fetch(URL_API_BASE + "?action=registrarVisita", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.fromEntries(params))
+});
+ 
   } catch(e) { 
     queueOffline({t:"visita",params:Object.fromEntries(params)}); 
   }
