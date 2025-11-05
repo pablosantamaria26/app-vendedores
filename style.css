@@ -1,246 +1,190 @@
 /* =========================================================
-   🎨 VARIABLES BASE (Tema Confianza por defecto)
+   🧠 APP DE VENDEDORES – ESTILOS FINALES 2026
 ========================================================= */
+
+/* ===== VARIABLES BASE (Tema Confianza por defecto) ===== */
 :root {
-  --card: #ffffff;
-  --borde: #d8e1ef;
-  --texto: #0a192f;
   --azul: #0a63ff;
-  --sombra: rgba(0, 0, 0, 0.15);
+  --azul-oscuro: #0a2b57;
+  --ok: #22c55e;
+  --no: #ef4444;
+  --bg: #0b1220;
+  --card: #0f1a2d;
+  --texto: #e6edf3;
+  --borde: #1f2a44;
+  --sombra: rgba(0,0,0,.35);
+  --boton-grad-a: var(--azul);
+  --boton-grad-b: #0e63ff;
 }
 
-/* =========================================================
-   🌈 TEMA ENERGÍA (Violeta Activo)
-========================================================= */
+/* ===== TEMAS ===== */
+
 body.tema-energia {
-  --card: #ffffff;
-  --borde: #d9c6ff;
-  --texto: #20114a;
   --azul: #8b5cf6;
-  --sombra: rgba(139, 92, 246, 0.28);
+  --azul-oscuro: #22c55e;
+  --bg: #0f0b1a;
+  --card: #17122b;
+  --texto: #f4f4fd;
+  --borde: #2a214a;
+  --boton-grad-a: #8b5cf6;
+  --boton-grad-b: #22c55e;
 }
 
-/* =========================================================
-   🌙 TEMA NOCHE (Oscuro Moderno)
-========================================================= */
+body.tema-foco {
+  --azul: #facc15;
+  --azul-oscuro: #111827;
+  --bg: #0a0a0a;
+  --card: #121212;
+  --texto: #f8fafc;
+  --borde: #1f2937;
+  --boton-grad-a: #facc15;
+  --boton-grad-b: #fde047;
+}
+
 body.tema-noche {
-  --card: #0d1b2a;
-  --borde: #2d4059;
-  --texto: #eaf4fc;
-  --azul: #4ea3ff;
-  --sombra: rgba(0, 0, 0, 0.55);
+  --azul: #007bff;
+  --azul-oscuro: #001b3a;
+  --bg: #000a1a;
+  --card: #021024;
+  --texto: #e0e7ff;
+  --borde: #08223e;
+  --boton-grad-a: #004aad;
+  --boton-grad-b: #007bff;
 }
 
-/* =========================================================
-   🧱 BASE
-========================================================= */
+/* ===== BASE ===== */
 body {
   margin: 0;
-  background: var(--card);
+  background: var(--bg);
   color: var(--texto);
-  font-family: 'Inter', sans-serif;
+  font-family: Inter, sans-serif;
   -webkit-tap-highlight-color: transparent;
+  transition: background .3s, color .3s;
 }
 
-h1, h2, h3 { margin: 0 0 10px; }
-
-.seccion { display: none; padding: 16px; }
-.seccion.visible { display: block; }
-
-/* =========================================================
-   🧭 HEADER + SELECTOR DE TEMA
-========================================================= */
 header {
+  width: 100%;
+  background: var(--azul-oscuro);
+  padding: 12px 16px;
+  color: #fff;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--borde);
-  background: var(--card);
+  align-items: center;
   position: sticky;
   top: 0;
   z-index: 900;
+  box-shadow: 0 3px 14px var(--sombra);
 }
 
-/* Botón selector */
-#btnTema {
-  border: 2px solid var(--borde);
+.modo-toggle, .tema-toggle {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 14px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+/* ===== LOGIN ===== */
+#login {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
+  z-index: 9999;
+}
+
+.login-card {
   background: var(--card);
+  border: 1px solid var(--borde);
+  padding: 20px;
+  border-radius: 14px;
+  width: 86%;
+  max-width: 340px;
+  text-align: center;
+  box-shadow: 0 12px 28px var(--sombra);
+}
+
+#login input {
+  width: 80%;
+  padding: 12px;
   border-radius: 10px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: .95rem;
+  border: 2px solid var(--azul);
+  font-size: 1.4rem;
+  text-align: center;
+  margin: 12px 0;
+  background: #fff;
+  color: #111;
 }
 
-/* Menú desplegable */
-#temaMenu {
-  position: absolute;
-  top: 54px;
-  right: 16px;
-  background: var(--card);
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px var(--sombra);
-  padding: 10px;
-  display: none;
+.teclado-numerico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .5em;
 }
-#temaMenu.visible { display: block; }
 
-#temaMenu button {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 6px;
-  border: 1px solid var(--borde);
-  border-radius: 8px;
-  background: var(--card);
-  color: var(--texto);
+.teclado-numerico button {
+  font-size: 1.4rem;
+  padding: .7em;
+  border-radius: 10px;
+  border: none;
+  background: #fff;
+  color: var(--azul-oscuro);
   cursor: pointer;
 }
-#temaMenu button:hover { background: var(--azul); color: #fff; }
 
-/* =========================================================
-   🧱 CLIENTES (Tarjetas)
-========================================================= */
+/* ===== SECCIONES ===== */
+.seccion { display: none; padding: 14px; }
+.seccion.visible { display: block; }
+
+/* ===== CARDS CLIENTE ===== */
 .cliente {
   background: var(--card);
-  border: 1px solid var(--borde);
-  border-radius: 12px;
+  border-left: 6px solid var(--azul);
+  border-radius: 16px;
   padding: 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 14px var(--sombra);
-  animation: fadeIn .25s ease-out;
+  margin: 12px 0;
+  box-shadow: 0 4px 18px var(--sombra);
 }
 
-.fila {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.cliente.bloqueado {
+  opacity: .6;
+  filter: grayscale(.9);
+  pointer-events: none;
 }
 
-.badge {
-  background: var(--azul);
-  color: white;
-  font-size: 0.75rem;
-  padding: 3px 8px;
-  border-radius: 8px;
-}
-
-/* =========================================================
-   🤝 CONTROLES TÁCTILES
-========================================================= */
-.check-grande {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.btn-visita, .btn-compra {
-  flex: 1;
-  padding: 14px 0;
-  border-radius: 12px;
-  border: 2px solid var(--borde);
-  background: var(--card);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: .25s;
-}
-
-.btn-visita.on, .btn-compra.on {
-  background: var(--azul);
-  border-color: var(--azul);
+/* ===== BOTONES ===== */
+button {
+  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
   color: #fff;
-}
-
-/* =========================================================
-   ✍️ Texto
-========================================================= */
-textarea {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
   width: 100%;
-  padding: 8px;
-  border-radius: 10px;
-  border: 1px solid var(--borde);
-  background: var(--card);
-  color: var(--texto);
-  margin-top: 10px;
 }
 
-/* =========================================================
-   💾 Acciones
-========================================================= */
-.acciones {
+.btn-secundario {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+}
+
+/* ===== MENÚ INFERIOR ===== */
+.menu {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  background: var(--card);
+  border-top: 1px solid var(--borde);
+  z-index: 950;
 }
-
-.acciones button {
+.menu button {
   flex: 1;
-  padding: 10px 0;
-  border-radius: 10px;
-  border: 2px solid var(--borde);
-  background: var(--card);
-  color: var(--texto);
-  cursor: pointer;
-  transition: .25s;
+  background: none;
+  border-radius: 0;
 }
-.acciones button:hover { filter: brightness(1.1); }
-
-/* =========================================================
-   🤖 BOTÓN IA + CHAT
-========================================================= */
-.floating-ia {
-  position: fixed;
-  bottom: 86px;
-  right: 16px;
-  width: 56px;
-  height: 56px;
-  background: var(--azul);
-  border-radius: 50%;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  cursor: pointer;
-  box-shadow: 0 6px 20px var(--sombra);
-}
-
-.ia-panel {
-  position: fixed;
-  bottom: 150px;
-  right: 16px;
-  background: var(--card);
-  border: 1px solid var(--borde);
-  border-radius: 12px;
-  max-width: 260px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding: 12px;
-  box-shadow: 0 8px 28px var(--sombra);
-  display: none;
-}
-.ia-panel.visible { display: flex; flex-direction: column; gap: 10px; }
-
-.bubble-ia {
-  background: var(--card);
-  border: 1px solid var(--borde);
-  padding: 10px;
-  border-radius: 12px 12px 12px 4px;
-}
-
-.bubble-user {
-  align-self: flex-end;
+.menu button.activo {
   background: var(--azul);
   color: #fff;
-  padding: 10px;
-  border-radius: 12px 12px 4px 12px;
-}
-
-/* =========================================================
-   🎬 Animaciones
-========================================================= */
-@keyframes fadeIn {
-  from {opacity:0; transform:translateY(6px);}
-  to {opacity:1; transform:translateY(0);}
 }
