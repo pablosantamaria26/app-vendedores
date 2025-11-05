@@ -4,7 +4,7 @@
 ============================================================ */
 
 /* ===============================
-   🎨 Variables base (tema Confianza)
+    🎨 Variables base (tema Confianza)
 ================================= */
 :root {
   --azul: #0a63ff;
@@ -21,10 +21,8 @@
 }
 
 /* ===============================
-   🌈 Temas motivacionales
+    🌈 Temas motivacionales (Tu código)
 ================================= */
-
-/* Tema 1: Confianza (azul profesional) */
 body.tema-confianza {
   --azul: #0a63ff;
   --azul-oscuro: #0a2b57;
@@ -35,8 +33,6 @@ body.tema-confianza {
   --boton-grad-a: #0a63ff;
   --boton-grad-b: #0e8bff;
 }
-
-/* Tema 2: Energía (violeta + verde, animado) */
 body.tema-energia {
   --azul: #8b5cf6;
   --azul-oscuro: #22c55e;
@@ -47,8 +43,6 @@ body.tema-energia {
   --boton-grad-a: #8b5cf6;
   --boton-grad-b: #22c55e;
 }
-
-/* Tema 3: Foco (negro + amarillo contrastante) */
 body.tema-foco {
   --azul: #facc15;
   --azul-oscuro: #111827;
@@ -60,27 +54,15 @@ body.tema-foco {
   --boton-grad-b: #fde047;
 }
 
-/* Tema 4: Noche (negro + azul suave, minimal) */
-body.tema-noche {
-  --azul: #0066ff;
-  --azul-oscuro: #001b3a;
-  --bg: #000a1a;
-  --card: #021024;
-  --texto: #e0e7ff;
-  --borde: #08223e;
-  --boton-grad-a: #004aad;
-  --boton-grad-b: #007bff;
-}
-
 /* ===============================
-   Transiciones globales
+    Transiciones globales (Tu código)
 ================================= */
 html, body, header, .cliente, .menu, .panel-resumen, #mapaFull {
   transition: background-color .4s ease, color .4s ease, border-color .4s ease;
 }
 
 /* ===============================
-   Layout base
+    Layout base (Tu código)
 ================================= */
 html, body {
   height: 100%;
@@ -92,7 +74,7 @@ html, body {
 }
 
 /* ===============================
-   Header
+    Header (Tu código)
 ================================= */
 header {
   width: 100%;
@@ -108,7 +90,6 @@ header {
   gap: 8px;
   align-items: center;
 }
-
 header h1 {
   margin: 0;
   font-size: 1.1rem;
@@ -116,7 +97,7 @@ header h1 {
 }
 
 /* ===============================
-   Botones del encabezado
+    Botones del encabezado (Tu código)
 ================================= */
 .modo-toggle, .tema-toggle {
   background: rgba(255,255,255,.12);
@@ -130,7 +111,6 @@ header h1 {
   align-items: center;
   gap: 6px;
 }
-
 .tema-toggle .dot {
   width: 10px;
   height: 10px;
@@ -139,7 +119,7 @@ header h1 {
 }
 
 /* ===============================
-   Menú de temas
+    Menú de temas (Tu código)
 ================================= */
 .tema-menu {
   position: absolute;
@@ -152,10 +132,9 @@ header h1 {
   padding: 8px;
   display: none;
   min-width: 220px;
-  z-index: 1000; /* Asegurar que esté sobre el contenido */
+  z-index: 1000;
 }
 .tema-menu.visible { display: block; }
-
 .tema-item {
   display: flex;
   align-items: center;
@@ -165,7 +144,6 @@ header h1 {
   cursor: pointer;
 }
 .tema-item:hover { background: rgba(255,255,255,.06); }
-
 .tema-item .dot {
   width: 14px;
   height: 14px;
@@ -174,14 +152,14 @@ header h1 {
 .tema-item .nombre { font-weight: 700; }
 
 /* ===============================
-   Main y secciones
+    Main y secciones (Tu código)
 ================================= */
 main {
   width: 100%;
   max-width: 780px;
   margin: 0 auto 84px;
   padding: 10px;
-  box-sizing: border-box; /* Añadido para consistencia */
+  box-sizing: border-box;
 }
 h2 {
   text-align: center;
@@ -192,7 +170,7 @@ h2 {
 .seccion.visible { display: block; }
 
 /* ===============================
-   Menú inferior
+    Menú inferior (Tu código)
 ================================= */
 .menu {
   position: fixed;
@@ -211,16 +189,16 @@ h2 {
   border: none;
   color: var(--texto);
   cursor: pointer;
-  font-size: 1rem; /* Asegurar tamaño */
+  font-size: 1rem;
 }
 .menu button.activo {
   background: var(--azul);
-  color: #fff; /* Mejor contraste */
+  color: #fff;
   font-weight: 800;
 }
 
 /* ===============================
-   Clientes y tarjetas
+    Clientes y tarjetas (Tu código)
 ================================= */
 .cliente {
   background: var(--card);
@@ -231,7 +209,7 @@ h2 {
   padding: 14px;
   margin: 10px 0;
   box-shadow: 0 4px 14px var(--sombra);
-  position: relative; /* Para la etiqueta de bloqueado */
+  position: relative;
 }
 .cliente h3 {
   margin: 0 0 6px 0;
@@ -243,14 +221,12 @@ h2 {
   align-items: center;
   flex-wrap: wrap;
 }
-
-
 .cliente .acciones {
   margin-top: 8px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: space-between; /* <-- LÍNEA NUEVA (Mueve el 2do botón a la derecha) */
+  justify-content: space-between;
 }
 .cliente.bloqueado {
   filter: grayscale(.75) saturate(.7);
@@ -262,7 +238,7 @@ h2 {
 }
 
 /* ===============================
-   Botones
+    Botones (Tu código)
 ================================= */
 button {
   background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
@@ -281,13 +257,35 @@ button:disabled {
   filter: grayscale(1);
   cursor: not-allowed;
 }
-
 .btn-secundario {
   background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 
+/* === Botones Visitado / Compró (Tu código) === */
+.btn-visita, .btn-compro {
+  background: var(--card);
+  border: 1px solid var(--borde);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--texto);
+  transition: transform .15s ease, filter .2s ease, background .2s ease, border-color .2s ease;
+  box-shadow: 0 4px 10px var(--sombra);
+}
+.btn-visita:hover, .btn-compro:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn-visita.hecho, .btn-compro.hecho {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.btn-compro[disabled] {
+  opacity: .45;
+  pointer-events: none;
+}
+
 /* ===============================
-   Textarea
+    Textarea (Tu código)
 ================================= */
 .cliente textarea {
   width: 100%;
@@ -298,11 +296,11 @@ button:disabled {
   border-radius: 8px;
   padding: 8px;
   outline: none;
-  box-sizing: border-box; /* Añadido para consistencia */
+  box-sizing: border-box;
 }
 
 /* ===============================
-   Mapa
+    Mapa (Tu código)
 ================================= */
 #mapaFull {
   height: 68vh;
@@ -314,7 +312,7 @@ button:disabled {
 }
 
 /* ===============================
-   Panel resumen
+    Panel resumen (Tu código)
 ================================= */
 .panel-resumen {
   text-align: center;
@@ -332,7 +330,7 @@ canvas {
 }
 
 /* ===============================
-   Toast de éxito animado
+    Toast de éxito animado (Tu código)
 ================================= */
 .exito-overlay {
   position: fixed;
@@ -342,7 +340,7 @@ canvas {
   background: rgba(0,0,0,.45);
   z-index: 9999;
   animation: exito-fade 1s forwards;
-  opacity: 0; /* Empezar invisible */
+  opacity: 0;
 }
 .exito-box {
   width: min(560px, 88vw);
@@ -356,15 +354,15 @@ canvas {
   align-items: center;
   justify-items: center;
   padding: 20px;
-  box-sizing: border-box; /* Añadido */
-  transform: scale(0.9); /* Animación de entrada */
+  box-sizing: border-box;
+  transform: scale(0.9);
   animation: exito-pop-in 0.2s 0.05s forwards;
 }
 .exito-titulo {
   font-weight: 800;
   font-size: 1.2rem;
   margin-top: 6px;
-  color: #111827; /* Asegurar color */
+  color: #111827;
 }
 .exito-circle {
   position: relative;
@@ -388,7 +386,7 @@ canvas {
   fill: none;
   stroke-linecap: round;
   stroke-dasharray: 565;
-  stroke-dashoffset: 565;
+  stroke-offset: 565;
   animation: exito-progress .7s ease-out forwards;
 }
 .exito-check {
@@ -397,11 +395,9 @@ canvas {
   display: grid;
   place-items: center;
 }
-
 .exito-check svg {
   width: 96px;
   height: 96px;
-  transform: rotate(-45deg); /* <-- LÍNEA NUEVA (Endereza el tilde) */
 }
 .exito-check path {
   stroke: #22c55e;
@@ -410,7 +406,7 @@ canvas {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 140;
-  stroke-dashoffset: 140;
+  stroke-offset: 140;
   animation: exito-check .25s ease-out forwards .65s;
   filter: drop-shadow(0 0 10px rgba(34,197,94,.45));
 }
@@ -420,12 +416,12 @@ canvas {
 @keyframes exito-check { to { stroke-dashoffset: 0; } }
 
 /* ===============================
-   Confirm de destino
+    Confirm de destino (Tu código)
 ================================= */
 .confirm-toast {
   position: fixed;
   left: 50%;
-  bottom: 90px; /* Subido para no tapar el menú */
+  bottom: 90px;
   transform: translateX(-50%);
   background: var(--card);
   color: var(--texto);
@@ -443,11 +439,11 @@ canvas {
   border-radius: 10px;
 }
 .confirm-toast button:last-child {
-  background: var(--no); /* Botón "No" en rojo */
+  background: var(--no);
 }
 
 /* ===============================
-   Login pantalla completa
+    Login (MODIFICADO)
 ================================= */
 #login {
   position: fixed;
@@ -456,7 +452,7 @@ canvas {
   place-items: center;
   background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
   z-index: 10000;
-  transition: opacity 0.3s ease; /* Transición para ocultar */
+  transition: opacity 0.3s ease;
 }
 .login-card {
   background: var(--card);
@@ -469,115 +465,80 @@ canvas {
   border: 1px solid var(--borde);
   box-shadow: 0 16px 36px var(--sombra);
 }
-#login input {
-  font-size: 1.4rem;
-  padding: 10px;
-  text-align: center;
-  margin: 10px 0;
-  width: 80%;
-  border-radius: 10px;
-  border: 2px solid var(--azul);
-  background: #fff;
-  color: #111;
-  box-sizing: border-box; /* Añadido */
-}
-.teclado-numerico {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: .5em;
-}
-.teclado-numerico button {
-  background: #fff;
-  color: var(--azul-oscuro);
-  border-radius: 10px;
-  padding: .6em 0;
-  width: 100%;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-}
+
 #login #error {
-  color: #ef4444;
+  color: var(--no);
   min-height: 1.1em;
+  visibility: hidden; /* Oculto por defecto */
+}
+#login #error.visible {
+    visibility: visible;
 }
 
+/* === NUEVOS ESTILOS PARA LOGIN NATIVO === */
+#hidden-pin-input {
+    position: absolute;
+    top: -1000px;
+    left: -1000px;
+    opacity: 0;
+    pointer-events: none;
+}
+.pin-display {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    justify-content: center;
+}
+.pin-dot {
+    width: 20px;
+    height: 20px;
+    background-color: var(--borde);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+.pin-dot.active {
+    background-color: var(--azul);
+    animation: pulse 0.3s ease;
+}
+.pin-display.error .pin-dot {
+    background-color: var(--no);
+    animation: shake 0.5s ease;
+}
+.loader {
+    width: 30px;
+    height: 30px;
+    margin: 20px auto;
+    border: 4px solid var(--borde);
+    border-top: 4px solid var(--azul);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: none;
+}
+.loader.visible {
+    display: block;
+}
+
+/* === ANIMACIONES (si no están ya) === */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===============================
+    Media query (Tu código)
+================================= */
 @media (max-width: 600px) {
   header h1 { font-size: 1rem; }
   .menu button { font-size: .95rem; padding: 10px 8px; }
   #mapaFull { height: 58vh; }
 }
-
-/* ===============================
-   Inputs (tamaño grande p/ dedos)
-================================= */
-.cliente input[type="checkbox"] {
-  /* Doble de tamaño */
-  width: 28px;
-  height: 28px;
-  
-  /* Espacio y alineación con el texto */
-  margin-right: 8px;
-  vertical-align: middle;
-  position: relative;
-  top: -2px; /* Ajuste fino */
-  cursor: pointer;
-}
-
-.cliente .fila label {
-  /* Asegura que la etiqueta y el texto se alineen bien */
-  display: flex;
-  align-items: center;
-  font-size: 1.1rem; /* Opcional: agranda un poco el texto también */
-  cursor: pointer;
-}
-
-/* ===============================
-   Inputs (tamaño grande p/ dedos)
-================================= */
-.cliente input[type="checkbox"] {
-  /* Doble de tamaño */
-  width: 28px;
-  height: 28px;
-  
-  /* Espacio y alineación con el texto */
-  margin-right: 8px;
-  vertical-align: middle;
-  position: relative;
-  top: -2px; /* Ajuste fino */
-  cursor: pointer;
-}
-
-.cliente .fila label {
-  /* Asegura que la etiqueta y el texto se alineen bien */
-  display: flex;
-  align-items: center;
-  font-size: 1.1rem; /* Opcional: agranda un poco el texto también */
-  cursor: pointer;
-}
-/* === Botones Visitado / Compró === */
-.btn-visita, .btn-compro {
-  background: var(--card);
-  border: 1px solid var(--borde);
-  padding: 8px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 700;
-  color: var(--texto);
-  transition: transform .15s ease, filter .2s ease, background .2s ease, border-color .2s ease;
-  box-shadow: 0 4px 10px var(--sombra);
-}
-.btn-visita:hover, .btn-compro:hover { transform: translateY(-1px); filter: brightness(1.05); }
-
-.btn-visita.hecho, .btn-compro.hecho {
-  background: var(--ok);
-  border-color: var(--ok);
-  color: #fff;
-}
-.btn-compro[disabled] {
-  opacity: .45;
-  pointer-events: none;
-}
-
-/* Que el botón de "Ir" quede a la derecha si hay lugar */
-.cliente .acciones { justify-content: space-between; }
-
