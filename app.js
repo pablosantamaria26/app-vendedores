@@ -174,6 +174,31 @@ function renderClientes(){
   });
 }
 
+function irCliente(lat,lng){
+  if(!lat || !lng){
+    alert("📍 Este cliente no tiene coordenadas.");
+    return;
+  }
+
+  const base = "https://www.google.com/maps/dir/?api=1";
+  const dest = `&destination=${lat},${lng}&travelmode=driving`;
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        const org = `&origin=${pos.coords.latitude},${pos.coords.longitude}`;
+        window.open(`${base}${org}${dest}`,"_blank");
+      },
+      ()=>{
+        window.open(`${base}${dest}`,"_blank");
+      }
+    );
+  } else {
+    window.open(`${base}${dest}`,"_blank");
+  }
+}
+
+
 /* ================================
    🗺️ Mapa
 ================================ */
