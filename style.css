@@ -93,3 +93,48 @@ textarea {
   width: 100%;
   resize: vertical;
 }
+
+/* =========================================================
+   🧠 IA Chat — Burbujas tipo WhatsApp
+========================================================= */
+
+.ia-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Burbuja de la IA */
+.bubble-ia {
+  background: var(--card);
+  border: 1px solid var(--borde);
+  padding: 10px 14px;
+  border-radius: 14px 14px 14px 4px;
+  font-size: 0.96rem;
+  line-height: 1.25rem;
+  box-shadow: 0 4px 14px var(--sombra);
+  animation: aparecer .25s ease-out;
+}
+
+/* Burbuja de "vos" */
+.bubble-user {
+  align-self: flex-end;
+  background: var(--azul);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 14px 14px 4px 14px;
+  font-size: 0.96rem;
+  line-height: 1.25rem;
+  max-width: 85%;
+  box-shadow: 0 4px 14px var(--sombra);
+  animation: aparecer .25s ease-out;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
