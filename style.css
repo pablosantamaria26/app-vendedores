@@ -554,3 +554,30 @@ canvas {
   font-size: 1.1rem; /* Opcional: agranda un poco el texto también */
   cursor: pointer;
 }
+/* === Botones Visitado / Compró === */
+.btn-visita, .btn-compro {
+  background: var(--card);
+  border: 1px solid var(--borde);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--texto);
+  transition: transform .15s ease, filter .2s ease, background .2s ease, border-color .2s ease;
+  box-shadow: 0 4px 10px var(--sombra);
+}
+.btn-visita:hover, .btn-compro:hover { transform: translateY(-1px); filter: brightness(1.05); }
+
+.btn-visita.hecho, .btn-compro.hecho {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.btn-compro[disabled] {
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* Que el botón de "Ir" quede a la derecha si hay lugar */
+.cliente .acciones { justify-content: space-between; }
+
