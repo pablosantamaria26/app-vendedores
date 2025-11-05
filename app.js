@@ -113,7 +113,7 @@ function inicializarLoginNativo() {
         const response = await fetch(URL_API_BASE + "?action=autenticarVendedor", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pin })
+            body: JSON.stringify({ pin }) // 👈 SOLO el pin en el cuerpo
         });
 
         const result = await response.json();
@@ -136,6 +136,7 @@ function inicializarLoginNativo() {
         showLoading(false);
     }
 }
+
 
 
     function handleLoginError(message) {
