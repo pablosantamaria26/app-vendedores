@@ -193,6 +193,8 @@ async function registrarVisita(num){
     clientesData = clientesData.filter(x=>x.numero!=num).concat([c]);
   }
   renderClientes();
+  registrarInteraccionIA("✅ Visita registrada. ¡Seguimos!");
+
 }
 
 /* ================================
@@ -265,13 +267,31 @@ function actualizarPanelIA(){
 
   const consejos = generarConsejosIA(clientesData);
 
+  panel.innerHTML = "";
+
   if(!consejos.length){
-    panel.innerHTML = "<span style='opacity:.7'>Sin consejos por ahora ✨</span>";
+    panel.innerHTML = `<div class="bubble-ia">✨ Sin recomendaciones por ahora. Buen ritmo.</div>`;
     return;
   }
 
-  panel.innerHTML = consejos.map(c=>`<div style="margin-bottom:6px">${c}</div>`).join("");
+  consejos.forEach(texto=>{
+    const div = document.createElement("div");
+    div.className = "bubble-ia";
+    div.textContent = texto;
+    panel.appendChild(div);
+  });
 }
+
+// Opcional: cuando el vendedor toca algo que demuestra acción → mostramos motivación
+function registrarInteraccionIA(texto){
+  const panel = document.getElementById("iaPanel");
+  const div = document.createElement("div");
+  div.className = "bubble-user";
+  div.textContent = texto;
+  panel.appendChild(div);
+  panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
+}
+
 
 /* =========================================================
    🔔 Alertas automáticas IA (cuando hay algo importante)
