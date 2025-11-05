@@ -1,284 +1,550 @@
 /* ================================
-    ⚙️ Config principal
+   ⚙️ CONFIGURACIÓN PRINCIPAL
 ================================ */
-const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+const vendedores = {
+  "0001": "Martín",
+  "0002": "Lucas",
+  "0003": "Mercado Limpio",
+};
 
-
-let clientesData = [];
-let posicionActual = null;
-let mapaFull = null;
+// URL del Apps Script desplegado (tu endpoint)
+const URL_API_BASE =
+  "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
 
 /* ================================
- 🔐 Login & sesión
+   LOGIN Y SESIÓN
 ================================ */
-window.addEventListener("DOMContentLoaded", () => {
-  restaurarTema();
-  const claveGuardada = localStorage.getItem("vendedorClave");
-  if (claveGuardada) {
-    document.getElementById("login").style.display = "none";
-    mostrarApp();
-  } else {
-    document.getElementById("login").style.display = "grid";
-    inicializarLoginNativo();
+function login() {
+  const clave = document.getElementById("clave").value.trim();
+  const error = document.getElementById("error");
+
+  if (!vendedores[clave]) {
+    error.textContent = "❌ Clave incorrecta";
+    return;
   }
-});
+
+  // Guardar la clave y cargar la app
+  localStorage.setItem("vendedorClave", clave);
+  mostrarApp();
+}
 
 function logout() {
   localStorage.removeItem("vendedorClave");
-  location.reload();
+  document.getElementById("app").classList.remove("visible");
+  document.getElementById("login").style.display = "flex";
+  document.getElementById("login").classList.remove("oculto");
 }
 
-/* ---- LOGIN UI ---- */
-function inicializarLoginNativo() {
-  const hiddenInput = document.getElementById('hidden-pin-input');
-  const pinDots = document.querySelectorAll('.pin-dot');
-  const pinDisplay = document.querySelector('.pin-display');
-  const errorMessage = document.getElementById('error');
-  const loader = document.getElementById('loader');
-  let currentPin = "";
-
-  function focusInput(){ hiddenInput.focus(); }
-  focusInput();
-
-  hiddenInput.addEventListener('input', async (e) => {
-    currentPin = e.target.value.slice(0,4);
-    e.target.value = currentPin;
-    pinDots.forEach((dot,i)=>dot.classList.toggle("active", i < currentPin.length));
-    if(currentPin.length === 4){
-      loader.classList.add("visible");
-      pinDisplay.style.display="none";
-      await validarLogin(currentPin);
-      loader.classList.remove("visible");
-      pinDisplay.style.display="flex";
-    }
-  });
-
-  async function validarLogin(pin){
-    try{
-      const res = await fetch(URL_API_BASE, {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ action:"autenticarVendedor", pin })
-      });
-      const r = await res.json();
-      if(r.estado === "ok"){
-        localStorage.setItem("vendedorClave", r.vendedor.clave);
-        document.getElementById("login").style.display="none";
-        mostrarApp();
-      } else {
-        errorMessage.textContent = r.mensaje || "PIN incorrecto";
-        errorMessage.classList.add("visible");
-        currentPin="";
-        hiddenInput.value="";
-        pinDots.forEach(dot=>dot.classList.remove("active"));
-      }
-    }catch(err){
-      errorMessage.textContent = "Error de conexión";
-      errorMessage.classList.add("visible");
-    }
-  }
-}
-
-/* ================================
- 🎨 Temas (Modo Día / Modo Noche)
-================================ */
-
-function aplicarTema(nombre){
-  document.body.classList.remove("tema-dia","tema-noche");
-  document.body.classList.add(nombre);
-  localStorage.setItem("temaPreferido", nombre);
-}
-
-function restaurarTema(){
-  aplicarTema(localStorage.getItem("temaPreferido") || "tema-dia");
-}
-
-function toggleModoOscuro(){
-  if(document.body.classList.contains("tema-noche")){
-    aplicarTema("tema-dia");
-  } else {
-    aplicarTema("tema-noche");
-  }
-}
-
-/* ================================
- 🧭 Navegación entre secciones
-================================ */
-function mostrarSeccion(s){
-  document.querySelectorAll(".seccion").forEach(sec=>sec.classList.remove("visible"));
-  document.getElementById("seccion-"+s)?.classList.add("visible");
-  document.querySelectorAll(".menu button").forEach(b=>b.classList.remove("activo"));
-  document.querySelector(`.menu button[data-seccion="${s}"]`)?.classList.add("activo");
-  if(s==="mapa") renderMapaFull();
-}
-
-/* ================================
- 🚀 Inicio de la App
-================================ */
-async function mostrarApp(){
+function mostrarApp() {
   const clave = localStorage.getItem("vendedorClave");
-  mostrarSeccion("ruta");
-  await cargarRuta(clave);
-  await cargarResumen(clave);
-  await cargarCalendario(clave);
-  inicializarNotificaciones(clave); // ✅ ahora sí se envía token al backend
-}
-
-/* ================================
- 🚗 Ruta del día
-================================ */
-async function cargarRuta(clave){
-  const cont=document.getElementById("contenedor");
-  cont.innerHTML="⏳ Cargando clientes...";
-  try{
-    const r = await fetch(`${URL_API_BASE}?action=getRutaDelDiaPorVendedor&clave=${clave}`);
-    clientesData = await r.json();
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(pos=>{
-        posicionActual={lat:pos.coords.latitude,lng:pos.coords.longitude};
-        renderClientes();
-      });
-    } else { renderClientes(); }
-  }catch(e){
-    cont.innerHTML="❌ Error al cargar ruta.";
-  }
-  return clientesData;
-}
-
-/* ================================
- 🧱 Render de tarjetas de clientes
-================================ */
-function distanciaKm(aLat,aLng,bLat,bLng){
-  const R=6371, dLat=(bLat-aLat)*Math.PI/180, dLng=(bLng-aLng)*Math.PI/180;
-  const A=Math.sin(dLat/2)**2 + Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R*2*Math.atan2(Math.sqrt(A),Math.sqrt(1-A));
-}
-
-function renderClientes(){
-  const cont=document.getElementById("contenedor");
-  cont.innerHTML="";
-  let lista=[...clientesData];
-
-  if(posicionActual){
-    lista.sort((a,b)=>{
-      const da=distanciaKm(posicionActual.lat,posicionActual.lng,Number(a.lat),Number(a.lng))||999;
-      const db=distanciaKm(posicionActual.lat,posicionActual.lng,Number(b.lat),Number(b.lng))||999;
-      return da-db;
-    });
+  if (!clave || !vendedores[clave]) {
+    document.getElementById("login").style.display = "flex";
+    document.getElementById("login").classList.remove("oculto");
+    document.getElementById("app").classList.remove("visible");
+    return;
   }
 
-  lista.forEach(c=>{
-    const card=document.createElement("div");
-    card.className="cliente";
-    card.innerHTML=`
-      <h3>${c.nombre}</h3>
-      <p>📍 ${c.direccion || ""} ${c.localidad ? "("+c.localidad+")":""}</p>
-      <textarea id="coment-${c.numero}" placeholder="Comentario..."></textarea>
-      <div class="fila">
-        <button onclick="marcarVisita('${c.numero}')">✅ Visitado</button>
-        <button onclick="marcarCompra('${c.numero}')">🛒 Compró</button>
-        <button onclick="irCliente(${c.lat},${c.lng})">🚗 Ir</button>
-      </div>`;
-    cont.appendChild(card);
-  });
+  const loginDiv = document.getElementById("login");
+  const appDiv = document.getElementById("app");
+  loginDiv.classList.add("oculto");
+
+  setTimeout(() => {
+    loginDiv.style.display = "none";
+    appDiv.classList.add("visible");
+
+    // 👇 Mostrar resumen al inicio
+    mostrarSeccion("resumen");
+  }, 500);
+
+  const nombre = vendedores[clave];
+  document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
+  cargarDatosVendedor(clave, nombre);
 }
 
-function irCliente(lat,lng){
-  if(!lat||!lng) return alert("Cliente sin coordenadas");
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,"_blank");
-}
 
 /* ================================
- 💾 Registrar Visita
+   AUTOEJECUCIÓN DE SESIÓN
 ================================ */
-async function marcarVisita(num){
-  await guardarVisita(num,true,false);
-}
-async function marcarCompra(num){
-  await guardarVisita(num,true,true);
-}
+window.addEventListener("load", () => {
+  const claveGuardada = localStorage.getItem("vendedorClave");
+  if (claveGuardada && vendedores[claveGuardada]) {
+    mostrarApp();
+  } else {
+    document.getElementById("login").style.display = "flex";
+  }
+});
 
-async function guardarVisita(numero,visitado,compro){
-  const c = clientesData.find(x=>String(x.numero)===String(numero));
-  const vendedor = localStorage.getItem("vendedorClave");
-  const comentario=(document.getElementById(`coment-${numero}`)?.value||"").trim();
-  const params={
-    action:"registrarVisita",
-    numero:c.numero, nombre:c.nombre,
-    direccion:c.direccion, localidad:c.localidad,
-    visitado, compro, comentario, vendedor
-  };
-  try{
-    await fetch(URL_API_BASE,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(params)
-    });
-  }catch(err){}
-}
 
 /* ================================
- 🗺️ Mapa
+   🚗 CARGA DE DATOS PRINCIPALES
 ================================ */
-function renderMapaFull(){
-  if(mapaFull){ mapaFull.remove(); mapaFull=null; }
-  mapaFull=L.map("mapaFull").setView([-34.7,-58.4],11);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapaFull);
-  clientesData.forEach(c=>{
-    if(c.lat && c.lng){
-      L.marker([c.lat,c.lng]).addTo(mapaFull).bindPopup(c.nombre);
-    }
-  });
-}
-
-/* ================================
- 📊 Pendientes
-================================ */
-async function cargarResumen(){ }
-async function cargarCalendario(){ }
-
-/* ================================
- 🔔 Notificaciones Push (FCM)
-================================ */
-async function inicializarNotificaciones(vendedorClave) {
-  const firebaseConfig = {
-    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-    authDomain: "app-vendedores-inteligente.firebaseapp.com",
-    projectId: "app-vendedores-inteligente",
-    storageBucket: "app-vendedores-inteligente.appspot.com",
-    messagingSenderId: "583313989429",
-    appId: "1:583313989429:web:c4f78617ad957c3b11367c",
-    vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const messaging = firebase.messaging();
+async function cargarDatosVendedor(clave) {
+  const urlRuta = `${URL_API_BASE}?accion=getRutaDelDiaPorVendedor&clave=${clave}`;
+  const urlPred = `${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`;
 
   try {
-    await Notification.requestPermission();
-    const token = await messaging.getToken({ vapidKey: firebaseConfig.vapidKey });
-    if (!token) return;
-    await fetch(URL_API_BASE,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ action:"registrarToken", vendedor:vendedorClave, token })
-    });
-  } catch(err){ console.warn("Notificaciones no habilitadas:",err); }
-}
+    const [r1, r2] = await Promise.all([fetch(urlRuta), fetch(urlPred)]);
+    const clientes = await r1.json();
+    const pred = await r2.json();
 
-if (typeof firebase !== "undefined") {
-  const messaging = firebase.messaging();
-  messaging.onMessage((payload) => {
-    alert(`🔔 ${payload.notification.title}\n${payload.notification.body}`);
-  });
+    const ahora = new Date().toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+    });
+
+    document.getElementById(
+      "estado"
+    ).textContent = `Ruta cargada (${clientes.length} clientes) — Última actualización: ${ahora}`;
+
+    mostrarRutaDia(clientes);
+    mostrarPanelPredicciones(pred);
+  } catch (e) {
+    console.error("❌ Error al cargar datos:", e);
+    document.getElementById("estado").textContent = "❌ Error al cargar datos.";
+  }
 }
 
 /* ================================
- Exponer funciones
+   🧭 RUTA DEL DÍA
 ================================ */
-window.logout=logout;
-window.mostrarSeccion=mostrarSeccion;
-window.toggleModoOscuro=toggleModoOscuro;
-window.marcarVisita=marcarVisita;
-window.marcarCompra=marcarCompra;
-window.irCliente=irCliente;
+function mostrarRutaDia(clientes) {
+  const cont = document.getElementById("contenedor");
+  cont.innerHTML = "";
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "🗺️ Ruta del Día";
+  cont.appendChild(titulo);
+
+  const btnRuta = document.createElement("button");
+  btnRuta.textContent = "📍 Ver ruta completa en Google Maps";
+  btnRuta.className = "btn-mapa";
+  btnRuta.onclick = () => abrirRutaEnMapa(clientes);
+  cont.appendChild(btnRuta);
+
+  if (!clientes || clientes.length === 0) {
+    cont.innerHTML += "<p>📭 No hay clientes asignados para hoy.</p>";
+    return;
+  }
+
+  clientes.forEach((c) => {
+    const div = document.createElement("div");
+    div.className = "cliente";
+    div.innerHTML = `
+      <h3>${c.nombre}</h3>
+      <p>📍 ${c.direccion}, ${c.localidad}</p>
+      <p>
+        <label><input type="checkbox" id="visitado-${c.numero}"> Visitado</label>
+        <label><input type="checkbox" id="compro-${c.numero}"> Compró</label>
+      </p>
+      <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
+      <button onclick='registrarVisita(${JSON.stringify(c)})'>💾 Guardar visita</button>
+    `;
+    cont.appendChild(div);
+  });
+}
+
+function abrirRutaEnMapa(clientes) {
+  const direcciones = clientes
+    .map((c) => `${c.direccion}, ${c.localidad}`)
+    .filter(Boolean)
+    .join("|");
+  if (!direcciones) {
+    alert("⚠️ No hay direcciones válidas para mostrar en el mapa.");
+    return;
+  }
+  const url = `https://www.google.com/maps/dir/?api=1&travelmode=driving&waypoints=${encodeURIComponent(
+    direcciones
+  )}`;
+  window.open(url, "_blank");
+}
+
+/* ================================
+   💾 REGISTRAR VISITA
+================================ */
+function registrarVisita(cliente) {
+  const visitado = document.getElementById(`visitado-${cliente.numero}`).checked;
+  const compro = document.getElementById(`compro-${cliente.numero}`).checked;
+  const comentario = document
+    .getElementById(`coment-${cliente.numero}`)
+    .value.trim();
+  const vendedor = localStorage.getItem("vendedorClave");
+
+  const params = new URLSearchParams({
+    accion: "registrarVisita",
+    numero: cliente.numero,
+    nombre: cliente.nombre,
+    direccion: cliente.direccion,
+    localidad: cliente.localidad,
+    visitado,
+    compro,
+    comentario,
+    vendedor,
+  });
+
+  fetch(`${URL_API_BASE}?${params.toString()}`)
+    .then((r) => r.json())
+    .then((res) => alert(res.estado || "✅ Visita registrada"))
+    .catch(() => alert("❌ Error al registrar visita"));
+}
+
+/* ================================
+   📅 CALENDARIO DE VISITAS
+================================ */
+async function cargarCalendario() {
+  const clave = localStorage.getItem("vendedorClave");
+  const cont = document.getElementById("contenedorCalendario");
+  if (!clave) {
+    cont.innerHTML = "⚠️ Debes iniciar sesión primero.";
+    return;
+  }
+
+  cont.innerHTML = "⏳ Cargando calendario...";
+  const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
+
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      cont.innerHTML = "📭 No hay visitas programadas.";
+      return;
+    }
+
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Día</th><th>Localidades</th><th>Última visita</th><th>Compró</th>
+          </tr>
+        </thead><tbody>
+    `;
+
+    data.forEach((fila) => {
+      html += `
+        <tr>
+          <td>${fila.fecha}</td>
+          <td>${fila.dia}</td>
+          <td>${fila.localidad}</td>
+          <td>${fila.ultimaVisita || "-"}</td>
+          <td>${fila.compro ? "✅" : "❌"}</td>
+        </tr>`;
+    });
+
+    html += "</tbody></table>";
+    cont.innerHTML = html;
+  } catch (e) {
+    console.error("Error al cargar calendario:", e);
+    cont.innerHTML = "❌ Error al cargar calendario.";
+  }
+}
+
+/* ================================
+   📈 PANEL DE PREDICCIONES / IA + GRÁFICO DE DESEMPEÑO
+================================ */
+function mostrarPanelPredicciones(pred) {
+  const cont = document.getElementById("contenedor");
+
+  // Eliminar panel anterior si existe
+  const viejo = document.querySelector(".panel-inteligente");
+  if (viejo) viejo.remove();
+
+  const panel = document.createElement("section");
+  panel.className = "panel-inteligente";
+  panel.innerHTML = `
+    <div class="tarjeta-resumen">
+      <h2>📊 Resumen Inteligente</h2>
+      <div class="grafico-container">
+        <canvas id="graficoTasa" width="140" height="140"></canvas>
+        <div class="grafico-texto" id="porcentajeTasa">0%</div>
+      </div>
+
+      <p>🚗 Visitados hoy: <b>${pred.totalHoy || 0}</b></p>
+      <p>💰 Compraron: <b>${pred.compraronHoy || 0}</b></p>
+      <p>⏱️ Frecuencia promedio: <b>${pred.frecuencia || "Sin datos"} días</b></p>
+      <p>🎯 <b>${pred.tasa || 0}%</b> tasa de conversión</p>
+      <p class="mensaje-ia">${mensajeMotivacional(pred.tasa || 0)}</p>
+    </div>
+
+    <div class="tarjeta-prediccion">
+      <h3>🤖 Sugerencia Inteligente</h3>
+      <p>${pred.mensaje}</p>
+    </div>
+  `;
+
+  cont.prepend(panel);
+
+  // Animar el gráfico circular
+  setTimeout(() => animarGrafico(pred.tasa || 0), 300);
+}
+
+/* ================================
+   🔵 ANIMACIÓN GRÁFICO CIRCULAR
+================================ */
+function animarGrafico(valor) {
+  const canvas = document.getElementById("graficoTasa");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const centro = canvas.width / 2;
+  const radio = 60;
+  const circunferencia = Math.PI * 2;
+  const colorBase = "#e0e0e0";
+  const colorRelleno = valor >= 70 ? "#00c851" : valor >= 40 ? "#ffbb33" : "#ff4444";
+  const texto = document.getElementById("porcentajeTasa");
+
+  let progreso = 0;
+  const anim = setInterval(() => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fondo
+    ctx.beginPath();
+    ctx.arc(centro, centro, radio, 0, circunferencia);
+    ctx.strokeStyle = colorBase;
+    ctx.lineWidth = 10;
+    ctx.stroke();
+
+    // Progreso
+    ctx.beginPath();
+    ctx.arc(centro, centro, radio, -Math.PI / 2, (circunferencia * progreso) / 100 - Math.PI / 2);
+    ctx.strokeStyle = colorRelleno;
+    ctx.lineWidth = 10;
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    // Texto
+    texto.textContent = `${Math.round(progreso)}%`;
+
+    if (progreso >= valor) clearInterval(anim);
+    else progreso += 1;
+  }, 15);
+}
+
+/* ================================
+   💬 MENSAJE MOTIVACIONAL
+================================ */
+function mensajeMotivacional(tasa) {
+  if (tasa >= 80) return "🚀 ¡Excelente trabajo! Sos un referente de ventas.";
+  if (tasa >= 60) return "🔥 Muy bien, seguí con ese ritmo.";
+  if (tasa >= 40) return "💪 Buen desempeño, ¡vamos por más!";
+  return "💡 No te desanimes, cada cliente cuenta. ¡Dale con todo!";
+}
+
+/* =====================================================
+ 🧠 APP DE VENDEDORES INTELIGENTE - EXTENSIÓN AVANZADA
+ Versión: Final Octubre 2025
+ Compatible con index_final.html
+===================================================== */
+
+/* ============================
+   🕒 NOTIFICACIÓN DIARIA
+   (Recuerda la ruta al iniciar el día)
+============================ */
+function notificacionDiaria() {
+  if (!("Notification" in window)) return;
+
+  Notification.requestPermission().then((perm) => {
+    if (perm === "granted") {
+      const clave = localStorage.getItem("vendedorClave");
+      if (!clave) return;
+
+      const nombre = vendedores[clave];
+      const notif = new Notification("🚗 Ruta del día disponible", {
+        body: `Hola ${nombre}, ya podés consultar tu ruta actualizada.`,
+        icon: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+      });
+
+      notif.onclick = () => window.focus();
+    }
+  });
+}
+
+// Ejecutar al cargar si es la primera visita del día
+const ultimaNotif = localStorage.getItem("notificacionHoy");
+const hoy = new Date().toLocaleDateString("es-AR");
+if (ultimaNotif !== hoy) {
+  notificacionDiaria();
+  localStorage.setItem("notificacionHoy", hoy);
+}
+
+/* ============================
+   📆 CALENDARIO AVANZADO
+============================ */
+async function cargarCalendario() {
+  const clave = localStorage.getItem("vendedorClave");
+  const cont = document.getElementById("contenedorCalendario");
+  if (!clave) {
+    cont.innerHTML = "<p>⚠️ Debes iniciar sesión primero.</p>";
+    return;
+  }
+
+  cont.innerHTML = "<p>⏳ Cargando calendario...</p>";
+  const url = `${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`;
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      cont.innerHTML = "<p>📭 No hay visitas programadas.</p>";
+      return;
+    }
+
+    let html = `<div class="lista-calendario">`;
+    data.forEach((f) => {
+      const estado = f.compro ? "✅" : "❌";
+      html += `
+        <div class="cal-item">
+          <div class="cal-info">
+            <b>${f.fecha}</b> - ${f.dia}<br>
+            <span>📍 ${f.localidad}</span>
+          </div>
+          <div class="cal-estado">${estado}</div>
+        </div>
+      `;
+    });
+    html += "</div>";
+
+    cont.innerHTML = html;
+  } catch (e) {
+    console.error("Error calendario avanzado:", e);
+    cont.innerHTML = "<p>❌ Error al cargar calendario.</p>";
+  }
+}
+
+/* ============================
+   🕒 HISTORIAL DE VISITAS
+============================ */
+async function verHistorial() {
+  const clave = localStorage.getItem("vendedorClave");
+  if (!clave) {
+    alert("⚠️ Primero iniciá sesión.");
+    return;
+  }
+
+  const url = `${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`;
+  const resp = await fetch(url);
+  const data = await resp.json();
+
+  let historial = document.createElement("div");
+  historial.className = "historial-overlay";
+  historial.innerHTML = `
+    <div class="historial-card">
+      <h3>📜 Historial de visitas recientes</h3>
+      <p>Fecha: ${data.fecha || "N/A"}</p>
+      <p>Total: ${data.totalHoy || 0}</p>
+      <p>Compraron: ${data.compraronHoy || 0}</p>
+      <p>Tasa: ${data.tasa || 0}%</p>
+      <button onclick="cerrarHistorial()">Cerrar</button>
+    </div>
+  `;
+  document.body.appendChild(historial);
+}
+
+function cerrarHistorial() {
+  document.querySelector(".historial-overlay")?.remove();
+}
+
+/* ============================
+   🌍 FILTRAR CLIENTES POR LOCALIDAD
+============================ */
+function filtrarClientesPorLocalidad(localidad) {
+  const cards = document.querySelectorAll(".cliente");
+  cards.forEach((card) => {
+    const texto = card.innerText.toLowerCase();
+    card.style.display = texto.includes(localidad.toLowerCase()) ? "block" : "none";
+  });
+}
+
+function mostrarFiltroLocalidad() {
+  const cont = document.getElementById("contenedor");
+  if (!cont.querySelector("#filtroLocalidad")) {
+    const input = document.createElement("input");
+    input.id = "filtroLocalidad";
+    input.placeholder = "🔍 Filtrar por localidad...";
+    input.style = `
+      width: 90%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    `;
+    input.oninput = () => filtrarClientesPorLocalidad(input.value);
+    cont.prepend(input);
+  }
+}
+
+/* ============================
+   🎨 ANIMACIONES Y EFECTOS
+============================ */
+function animarTarjetas() {
+  const cards = document.querySelectorAll(".cliente");
+  cards.forEach((c, i) => {
+    c.style.opacity = "0";
+    c.style.transform = "translateY(20px)";
+    setTimeout(() => {
+      c.style.transition = "all 0.3s ease";
+      c.style.opacity = "1";
+      c.style.transform = "translateY(0)";
+    }, 100 * i);
+  });
+}
+
+/* ============================
+   ⏳ AUTO REFRESCO DE DATOS
+============================ */
+function activarAutoRefresh(minutos = 15) {
+  setInterval(() => {
+    const clave = localStorage.getItem("vendedorClave");
+    if (clave) {
+      console.log("🔄 Auto-refrescando datos del vendedor...");
+      cargarRuta(clave);
+      cargarResumen(clave);
+    }
+  }, minutos * 60 * 1000);
+}
+
+// Activar refresco cada 15 min
+activarAutoRefresh();
+
+/* ============================
+   🧩 MEJORAS DE MAPA
+============================ */
+function mostrarMapa(puntos) {
+  const mapaDiv = document.getElementById("mapa");
+  mapaDiv.innerHTML = "";
+  const map = L.map("mapa").setView([-34.7, -58.4], 11);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  let group = [];
+  puntos.forEach((p) => {
+    const marker = L.marker([p[0], p[1]]).addTo(map).bindPopup(p[2]);
+    group.push(marker);
+  });
+
+  const groupLayer = L.featureGroup(group);
+  if (group.length) map.fitBounds(groupLayer.getBounds().pad(0.3));
+
+  // 📍 Agregar marcador del vendedor actual
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const marker = L.marker([pos.coords.latitude, pos.coords.longitude], {
+        icon: L.icon({
+          iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+          iconSize: [32, 32],
+        }),
+      })
+        .addTo(map)
+        .bindPopup("📍 Estás aquí");
+    });
+  }
+}
+
+/* ============================
+   🧭 ATENCIÓN A LOS DETALLES
+============================ */
+// Se ejecuta automáticamente cada vez que se carga la ruta
+const observer = new MutationObserver(() => {
+  mostrarFiltroLocalidad();
+  animarTarjetas();
+});
+observer.observe(document.body, { childList: true, subtree: true });
