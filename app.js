@@ -161,36 +161,63 @@ function aplicarOrdenManualSiExiste(){
    🧱 Render tarjetas
 ================================ */
 function renderClientes(){
-  const cont=document.getElementById("contenedor");
+  const cont=document.getElementById("contenedor"); if(!cont) return;
   cont.innerHTML="";
 
   clientesData.forEach((c,idx)=>{
-    const lat=parseFloat(c.lat), lng=parseFloat(c.lng);
-    const dist=(posicionActual)? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null; c._dist = dist;
+    const lat = Number(c.lat), lng = Number(c.lng);
+    const tieneGeo = Number.isFinite(lat) && Number.isFinite(lng);
+    const dist = (posicionActual && tieneGeo) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
+    c._dist = dist; // 👈 para IA
 
-    cont.insertAdjacentHTML("beforeend",`
-      <div class="cliente" id="c_${c.numero}">
-        <h3>${c.numero} - ${c.nombre}</h3>
-        <div class="fila">
-          <span>📍 ${c.direccion||""}</span>
-          ${dist?`<span class="badge">📏 ${dist.toFixed(1)} km</span>`:""}
-        </div>
+    const card = document.createElement("div");
+    card.className="cliente";
+    card.id="c_"+c.numero;
+    card.setAttribute("draggable","true");           // 👈 DnD
+    card.dataset.index = idx;
 
-        <div class="fila check-grande">
-          <button onclick="toggleVisita(${c.numero})" id="btnV_${c.numero}" class="btn-visita">No Visitado</button>
-          <button onclick="toggleCompra(${c.numero})" id="btnC_${c.numero}" class="btn-compra">No Compró</button>
-        </div>
-
-        <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
-
-        <div class="acciones">
-          <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
-          <button class="btn-secundario" onclick="irCliente(${lat},${lng})">🚗 Ir</button>
-        </div>
+    card.innerHTML = `
+      <h3>${c.numero} - ${c.nombre}</h3>
+      <div class="fila">
+        <span>📍 ${c.direccion||""}</span>
+        ${dist!==null ? `<span class="badge">📏 ${dist.toFixed(1)} km</span>` : ""}
       </div>
-    `);
+
+      <div class="fila check-grande">
+        <button onclick="toggleVisita(${c.numero})" id="btnV_${c.numero}" class="btn-visita">No Visitado</button>
+        <button onclick="toggleCompra(${c.numero})" id="btnC_${c.numero}" class="btn-compra">No Compró</button>
+      </div>
+
+      <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
+
+      <div class="acciones">
+        <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
+        ${tieneGeo ? `<button class="btn-secundario" onclick="irCliente(${lat},${lng})">🚗 Ir</button>` : `<button class="btn-secundario" disabled title="Sin ubicación">🚗 Ir</button>`}
+      </div>
+    `;
+
+    // DnD handlers
+    card.addEventListener("dragstart",(ev)=>{ dragSrcIndex = idx; ev.dataTransfer.effectAllowed="move"; });
+    card.addEventListener("dragover",(ev)=>{ ev.preventDefault(); ev.dataTransfer.dropEffect="move"; });
+    card.addEventListener("drop",(ev)=>{
+      ev.preventDefault();
+      const cards = Array.from(cont.querySelectorAll(".cliente"));
+      const targetIndex = cards.indexOf(card);
+      if(dragSrcIndex===null || dragSrcIndex===targetIndex) return;
+
+      const moved = clientesData.splice(dragSrcIndex,1)[0];
+      clientesData.splice(targetIndex,0,moved);
+      cont.insertBefore(cards[dragSrcIndex], cards[targetIndex]);
+      dragSrcIndex=null;
+
+      // guardar orden
+      guardarOrden(clientesData.map(x=>String(x.numero)));
+    });
+
+    cont.appendChild(card);
   });
 }
+
 
 /* ================================
    ✅ Botones táctiles (no checkbox)
