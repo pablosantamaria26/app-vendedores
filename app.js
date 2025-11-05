@@ -224,6 +224,81 @@ function detectarClienteCercano(){ /* se mantiene igual */ }
 ================================ */
 function renderMapaFull(){ /* sin cambios */ }
 
+
+/* =========================================================
+   🧠 IA — Reglas Simples y Consejos
+========================================================= */
+
+function generarConsejosIA(clientes){
+  const consejos = [];
+
+  const hoy = new Date();
+
+  clientes.forEach(c => {
+    // Días sin comprar
+    if(c.ultCompraDias && c.ultCompraDias > 10){
+      consejos.push(`⚠️ El cliente ${c.numero} (${c.nombre}) no compra hace ${c.ultCompraDias} días.`);
+    }
+
+    // Si suele comprar cada X días (predicción desde backend)
+    if(c.frecuenciaCompraDias && c.ultCompraDias){
+      if(c.ultCompraDias >= c.frecuenciaCompraDias - 1){
+        consejos.push(`🟢 Probabilidad de compra HOY en ${c.numero} (${c.nombre}).`);
+      }
+    }
+
+    // Clientes grandes primero
+    if(c.esClienteClave){
+      consejos.push(`⭐ ${c.nombre} es cliente importante → Priorizar hoy.`);
+    }
+  });
+
+  return consejos;
+}
+
+/* =========================================================
+   💡 Mostrar consejos en el panel IA
+========================================================= */
+function actualizarPanelIA(){
+  const panel = document.getElementById("iaPanel");
+  if(!panel) return;
+
+  const consejos = generarConsejosIA(clientesData);
+
+  if(!consejos.length){
+    panel.innerHTML = "<span style='opacity:.7'>Sin consejos por ahora ✨</span>";
+    return;
+  }
+
+  panel.innerHTML = consejos.map(c=>`<div style="margin-bottom:6px">${c}</div>`).join("");
+}
+
+/* =========================================================
+   🔔 Alertas automáticas IA (cuando hay algo importante)
+========================================================= */
+function alertasIA(){
+  const consejos = generarConsejosIA(clientesData);
+
+  // Solo disparar alertas si hay algo importante
+  const alertaClave = consejos.find(c => c.includes("⚠️") || c.includes("⭐"));
+
+  if(alertaClave){
+    mostrarConsejoIA(alertaClave);
+  }
+}
+
+/* =========================================================
+   🟢 Integración automática al cargar la ruta
+========================================================= */
+const _cargarRutaOriginal = cargarRuta;
+cargarRuta = async function(clave){
+  const data = await _cargarRutaOriginal(clave);
+  actualizarPanelIA();
+  alertasIA();
+  return data;
+};
+
+
 /* ================================
    🔗 Exponer funciones
 ================================ */
