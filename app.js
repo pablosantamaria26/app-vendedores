@@ -1,7 +1,8 @@
 /* ================================
     ⚙️ Config principal
 ================================ */
-const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+
 
 let clientesData = [];
 let posicionActual = null;
