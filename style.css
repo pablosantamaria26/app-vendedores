@@ -1,235 +1,506 @@
-/* ============================================================
-    🎨 App Vendedores — Modo Día & Modo Noche
-    Basado en tu estilo mejorado 2026
-============================================================ */
-
-/* ===============================
-    🎨 Variables base (Modo Día)
-================================= */
+/* ================================
+   🎨 VARIABLES DE COLOR BASE
+================================ */
 :root {
-  --azul: #0a63ff;
-  --azul-oscuro: #0a2b57;
-  --ok: #22c55e;
-  --no: #ef4444;
-  --bg: #f7f9fc;
-  --card: #ffffff;
-  --texto: #121722;
-  --borde: #ccd4e2;
-  --sombra: rgba(0,0,0,.12);
-  --boton-grad-a: var(--azul);
-  --boton-grad-b: #3390ff;
+  --azul: #004aad;
+  --azul-oscuro: #002b73;
+  --celeste: #eaf3ff;
+  --blanco: #ffffff;
+  --gris-claro: #f7f9fc;
+  --sombra: rgba(0, 0, 0, 0.1);
+  --gradiente: linear-gradient(135deg, #004aad, #0079ff);
+  --texto: #222;
 }
 
-/* ===============================
-    🌙 Modo Noche (Negro + Verde premium)
-================================= */
-body.tema-noche {
-  --azul: #22c55e;
-  --azul-oscuro: #10301c;
-  --bg: #0b1220;
-  --card: #0f1a2d;
+body[data-dark="true"] {
+  --azul: #58a6ff;
+  --azul-oscuro: #1f6feb;
+  --celeste: #1c2128;
+  --blanco: #0d1117;
+  --gris-claro: #010409;
+  --sombra: rgba(255, 255, 255, 0.08);
+  --gradiente: linear-gradient(135deg, #1f6feb, #58a6ff);
   --texto: #e6edf3;
-  --borde: #1f2a44;
-  --sombra: rgba(0,0,0,.45);
-  --boton-grad-a: #22c55e;
-  --boton-grad-b: #32e67b;
 }
 
-/* ===============================
-    Transiciones suaves
-================================= */
-html, body, header, .cliente, .menu, .panel-resumen, #mapaFull {
-  transition: background-color .4s ease, color .4s ease, border-color .4s ease;
-}
-
-/* ===============================
-    Base layout
-================================= */
-html, body {
-  height: 100%;
+/* ================================
+   BODY GENERAL
+================================ */
+body {
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  background: var(--gris-claro);
+  color: var(--texto);
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--texto);
+  padding: 0;
   overflow-x: hidden;
+  height: 100vh;
+  transition: background 0.5s ease, color 0.5s ease;
 }
 
-/* ===============================
-    Header
-================================= */
-header {
-  width: 100%;
-  background: var(--azul-oscuro);
-  color: #fff;
-  padding: 12px 14px;
-  position: sticky;
-  top: 0;
-  z-index: 999;
-  box-shadow: 0 2px 14px var(--sombra);
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-  align-items: center;
-}
-header h1 { margin: 0; font-size: 1.1rem; font-weight: 700; }
-
-/* ===============================
-    Botones de header
-================================= */
-.modo-toggle {
-  background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.28);
-  color: #fff;
-  border-radius: 999px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-/* ===============================
-    Main / Secciones
-================================= */
-main {
-  width: 100%;
-  max-width: 780px;
-  margin: 0 auto 84px;
-  padding: 10px;
-  box-sizing: border-box;
-}
-.seccion { display: none; }
-.seccion.visible { display: block; }
-
-/* ===============================
-    Menú inferior
-================================= */
-.menu {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  background: var(--card);
-  border-top: 1px solid var(--borde);
-  z-index: 1000;
-}
-.menu button {
-  flex: 1;
-  padding: 12px;
-  background: transparent;
-  border: none;
-  color: var(--texto);
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-}
-.menu button.activo {
-  background: var(--azul);
-  color: #fff;
-  font-weight: 800;
-}
-
-/* ===============================
-    Tarjetas Clientes
-================================= */
-.cliente {
-  background: var(--card);
-  color: var(--texto);
-  border: 1px solid var(--borde);
-  border-left: 6px solid var(--azul);
-  border-radius: 14px;
-  padding: 14px;
-  margin: 10px 0;
-  box-shadow: 0 4px 14px var(--sombra);
-}
-.cliente.bloqueado { opacity: .45; pointer-events: none; }
-
-/* ===============================
-    Botones principales
-================================= */
-button {
-  background: linear-gradient(135deg, var(--boton-grad-a), var(--boton-grad-b));
-  color: #fff;
-  border: none;
-  border-radius: 12px; /* ← moderno táctil */
-  padding: 9px 14px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 14px var(--sombra);
-  transition: .2s;
-}
-button:hover { transform: translateY(-1px); filter: brightness(1.08); }
-
-/* Botones estado visita */
-.btn-visita, .btn-compro {
-  background: var(--card);
-  border: 1px solid var(--borde);
-  border-radius: 10px;
-  padding: 8px 12px;
-}
-.btn-visita.hecho, .btn-compro.hecho {
-  background: var(--ok);
-  border-color: var(--ok);
-  color: #fff;
-}
-
-/* ===============================
-    Textarea
-================================= */
-.cliente textarea {
-  width: 100%;
-  margin-top: 6px;
-  background: transparent;
-  color: var(--texto);
-  border: 1px solid var(--borde);
-  border-radius: 8px;
-  padding: 8px;
-}
-
-/* ===============================
-    Mapa
-================================= */
-#mapaFull {
-  height: 68vh;
-  width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px var(--sombra);
-  border: 1px solid var(--borde);
-}
-
-/* ===============================
-    Login
-================================= */
+/* ================================
+   LOGIN FULLSCREEN
+================================ */
 #login {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, var(--azul-oscuro), var(--azul));
-  z-index: 10000;
-}
-.login-card {
-  background: var(--card);
-  color: var(--texto);
-  border-radius: 16px;
-  padding: 22px;
-  width: 86%;
-  max-width: 340px;
+  background: var(--gradiente);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  border: 1px solid var(--borde);
+  transition: opacity 0.6s ease;
 }
 
-/* PIN UI */
-.pin-display { display: flex; gap: 18px; margin: 20px 0; justify-content: center; }
-.pin-dot { width: 18px; height: 18px; background: var(--borde); border-radius: 50%; }
-.pin-dot.active { background: var(--azul); }
-
-/* Loader */
-.loader {
-  width: 30px; height: 30px;
-  border: 4px solid var(--borde);
-  border-top: 4px solid var(--azul);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  display: none;
+#login h2 {
+  color: var(--blanco);
+  font-size: 1.9em;
+  margin-bottom: 1em;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
-.loader.visible { display: block; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+#login input {
+  font-size: 1.3em;
+  padding: 0.6em 1em;
+  text-align: center;
+  margin: 0.6em;
+  border-radius: 12px;
+  border: 2px solid #ccc;
+  outline: none;
+  width: 240px;
+  transition: all 0.3s ease;
+}
+
+#login input:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 15px rgba(0, 74, 173, 0.4);
+}
+
+#login button {
+  background: var(--blanco);
+  color: var(--azul);
+  border: none;
+  border-radius: 40px;
+  padding: 0.7em 2em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#login button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(255,255,255,0.3);
+}
+
+/* ================================
+   APP PRINCIPAL
+================================ */
+#app.visible {
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+/* ================================
+   HEADER
+================================ */
+header {
+  background: var(--gradiente);
+  color: var(--blanco);
+  padding: 1.2em 1em;
+  text-align: center;
+  box-shadow: 0 3px 8px var(--sombra);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h1 {
+  margin: 0.3em 0 0.6em;
+  font-size: 1.7em;
+  text-shadow: 0 0 8px rgba(255,255,255,0.3);
+}
+
+/* ================================
+   TOGGLE MODO OSCURO
+================================ */
+.modo-toggle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 1.7em;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.modo-toggle:hover {
+  transform: rotate(25deg);
+}
+
+/* ================================
+   MENÚ DE NAVEGACIÓN
+================================ */
+.menu {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6em;
+}
+
+.menu button {
+  background: transparent;
+  color: var(--blanco);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 30px;
+  padding: 0.6em 1.4em;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.menu button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.menu button.activo {
+  background: var(--blanco);
+  color: var(--azul);
+  box-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
+
+/* ================================
+   SECCIONES FULLSCREEN
+================================ */
+main {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.seccion {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--gris-claro);
+  transition: opacity 0.4s ease, transform 0.5s ease;
+  padding: 1.5em 1em 2em;
+}
+
+.seccion.oculto {
+  opacity: 0;
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+.seccion.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ================================
+   TABLA CALENDARIO
+================================ */
+.tabla-calendario {
+  width: 100%;
+  max-width: 900px;
+  margin: 1.5em auto;
+  overflow-x: auto;
+}
+
+.tabla-calendario table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  background: var(--blanco);
+  overflow: hidden;
+}
+
+.tabla-calendario th {
+  background: var(--gradiente);
+  color: var(--blanco);
+  padding: 0.9em;
+  text-align: left;
+}
+
+.tabla-calendario td {
+  padding: 0.8em;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabla-calendario tr:hover td {
+  background: var(--celeste);
+}
+
+/* ================================
+   TARJETAS DE CLIENTES
+================================ */
+.cliente {
+  background: var(--blanco);
+  border-left: 6px solid var(--azul);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px var(--sombra);
+  margin: 1em auto;
+  padding: 1em;
+  width: 90%;
+  max-width: 640px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.cliente:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0,74,173,0.3);
+}
+
+/* ================================
+   BOTONES GENERALES
+================================ */
+button {
+  background: var(--gradiente);
+  color: #fff;
+  border: none;
+  border-radius: 40px;
+  padding: 0.7em 1.6em;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(0,74,173,0.4);
+}
+
+/* ================================
+   📊 PANEL DE RESUMEN INTELIGENTE
+================================ */
+.panel-resumen {
+  width: 92%;
+  max-width: 900px;
+  margin: 2em auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2em;
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+.tarjeta-resumen, .tarjeta-prediccion {
+  background: var(--blanco);
+  border-left: 6px solid var(--azul);
+  border-radius: 12px;
+  box-shadow: 0 3px 8px var(--sombra);
+  padding: 1.4em;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tarjeta-resumen:hover,
+.tarjeta-prediccion:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0,74,173,0.3);
+}
+
+.tarjeta-resumen h3,
+.tarjeta-prediccion h3 {
+  color: var(--azul);
+  margin-top: 0;
+  margin-bottom: 0.6em;
+}
+
+.tarjeta-prediccion p {
+  font-size: 1.15em;
+  line-height: 1.6em;
+}
+
+/* ================================
+   ✨ ANIMACIONES
+================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================================
+   SCROLLBAR
+================================ */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--azul);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--azul-oscuro);
+}
+
+/* ================================
+   🧠 PANEL INTELIGENTE / GRÁFICO
+================================ */
+.panel-inteligente {
+  width: 90%;
+  max-width: 700px;
+  margin: 2em auto;
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+.grafico-container {
+  position: relative;
+  display: inline-block;
+  width: 150px;
+  height: 150px;
+  margin: 1.2em auto;
+}
+
+.grafico-texto {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.8em;
+  font-weight: bold;
+  color: var(--azul);
+}
+
+.mensaje-ia {
+  margin-top: 1em;
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--azul-oscuro);
+}
+
+/* ================================
+   🔐 LOGIN FULLSCREEN MODERNO
+================================ */
+.pantalla-login {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #004aad, #0079ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  animation: fondoAnimado 8s ease-in-out infinite alternate;
+  z-index: 999;
+}
+
+@keyframes fondoAnimado {
+  0% { background: linear-gradient(135deg, #004aad, #0079ff); }
+  100% { background: linear-gradient(135deg, #0079ff, #00bfff); }
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 2.5em 2em;
+  width: 90%;
+  max-width: 360px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  animation: fadeIn 0.8s ease;
+}
+
+.login-card h1 {
+  font-size: 1.6em;
+  margin-bottom: 0.3em;
+  font-weight: 700;
+}
+
+.login-card h2 {
+  font-size: 1.2em;
+  margin-bottom: 1em;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.login-card input {
+  font-size: 2em;
+  letter-spacing: 0.3em;
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5em 0;
+  width: 80%;
+  outline: none;
+  margin-bottom: 1em;
+  background: rgba(255, 255, 255, 0.9);
+  color: #004aad;
+  font-weight: bold;
+}
+
+.teclado-numerico {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6em;
+  justify-items: center;
+  margin-bottom: 1em;
+}
+
+.teclado-numerico button {
+  background: var(--blanco);
+  color: var(--azul);
+  font-size: 1.4em;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  padding: 0.6em 0;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.teclado-numerico button:hover {
+  background: var(--azul);
+  color: white;
+  transform: scale(1.05);
+}
+
+.error {
+  color: #ffcccc;
+  font-weight: 600;
+  min-height: 1.2em;
+  font-size: 1em;
+  margin-top: 0.5em;
+  animation: fadeIn 0.5s ease;
+}
+
+/* ================================
+   🏠 PANTALLA PRINCIPAL (RESUMEN)
+================================ */
+#seccion-resumen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 2em;
+}
+
+#seccion-resumen h2 {
+  font-size: 1.8em;
+  color: var(--azul);
+  margin-bottom: 1em;
+}
+
+.panel-resumen {
+  margin-top: 1em;
+  max-width: 600px;
+  width: 90%;
+}
+
+.panel-resumen .tarjeta-resumen {
+  border-left: 8px solid var(--azul);
+}
+
+/* ================================
+   📱 RESPONSIVE (MÓVILES)
+================================ */
+@media (max-width: 600px) {
+  header h1 { font-size: 1.3em; }
+  .menu button { font-size: 0.9em; padding: 0.4em 1em; }
+  .tarjeta-resumen, .tarjeta-prediccion { padding: 1em; }
+  .grafico-container { width: 120px; height: 120px; }
+  .grafico-texto { font-size: 1.5em; }
+}
