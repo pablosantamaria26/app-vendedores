@@ -397,6 +397,15 @@ async function cargarCalendario(){
 }
 
 /* ================================
+   🔔 Notificación diaria (placeholder)
+   — Se mantiene desactivada hasta terminar pruebas
+================================ */
+function notificacionDiaria(){
+  // (Se dejará lógica final al terminar pruebas)
+}
+
+
+/* ================================
    🔗 Exponer
 ================================ */
 window.agregarDigito=agregarDigito;
