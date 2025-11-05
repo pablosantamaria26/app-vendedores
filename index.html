@@ -9,7 +9,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
   <meta name="theme-color" content="#0a2b57" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -33,7 +32,8 @@
   <div class="login-card">
     <h1>🧠 App de Vendedores</h1>
     <h2>🔐 Ingresá tu código</h2>
-    <input type="password" id="clave" maxlength="4" placeholder="••••" />
+    <input type="password" id="clave" maxlength="4" autocomplete="off" placeholder="••••" />
+    
     <div class="teclado-numerico">
       <button onclick="agregarDigito('1')">1</button>
       <button onclick="agregarDigito('2')">2</button>
@@ -59,10 +59,18 @@
   <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
 
   <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-    <div class="tema-item" onclick="aplicarTema('tema-confianza')"><span class="dot" style="background:#0a63ff"></span> ● Confianza</div>
-    <div class="tema-item" onclick="aplicarTema('tema-energia')"><span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> ● Energía</div>
-    <div class="tema-item" onclick="aplicarTema('tema-foco')"><span class="dot" style="background:#facc15"></span> ● Foco</div>
-    <div class="tema-item" onclick="aplicarTema('tema-noche')"><span class="dot" style="background:#001b3a"></span> ● Noche</div>
+    <div class="tema-item" onclick="aplicarTema('tema-confianza')">
+      <span class="dot" style="background:#0a63ff"></span> Confianza
+    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-energia')">
+      <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> Energía
+    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-foco')">
+      <span class="dot" style="background:#facc15"></span> Foco
+    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-noche')">
+      <span class="dot" style="background:#001b3a"></span> Noche
+    </div>
   </div>
 </header>
 
@@ -70,7 +78,7 @@
 <main>
   <section id="seccion-ruta" class="seccion visible">
     <h2>🗺️ Ruta del Día</h2>
-    <div id="estado"></div>
+    <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
     <div id="contenedor"></div>
   </section>
 
@@ -93,30 +101,24 @@
 
 <!-- ======================= Menú inferior ======================= -->
 <div class="menu">
-  <button onclick="mostrarSeccion('ruta')" class="activo">🗺️ Ruta</button>
-  <button onclick="mostrarSeccion('mapa')">📍 Mapa</button>
-  <button onclick="mostrarSeccion('calendario')">📅</button>
-  <button onclick="mostrarSeccion('resumen')">📈</button>
-  <button onclick="logout()">🚪</button>
+  <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
+  <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
+  <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
+  <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
+  <button id="btnLogout" onclick="logout()">🚪</button>
 </div>
 
-<!-- ======================= IA ======================= -->
+<!-- ======================= IA mínima ======================= -->
 <button id="iaTipBtn" class="floating-ia">💡</button>
 <div id="iaPanel" class="ia-panel oculto"></div>
 
 <script>
-  document.getElementById("iaTipBtn").addEventListener("click", ()=>{
-    document.getElementById("iaPanel").classList.toggle("oculto");
-  });
-
-  /* ✅ Registrar Service Worker (PWA + Notificaciones) */
-  if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("service-worker.js")
-      .then(() => console.log("✅ Service Worker activo"))
-      .catch(err => console.log("❌ SW error:", err));
-  }
+document.getElementById("iaTipBtn").addEventListener("click", ()=>{
+  document.getElementById("iaPanel").classList.toggle("oculto");
+});
 </script>
 
 <script src="./app.js?v=20251104" defer></script>
+
 </body>
 </html>
