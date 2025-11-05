@@ -138,7 +138,7 @@ function renderClientes(){
 
   clientesData.forEach((c,idx)=>{
     const lat=parseFloat(c.lat), lng=parseFloat(c.lng);
-    const dist=(posicionActual)? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null;
+    const dist=(posicionActual)? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng) : null; c._dist = dist;
 
     cont.insertAdjacentHTML("beforeend",`
       <div class="cliente" id="c_${c.numero}">
