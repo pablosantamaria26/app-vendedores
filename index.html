@@ -9,12 +9,13 @@
   <link rel="icon" type="image/png" sizes="32x32" href="ml-favicon-32.png">
   <link rel="apple-touch-icon" href="ml-icon-192.png">
   <meta name="theme-color" content="#0a2b57" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 
-  <!-- Leaflet (Mapa) -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -58,18 +59,10 @@
   <div class="tema-toggle" onclick="toggleTemaMenu(event)">🎨 Temas</div>
 
   <div class="tema-menu" id="temaMenu" onclick="event.stopPropagation()">
-    <div class="tema-item" onclick="aplicarTema('tema-confianza')">
-      <span class="dot" style="background:#0a63ff"></span> <span class="nombre">● Confianza</span>
-    </div>
-    <div class="tema-item" onclick="aplicarTema('tema-energia')">
-      <span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> <span class="nombre">● Energía</span>
-    </div>
-    <div class="tema-item" onclick="aplicarTema('tema-foco')">
-      <span class="dot" style="background:#facc15"></span> <span class="nombre">● Foco</span>
-    </div>
-    <div class="tema-item" onclick="aplicarTema('tema-noche')">
-      <span class="dot" style="background:#001b3a"></span> <span class="nombre">● Noche</span>
-    </div>
+    <div class="tema-item" onclick="aplicarTema('tema-confianza')"><span class="dot" style="background:#0a63ff"></span> ● Confianza</div>
+    <div class="tema-item" onclick="aplicarTema('tema-energia')"><span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#22c55e)"></span> ● Energía</div>
+    <div class="tema-item" onclick="aplicarTema('tema-foco')"><span class="dot" style="background:#facc15"></span> ● Foco</div>
+    <div class="tema-item" onclick="aplicarTema('tema-noche')"><span class="dot" style="background:#001b3a"></span> ● Noche</div>
   </div>
 </header>
 
@@ -77,7 +70,7 @@
 <main>
   <section id="seccion-ruta" class="seccion visible">
     <h2>🗺️ Ruta del Día</h2>
-    <div id="estado" style="text-align:center;margin:6px 0 10px"></div>
+    <div id="estado"></div>
     <div id="contenedor"></div>
   </section>
 
@@ -100,25 +93,30 @@
 
 <!-- ======================= Menú inferior ======================= -->
 <div class="menu">
-  <button id="btnRuta" class="activo" onclick="mostrarSeccion('ruta')">🗺️ Ruta</button>
-  <button id="btnMapa" onclick="mostrarSeccion('mapa')">📍 Mapa</button>
-  <button id="btnCalendario" onclick="mostrarSeccion('calendario')">📅</button>
-  <button id="btnResumen" onclick="mostrarSeccion('resumen')">📈</button>
-  <button id="btnLogout" onclick="logout()">🚪</button>
+  <button onclick="mostrarSeccion('ruta')" class="activo">🗺️ Ruta</button>
+  <button onclick="mostrarSeccion('mapa')">📍 Mapa</button>
+  <button onclick="mostrarSeccion('calendario')">📅</button>
+  <button onclick="mostrarSeccion('resumen')">📈</button>
+  <button onclick="logout()">🚪</button>
 </div>
 
-<!-- ======================= IA Mínima ======================= -->
+<!-- ======================= IA ======================= -->
 <button id="iaTipBtn" class="floating-ia">💡</button>
 <div id="iaPanel" class="ia-panel oculto"></div>
 
 <script>
-document.getElementById("iaTipBtn").addEventListener("click", ()=>{
-  const p=document.getElementById("iaPanel");
-  p.classList.toggle("oculto");
-});
+  document.getElementById("iaTipBtn").addEventListener("click", ()=>{
+    document.getElementById("iaPanel").classList.toggle("oculto");
+  });
+
+  /* ✅ Registrar Service Worker (PWA + Notificaciones) */
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("✅ Service Worker activo"))
+      .catch(err => console.log("❌ SW error:", err));
+  }
 </script>
 
 <script src="./app.js?v=20251104" defer></script>
-
 </body>
 </html>
