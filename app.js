@@ -1,7 +1,8 @@
 /* ================================
-    ⚙️ Config principal (Tu código)
+    ⚙️ Config principal
 ================================ */
 const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
+// ⬇️ Esta URL apunta al Worker de Cloudflare
 const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
 
 let clientesData = [];
@@ -12,78 +13,51 @@ let mapaFull = null;
     🔐 Login & sesión (NATIVO / API)
 ======================================= */
 
-// La función de logout se mantiene
 function logout(){ 
   localStorage.removeItem("vendedorClave"); 
   location.reload(); 
 }
 
-// El 'load' se reemplaza por DOMContentLoaded para manejar ambos casos
 window.addEventListener("DOMContentLoaded", () => {
-    // Restauramos funciones visuales y de fondo
     restaurarTema();
     syncOffline();
     notificacionDiaria();
 
-    // Verificamos si ya hay una sesión válida
     const claveGuardada = localStorage.getItem("vendedorClave");
     if (claveGuardada && vendedores[claveGuardada]) {
-        // Sesión válida: ocultar login y mostrar app
         document.getElementById("login").style.display = "none";
-        mostrarApp(); // Tu función principal
+        mostrarApp(); 
     } else {
-        // No hay sesión: mostrar login e inicializarlo
         document.getElementById("login").style.display = "grid";
         inicializarLoginNativo();
     }
 });
 
-/**
- * Inicializa la lógica de login con teclado nativo.
- */
 function inicializarLoginNativo() {
     const hiddenInput = document.getElementById('hidden-pin-input');
     const pinDots = document.querySelectorAll('.pin-dot');
     const pinDisplay = document.querySelector('.pin-display');
     const errorMessage = document.getElementById('error');
     const loader = document.getElementById('loader');
-
-    if (!hiddenInput) return; // Si no está en la página, no hacer nada
-
+    if (!hiddenInput) return;
     let currentPin = '';
 
-    function focusInput() {
-        hiddenInput.focus();
-    }
-
-    // Forza el foco al cargar y al tocar la pantalla
+    function focusInput() { hiddenInput.focus(); }
     focusInput();
     document.body.addEventListener('click', () => {
-        // Solo re-enfocar si el login es visible
-        if (document.getElementById('login').style.display === 'grid') {
-            focusInput();
-        }
+        if (document.getElementById('login').style.display === 'grid') focusInput();
     });
     document.body.addEventListener('touchstart', () => {
-        if (document.getElementById('login').style.display === 'grid') {
-            focusInput();
-        }
+        if (document.getElementById('login').style.display === 'grid') focusInput();
     });
 
     hiddenInput.addEventListener('input', (e) => {
-        currentPin = e.target.value.trim();
-
-        if (currentPin.length > 4) {
-            currentPin = currentPin.substring(0, 4);
-            e.target.value = currentPin;
-        }
-
+        currentPin = e.target.value.trim().substring(0, 4);
+        e.target.value = currentPin;
         updatePinDisplay(currentPin.length);
-        vibrate(50); // Vibración en cada dígito
-
-        // Auto-submit al 4to dígito
+        vibrate(50); 
         if (currentPin.length === 4) {
-            hiddenInput.blur(); // Oculta el teclado
+            hiddenInput.blur();
             validatePin(currentPin);
         }
     });
@@ -91,86 +65,64 @@ function inicializarLoginNativo() {
     function updatePinDisplay(length) {
         pinDisplay.classList.remove('error');
         errorMessage.classList.remove('visible');
-
         pinDots.forEach((dot, index) => {
-            if (index < length) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
+            dot.classList.toggle('active', index < length);
         });
     }
 
-    /**
-     * Valida el PIN contra el Worker (Apps Script)
-     */
     async function validatePin(pin) {
       showLoading(true);
       errorMessage.classList.remove('visible');
-
       try {
-          // ================================================================
-          // AQUÍ ESTÁ LA CORRECCIÓN:
-          // 1. La 'action' va DENTRO del JSON.
-          // 2. La URL_API_BASE se llama limpia (sin ?action=)
-          // ================================================================
+          // ✅ CORRECTO: Llama al worker (URL_API_BASE)
+          // y envía la 'action' DENTRO del body.
           const response = await fetch(URL_API_BASE, { 
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
-                  action: "autenticarVendedor", // <-- La 'action' debe ir aquí
+                  action: "autenticarVendedor", // <-- La 'action' va aquí
                   pin: pin 
               }) 
           });
 
-          const result = await response.json();
+          // Si el worker falla o Google falla, esto dará el error
+          const result = await response.json(); 
 
           if (result.estado === "ok" && result.vendedor) {
               localStorage.setItem("vendedorClave", result.vendedor.clave);
-
               document.getElementById("login").style.opacity = "0";
               setTimeout(() => {
                   document.getElementById("login").style.display = "none";
               }, 300);
-
               mostrarApp();
           } else {
               handleLoginError(result.mensaje || "PIN incorrecto");
           }
       } catch (err) {
-          // Este 'catch' se activa por el error de CORS (Failed to fetch)
-          // O si el JSON está mal (como el <!DOCTYPE>)
-          console.error("Error de red o JSON:", err);
+          // Este es el error que estás viendo
+          console.error("Error de red o JSON:", err); 
           handleLoginError("Error de conexión. Revisa el worker.");
       } finally {
           showLoading(false);
       }
     }
 
-
     function handleLoginError(message) {
         errorMessage.textContent = message;
         errorMessage.classList.add('visible');
         pinDisplay.classList.add('error');
-        vibrate([100, 50, 100]); // Vibración de error
-
-        // Reseteo
+        vibrate([100, 50, 100]); 
         currentPin = '';
         hiddenInput.value = '';
         setTimeout(() => {
             updatePinDisplay(0);
-            focusInput(); // Vuelve a poner el foco
+            focusInput(); 
         }, 1000);
     }
 
     function showLoading(isLoading) {
-        if (isLoading) {
-            loader.classList.add('visible');
-            pinDisplay.style.display = 'none';
-        } else {
-            loader.classList.remove('visible');
-            pinDisplay.style.display = 'flex';
-        }
+        loader.classList.toggle('visible', isLoading);
+        pinDisplay.style.display = isLoading ? 'none' : 'flex';
     }
 
     function vibrate(pattern) {
@@ -185,7 +137,7 @@ function inicializarLoginNativo() {
 
 
 /* ================================
-    🎨 Temas (Tu código)
+    🎨 Temas
 ================================ */
 function toggleTemaMenu(ev){
   ev.stopPropagation();
@@ -207,7 +159,7 @@ function toggleModoOscuro(){
 }
 
 /* ================================
-    🧭 Navegación (Tu código)
+    🧭 Navegación
 ================================ */
 function mostrarSeccion(s){
   document.querySelectorAll(".seccion").forEach(sec=>sec.classList.remove("visible"));
@@ -218,7 +170,7 @@ function mostrarSeccion(s){
 }
 
 /* ================================
-    🚀 App principal (Tu código)
+    🚀 App principal
 ================================ */
 async function mostrarApp(){
   const clave=localStorage.getItem("vendedorClave");
@@ -232,7 +184,7 @@ async function mostrarApp(){
 }
 
 /* ================================
-    📍 Distancias (Tu código)
+    📍 Distancias
 ================================ */
 const toRad = d => d*Math.PI/180;
 function distanciaKm(aLat,aLng,bLat,bLng){
@@ -242,14 +194,14 @@ function distanciaKm(aLat,aLng,bLat,bLng){
 }
 
 /* ================================
-    🚗 Cargar ruta (Tu código)
+    🚗 Cargar ruta
 ================================ */
 async function cargarRuta(clave){
   const cont=document.getElementById("contenedor");
   const estado=document.getElementById("estado");
   cont.innerHTML="⏳ Cargando clientes...";
   try{
-    // Las peticiones GET están bien como las tenías
+    // ✅ CORRECTO: Las peticiones GET (para data) están bien como las tenías.
     const r1 = await fetch(`${URL_API_BASE}?action=getRutaDelDiaPorVendedor&clave=${clave}`);
     clientesData = await r1.json();
 
@@ -267,13 +219,12 @@ async function cargarRuta(clave){
 }
 
 /* ================================
-    ✅ RENDER CLIENTES (ORDENA POR DISTANCIA) (Tu código)
+    ✅ RENDER CLIENTES
 ================================ */
 function renderClientes(){
   const cont = document.getElementById("contenedor");
   if(!cont) return;
   cont.innerHTML = "";
-
   let lista = [...clientesData];
 
   if(posicionActual){
@@ -289,16 +240,14 @@ function renderClientes(){
     card.className="cliente"; card.id="c_"+c.numero;
     const lat=parseFloat(c.lat), lng=parseFloat(c.lng);
     const dist = posicionActual && !isNaN(lat) && !isNaN(lng) ? distanciaKm(posicionActual.lat,posicionActual.lng,lat,lng).toFixed(1) : null;
-
     const visitadoHecho = !!c.bloqueado;
 
     card.innerHTML=`
       <h3>${c.nombre}</h3>
-      <div classa="fila">
+      <div class="fila">
         <span>📍 ${c.direccion||""}${c.localidad?`, ${c.localidad}`:""}</span>
         ${dist? `<span class="badge">📏 ${dist} km</span>`:""}
       </div>
-
       <div class="fila" style="margin-top:6px; gap:10px;">
         <button id="btn-visita-${c.numero}" class="btn-visita ${visitadoHecho?"hecho":""}">
           ${visitadoHecho?"✅ Visitado":"Aún sin visitar"}
@@ -307,9 +256,7 @@ function renderClientes(){
           🛒 Compró
         </button>
       </div>
-
       <textarea id="coment-${c.numero}" placeholder="Comentario..." rows="2"></textarea>
-
       <div class="acciones">
         <button onclick="registrarVisita(${c.numero})">💾 Guardar</button>
         <button class="btn-secundario" onclick="irCliente(${lat},${lng})">🚗 Ir</button>
@@ -317,32 +264,21 @@ function renderClientes(){
 
     const btnVisita = card.querySelector(`#btn-visita-${c.numero}`);
     const btnCompro = card.querySelector(`#btn-compro-${c.numero}`);
-
     btnVisita.onclick=()=>{ btnVisita.classList.add("hecho"); btnVisita.textContent="✅ Visitado"; btnCompro.removeAttribute("disabled"); };
     btnCompro.onclick=()=>{ btnCompro.classList.toggle("hecho"); };
-
     if(c.bloqueado) card.classList.add("bloqueado");
-
     cont.appendChild(card);
   });
 }
 
 function irCliente(lat,lng){
-  if(!lat || !lng){
-    alert("📍 Este cliente no tiene coordenadas.");
-    return;
-  }
-
-  const base = "https://www.google.com/maps/dir/?api=1"; // URL de Google Maps actualizada
+  if(!lat || !lng){ alert("📍 Este cliente no tiene coordenadas."); return; }
   const dest = `&destination=${lat},${lng}&travelmode=driving`;
-  
-  // No pedimos origen, dejamos que Maps use la ubicación actual
-  window.open(`${base}${dest}`,"_blank");
+  window.open(`https://www.google.com/maps/dir/?api=1${dest}`,"_blank");
 }
 
-
 /* ================================
-    🗺️ Mapa (Tu código)
+    🗺️ Mapa
 ================================ */
 function renderMapaFull(){
   const el=document.getElementById("mapaFull");
@@ -356,61 +292,52 @@ function renderMapaFull(){
 }
 
 /* ================================
-    💾 Registrar visita (Tu código)
+    💾 Registrar visita
 ================================ */
 function getClientePorNumero(num){ return clientesData.find(x=>String(x.numero)===String(num)); }
 
 async function registrarVisita(numero){
-  mostrarExito(); // Tu overlay de éxito
+  mostrarExito(); 
   const visitado = document.getElementById(`btn-visita-${numero}`)?.classList.contains("hecho");
   const compro    = document.getElementById(`btn-compro-${numero}`)?.classList.contains("hecho");
   const comentario=(document.getElementById(`coment-${numero}`)?.value||"").trim();
-
   const c=getClientePorNumero(numero);
   const vendedor=localStorage.getItem("vendedorClave");
-
   c.bloqueado=true;
-  renderClientes(); // REPINTA AUTOMÁTICO
+  renderClientes(); 
 
-  // 'params' ahora es un objeto simple, no URLSearchParams
   const params = {
       action:"registrarVisita",
       numero:c.numero,
       nombre:c.nombre,
       direccion:c.direccion||"",
       localidad:c.localidad||"",
-      visitado: visitado.toString(), // Convertir a string
-      compro: compro.toString(),   // Convertir a string
+      visitado: visitado.toString(),
+      compro: compro.toString(),
       comentario,
       vendedor
   };
   
-  // ================================================================
-  // AQUÍ ESTÁ LA CORRECCIÓN:
-  // 1. La 'action' va DENTRO del JSON (params ya la tiene).
-  // 2. La URL_API_BASE se llama limpia.
-  // ================================================================
+  // ✅ CORRECTO: Llama al worker (URL_API_BASE)
+  // y envía 'params' (que incluye la 'action') DENTRO del body.
   try{ 
     await fetch(URL_API_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params) // Enviamos el objeto 'params' directamente
+        body: JSON.stringify(params) 
     });
-  
   } catch(e) { 
     queueOffline({t:"visita",params:params}); 
   }
 }
 
 /* ================================
-    🔔 Overlay Éxito (Tu código)
+    🔔 Overlay Éxito
 ================================ */
 function mostrarExito(){
   const prev=document.querySelector(".exito-overlay"); if(prev) prev.remove();
   const wrap=document.createElement("div");
   wrap.className="exito-overlay";
-  
-  // (Tu HTML de overlay de éxito)
   wrap.innerHTML=`
     <div class="exito-box">
       <div class="exito-circle">
@@ -421,42 +348,23 @@ function mostrarExito(){
       </div>
       <div class="exito-titulo">Visita registrada</div>
     </div>`;
-  
   document.body.appendChild(wrap);
   setTimeout(()=>wrap.remove(), 900);
 }
 
 /* ================================
-    📶 Cola Offline (Tu código)
+    📶 Cola Offline y Stubs
 ================================ */
 function queueOffline(item){ const k="offlineQueue"; let q=JSON.parse(localStorage.getItem(k)||"[]"); q.push(item); localStorage.setItem(k,JSON.stringify(q)); }
 async function syncOffline(){}
-
-/* ================================
-    📈 Resumen (Tu código - A completar)
-================================ */
-async function cargarResumen(clave){
-  // (Aquí iría tu lógica para llamar a getResumenVendedor y pintar el chart)
-}
-
-/* ================================
-    📅 Calendario (Tu código - A completar)
-================================ */
-async function cargarCalendario(clave){
-  // (Aquí iría tu lógica para llamar a getCalendarioVisitas)
-} 
-
-/* ================================
-    🔔 Notificaciones (Tu código - A completar)
-================================ */
+async function cargarResumen(clave){}
+async function cargarCalendario(clave){} 
 function inicializarNotificaciones(clave){} 
 function notificacionDiaria(){}
 function detectarClienteCercano(clave, clientesHoy){}
 function toast(msg){}
 
-/* Exponer funciones al window (Tu código) */
-// (Ya no necesitamos exponer agregarDigito ni borrarDigito)
-window.login = null; // Se maneja internamente
+/* Exponer funciones al window */
 window.logout=logout;
 window.mostrarSeccion=mostrarSeccion;
 window.registrarVisita=registrarVisita;
