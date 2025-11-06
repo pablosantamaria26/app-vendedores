@@ -555,49 +555,46 @@ observer.observe(document.body, { childList: true, subtree: true });
    -------------------------------------------------- */
 async function registrarTokenPush() {
   try {
-    // Verificar compatibilidad del navegador
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       console.log("⚠️ Notificaciones no soportadas en este dispositivo.");
       return;
     }
 
-    // Solicitar permiso
     const permiso = await Notification.requestPermission();
     if (permiso !== "granted") {
       console.log("⚠️ El usuario no permitió notificaciones.");
       return;
     }
 
-    // Registrar Service Worker
+    // Registrar service worker
     const reg = await navigator.serviceWorker.register("service-worker.js");
-    
-    // Obtener token desde Firebase (asumiendo FCM ya instalado en tu proyecto)
-    const token = await firebase.messaging().getToken({
-      serviceWorkerRegistration: reg,
-    });
+
+    // Obtener token de Firebase
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({ serviceWorkerRegistration: reg });
+
+    if (!token) {
+      console.warn("⚠️ No se pudo obtener token FCM.");
+      return;
+    }
 
     const vendedor = localStorage.getItem("vendedorClave");
-    if (!vendedor || !token) return;
+    if (!vendedor) return;
 
-    // ✅ Enviar token al Apps Script
-    await fetch(`${URL_API_BASE}?accion=guardarToken`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ vendedor, token })
-});
-)
+    console.log("📬 Token generado:", token);
+
+    // ✅ Enviar token al CLOUDLFARE WORKER (no directo a GAS)
+    await fetch(`${URL_API_BASE}/guardarToken`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ vendedor, token })
     });
 
-    console.log("✅ Token enviado al servidor:", token.slice(0, 20) + "...");
+    console.log("✅ Token enviado correctamente al servidor");
 
   } catch (e) {
     console.error("❌ Error al registrar token:", e);
   }
 }
-
-/* ▶️ Ejecutar automáticamente al iniciar la app */
-window.addEventListener("load", () => {
-  const clave = localStorage.getItem("vendedorClave");
-  if (clave) registrarTokenPush();
-});
-
