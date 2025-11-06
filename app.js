@@ -548,3 +548,53 @@ const observer = new MutationObserver(() => {
   animarTarjetas();
 });
 observer.observe(document.body, { childList: true, subtree: true });
+
+/* ==================================================
+   🔔 REGISTRO DE TOKEN FIREBASE (PUSH)
+   -------------------------------------------------- */
+async function registrarTokenPush() {
+  try {
+    // Verificar compatibilidad del navegador
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      console.log("⚠️ Notificaciones no soportadas en este dispositivo.");
+      return;
+    }
+
+    // Solicitar permiso
+    const permiso = await Notification.requestPermission();
+    if (permiso !== "granted") {
+      console.log("⚠️ El usuario no permitió notificaciones.");
+      return;
+    }
+
+    // Registrar Service Worker
+    const reg = await navigator.serviceWorker.register("service-worker.js");
+    
+    // Obtener token desde Firebase (asumiendo FCM ya instalado en tu proyecto)
+    const token = await firebase.messaging().getToken({
+      serviceWorkerRegistration: reg,
+    });
+
+    const vendedor = localStorage.getItem("vendedorClave");
+    if (!vendedor || !token) return;
+
+    // ✅ Enviar token al Apps Script
+    await fetch(URL_API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vendedor, token })
+    });
+
+    console.log("✅ Token enviado al servidor:", token.slice(0, 20) + "...");
+
+  } catch (e) {
+    console.error("❌ Error al registrar token:", e);
+  }
+}
+
+/* ▶️ Ejecutar automáticamente al iniciar la app */
+window.addEventListener("load", () => {
+  const clave = localStorage.getItem("vendedorClave");
+  if (clave) registrarTokenPush();
+});
+
