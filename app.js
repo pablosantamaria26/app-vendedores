@@ -580,10 +580,12 @@ async function registrarTokenPush() {
     if (!vendedor || !token) return;
 
     // ✅ Enviar token al Apps Script
-    await fetch(URL_API_BASE, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vendedor, token })
+    await fetch(`${URL_API_BASE}?accion=guardarToken`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ vendedor, token })
+});
+)
     });
 
     console.log("✅ Token enviado al servidor:", token.slice(0, 20) + "...");
