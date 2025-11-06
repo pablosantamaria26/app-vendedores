@@ -553,7 +553,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 /* ==================================================
    🔔 REGISTRO DE TOKEN FIREBASE (PUSH)
    -------------------------------------------------- */
-async function registrarTokenPush() {
+async function inicializarNotificaciones() { // Usaremos este nombre
   try {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       console.log("⚠️ Notificaciones no soportadas en este dispositivo.");
