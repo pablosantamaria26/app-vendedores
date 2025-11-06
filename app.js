@@ -566,15 +566,15 @@ async function registrarTokenPush() {
       return;
     }
 
-    // Registrar service worker
+    // Registrar Service Worker
     const reg = await navigator.serviceWorker.register("service-worker.js");
 
-    // Obtener token de Firebase
+    // Obtener token desde Firebase (usando el SW registrado)
     const messaging = firebase.messaging();
     const token = await messaging.getToken({ serviceWorkerRegistration: reg });
 
     if (!token) {
-      console.warn("⚠️ No se pudo obtener token FCM.");
+      console.warn("⚠️ No se pudo obtener el token FCM.");
       return;
     }
 
@@ -583,12 +583,10 @@ async function registrarTokenPush() {
 
     console.log("📬 Token generado:", token);
 
-    // ✅ Enviar token al CLOUDLFARE WORKER (no directo a GAS)
+    // ✅ ENVIAR TOKEN AL CLOUDFLARE WORKER (CORRECTO PARA EVITAR CORS)
     await fetch(`${URL_API_BASE}/guardarToken`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vendedor, token })
     });
 
