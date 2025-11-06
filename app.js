@@ -7,9 +7,9 @@ const vendedores = {
   "0003": "Mercado Limpio",
 };
 
-// URL del Apps Script desplegado (tu endpoint)
-const URL_API_BASE =
-  "https://script.google.com/macros/s/AKfycbzqPMRir2VCB_C_EUsa0o8-eYCRDM4AQLsY3Jx_5jRKkYi-D2WgTEkTFrBIRFugT5MW/exec";
+
+const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+
 
 /* ================================
    LOGIN Y SESIÓN
