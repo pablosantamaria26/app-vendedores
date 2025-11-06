@@ -59,6 +59,7 @@ function mostrarApp() {
   const nombre = vendedores[clave];
   document.getElementById("titulo").textContent = `👋 Bienvenido, ${nombre}`;
   cargarDatosVendedor(clave, nombre);
+  registrarTokenPush();
 }
 
 
