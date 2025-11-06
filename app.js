@@ -16,7 +16,7 @@
 ================================ */
 const vendedores = { "0001": "Martín", "0002": "Lucas", "0003": "Mercado Limpio" };
 // 🔁 Redirige todas las llamadas a través de tu Cloudflare Worker
-const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
+const URL_API_BASE = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
 
 /* Estado global */
