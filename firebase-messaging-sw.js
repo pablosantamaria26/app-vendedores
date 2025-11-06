@@ -1,25 +1,24 @@
 // ==================================================
-// 🔔 Service Worker FCM - App Vendedores Inteligente (versión auto-actualizable)
+// 🔔 Service Worker FCM - App Vendedores Inteligente
 // ==================================================
 
-// ✅ Fuerza la actualización inmediata del SW cuando cambia
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   console.log("⚡ Nueva versión del Service Worker instalada");
-  self.skipWaiting(); // Evita quedar en estado “waiting”
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("♻️ Activando nueva versión del SW y reclamando clientes...");
-  event.waitUntil(clients.claim()); // Toma control inmediato de las pestañas
+  console.log("♻️ Activando SW y reclamando clientes...");
+  event.waitUntil(clients.claim());
 });
 
-// ==================================================
+// --------------------------------------------------
 // 📦 Librerías Firebase
-// ==================================================
+// --------------------------------------------------
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-// ✅ Configuración Firebase
+// ✅ Inicializar Firebase
 firebase.initializeApp({
   apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
   authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -29,52 +28,39 @@ firebase.initializeApp({
   appId: "1:583313989429:web:c4f78617ad957c3b11367c"
 });
 
-// ✅ Inicializa el servicio de mensajería
 const messaging = firebase.messaging();
 
-// ==================================================
-// 📩 Manejo de notificaciones en segundo plano
-// ==================================================
+// --------------------------------------------------
+// 📩 Notificaciones en segundo plano
+// --------------------------------------------------
 messaging.onBackgroundMessage((payload) => {
-  console.log("📨 Notificación en segundo plano recibida:", payload);
+  console.log("📨 Notificación en background:", payload);
 
-  const notif = payload.notification || {
-    title: "Nueva alerta",
-    body: "Tienes una nueva notificación.",
-    icon: "ml-icon-192.png"
-  };
-
-  const notificationTitle = notif.title || "Notificación";
-  const notificationOptions = {
+  const notif = payload.notification || {};
+  self.registration.showNotification(notif.title || "Nueva alerta", {
     body: notif.body || "",
-    icon: notif.icon || "ml-icon-192.png",
+    icon: "ml-icon-192.png",
     badge: "ml-icon-192.png",
     data: payload.data || {}
-  };
-
-  // Muestra la notificación
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  });
 });
 
-// ==================================================
-// 🖱️ Click en la notificación
-// Abre la app si está cerrada o la enfoca si está abierta
-// ==================================================
+// --------------------------------------------------
+// 🖱️ Click → Abrir / Enfocar App
+// --------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = "https://pablosantamaria26.github.io/app-vendedores/"; // 🔗 ajustá si cambia el path
+  const APP_URL = self.location.origin + "/app-vendedores/";
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === targetUrl && "focus" in client) {
-          return client.focus();
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((tabs) => {
+      for (const tab of tabs) {
+        if (tab.url.startsWith(APP_URL) && "focus" in tab) {
+          return tab.focus();
         }
       }
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
+      return clients.openWindow(APP_URL);
     })
   );
 });
