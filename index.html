@@ -550,75 +550,53 @@
       }
     }
 
-    /* ==================================================
-       🔔 FCM (SECCIÓN CORREGIDA - POST LIMPIO)
-       ================================================== */
-   function inicializarNotificaciones(vendedor) {
-      console.log("🚀 Inicializando notificaciones para", vendedor);
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
-        authDomain: "app-vendedores-inteligente.firebaseapp.com",
-        projectId: "app-vendedores-inteligente",
-        storageBucket: "app-vendedores-inteligente.firebasestorage.app",
-        messagingSenderId: "583313989429",
-        appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-      };
-      // Inicializa Firebase solo si no está inicializado aún
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+ function inicializarNotificaciones(vendedor) {
+  console.log("🚀 Inicializando notificaciones para", vendedor);
 
-      const messaging = firebase.messaging();
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker
-          .register("firebase-messaging-sw.js")
-          .then(async (registration) => {
-            console.log("✅ Service Worker registrado correctamente. Esperando que se active...");
+  const firebaseConfig = {
+    apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+    authDomain: "app-vendedores-inteligente.firebaseapp.com",
+    projectId: "app-vendedores-inteligente",
+    storageBucket: "app-vendedores-inteligente.appspot.com",
+    messagingSenderId: "583313989429",
+    appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+  };
 
-            await navigator.serviceWorker.ready;
+  const URL_TOKEN = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/token";
 
-            console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
-            const permiso = await Notification.requestPermission();
-        
-            if (permiso !== "granted") {
-              console.warn("⚠️ Permiso de notificaciones denegado.");
-              return;
-            }
+  if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
 
-            console.log("🔑 Obteniendo token FCM...");
-            const token = await messaging.getToken({
-              vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
-              serviceWorkerRegistration: registration
-            });
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("firebase-messaging-sw.js")
+      .then(async (registration) => {
 
-           
-             if (token) {
-              console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
-              
-              /* --- INICIO DE LA CORRECCIÓN --- */
-              // Enviamos el POST a la URL base, sin parámetros.
-              // Tu 'codigo.gs' (doPost) espera leer el body.
-              await fetch(URL_API_BASE, {
-                method: "POST",
-                body: JSON.stringify({ vendedor: vendedor, token: token }),
-                headers: { "Content-Type": "application/json" },
-                mode: 'cors' // Añadido para asegurar la petición CORS
-              });
-              /* --- FIN DE LA CORRECCIÓN --- */
-              
-              console.log("✅ Token enviado correctamente al servidor.");
-            } else {
-              console.warn("⚠️ No se pudo obtener token FCM (puede ser por bloqueador o permisos).");
-            }
-          })
-          .catch((err) => console.error("❌ Error en el proceso de registro o fetch:", err));
-        
-        messaging.onMessage((payload) => {
-          console.log("📢 Notificación recibida (primer plano):", payload);
-          toast(`${payload.notification.title} — ${payload.notification.body}`);
+        await navigator.serviceWorker.ready;
+        const permiso = await Notification.requestPermission();
+        if (permiso !== "granted") return;
+
+        const token = await messaging.getToken({
+          vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
+          serviceWorkerRegistration: registration
         });
-      } else {
-        console.warn("⚠️ Este navegador no soporta notificaciones push.");
-      }
+
+        if (token) {
+          console.log("📬 Token generado:", token.slice(0, 40), "...");
+          
+          await fetch(URL_TOKEN, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ vendedor, token })
+          });
+
+          console.log("✅ Token enviado correctamente");
+        }
+      });
+
+    messaging.onMessage((payload) => {
+      toast(`${payload.notification.title} — ${payload.notification.body}`);
+    });
+  }
 }
 
 
