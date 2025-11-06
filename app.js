@@ -556,12 +556,11 @@ function mensajeMotivacional(tasa){
 
 
 /* ==================================================
-   🔔 Inicializar notificaciones Firebase (versión final CORS-safe)
+   🔔 Inicializar notificaciones Firebase (versión final con Worker)
    ================================================== */
 function inicializarNotificaciones(vendedor) {
   console.log("🚀 Inicializando notificaciones para", vendedor);
 
-  // 🔧 Configuración de tu proyecto Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
     authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -571,73 +570,61 @@ function inicializarNotificaciones(vendedor) {
     appId: "1:583313989429:web:c4f78617ad957c3b11367c"
   };
 
-  // 🧩 Inicializar Firebase si no está iniciado
-  if (typeof firebase === "undefined") {
-    console.error("⚠️ Firebase no está cargado.");
-    return;
-  }
   if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-
   const messaging = firebase.messaging();
 
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("firebase-messaging-sw.js")
-      .then(async (registration) => {
-        console.log("✅ Service Worker registrado correctamente. Esperando activación...");
-        await navigator.serviceWorker.ready;
-        console.log("🟢 Service Worker activo. Solicitando permiso de notificaciones...");
-
-        const permiso = await Notification.requestPermission();
-        if (permiso !== "granted") {
-          console.warn("⚠️ Permiso de notificaciones denegado por el usuario.");
-          return;
-        }
-
-        console.log("🔑 Obteniendo token FCM...");
-        const token = await messaging.getToken({
-          vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
-          serviceWorkerRegistration: registration
-        });
-
-        if (token && vendedor) {
-          console.log("📬 Token generado correctamente:", token.slice(0, 40) + "...");
-
-          /* ==================================================
-             🚀 Envío del token al backend via Worker (sin CORS)
-             --------------------------------------------------
-             ✅ El Worker Cloudflare actúa como proxy hacia Apps Script
-             ✅ Evita errores CORS y preflight
-          ================================================== */
-          const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
-
-          try {
-            const respuesta = await fetch(WORKER_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ vendedor, token })
-            });
-
-            const texto = await respuesta.text();
-            console.log("✅ Token enviado correctamente vía Worker:", texto);
-          } catch (err) {
-            console.error("❌ Error enviando token vía Worker:", err);
-          }
-        } else {
-          console.warn("⚠️ No se obtuvo token FCM (posible bloqueo o permiso denegado).");
-        }
-
-        // 🔔 Escuchar notificaciones en primer plano
-        messaging.onMessage((payload) => {
-          console.log("📢 Notificación recibida (foreground):", payload);
-          const n = payload.notification;
-          if (n) toast(`${n.title} — ${n.body}`);
-        });
-      })
-      .catch((err) => console.error("❌ Error al registrar el Service Worker:", err));
-  } else {
+  if (!("serviceWorker" in navigator)) {
     console.warn("⚠️ Este navegador no soporta Service Workers ni notificaciones push.");
+    return;
   }
+
+  navigator.serviceWorker.register("firebase-messaging-sw.js")
+    .then(async (registration) => {
+      console.log("✅ Service Worker FCM registrado");
+
+      await navigator.serviceWorker.ready;
+
+      const permiso = await Notification.requestPermission();
+      if (permiso !== "granted") {
+        console.warn("⚠️ El usuario no permitió notificaciones.");
+        return;
+      }
+
+      console.log("🔑 Obteniendo token FCM...");
+      const token = await messaging.getToken({
+        vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o",
+        serviceWorkerRegistration: registration
+      });
+
+      if (!token) {
+        console.warn("⚠️ No se obtuvo token FCM");
+        return;
+      }
+
+      console.log("📬 Token generado:", token.slice(0, 40) + "...");
+
+      // ✅ Enviar token al backend → al WORKER (no al GAS directo)
+      try {
+        const res = await fetch(URL_API_BASE, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ vendedor, token })
+        });
+
+        console.log("✅ Token enviado:", await res.text());
+      } catch (err) {
+        console.error("❌ Error enviando token:", err);
+      }
+
+      // Notificaciones en primer plano
+      messaging.onMessage((payload) => {
+        console.log("📢 Notificación recibida (foreground):", payload);
+        if (payload.notification) {
+          toast(`${payload.notification.title} — ${payload.notification.body}`);
+        }
+      });
+    })
+    .catch((err) => console.error("❌ Error registrando SW FCM:", err));
 }
 
 
