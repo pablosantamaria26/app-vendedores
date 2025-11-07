@@ -1,90 +1,89 @@
-/***************************************************
- * CONFIG
- ***************************************************/
-const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+/*****************************************************
+ * 🌎 CONFIG
+ *****************************************************/
+const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-let VENDEDOR = null;
+/*****************************************************
+ * 🎨 CAMBIO DE TEMA (Día / Noche)
+ *****************************************************/
+const toggle = document.getElementById("themeToggle");
+toggle.onclick = () => {
+  const current = document.documentElement.getAttribute("data-theme") || "dia";
+  const next = current === "dia" ? "noche" : "dia";
+  document.documentElement.setAttribute("data-theme", next);
+  toggle.textContent = next === "dia" ? "🌙" : "☀️";
+};
 
-/***************************************************
- * LOGIN AUTOMÁTICO AL ESCRIBIR 4 NÚMEROS
- ***************************************************/
+/*****************************************************
+ * 🔐 LOGIN POR PIN AUTOMÁTICO
+ *****************************************************/
 const pinInput = document.getElementById("pinInput");
+let vendedor = null;
+
 window.addEventListener("load", () => setTimeout(() => pinInput.focus(), 200));
 
-pinInput.addEventListener("input", () => {
+pinInput.addEventListener("input", async () => {
   if (pinInput.value.length === 4) {
     loginConPin(pinInput.value);
   }
 });
 
 async function loginConPin(pin) {
-  showToast("Verificando…", 1200);
+  showToast("Verificando PIN...");
 
   try {
-    const resp = await fetch(`${WORKER_URL}?accion=loginConPin&pin=${pin}`);
+    const resp = await fetch(`${API}?accion=loginConPin&pin=${pin}`);
     const data = await resp.json();
 
-    if (!data.ok) {
-      showError("PIN incorrecto");
-      pinInput.value = "";
-      return;
-    }
+    if (!data.ok) return showToast("PIN incorrecto ❌");
 
-    VENDEDOR = data.vendedor;
-    localStorage.setItem("VENDEDOR", VENDEDOR);
+    vendedor = data.vendedor;
+    localStorage.setItem("vendedor", vendedor);
 
-    mostrarHome();
-    registrarTokenFCM(VENDEDOR);
+    document.getElementById("loginScreen").classList.remove("active");
+    document.getElementById("homeScreen").classList.add("active");
+
+    showToast(`Bienvenido ${vendedor} 👋`, 2000);
+    cargarHome();
 
   } catch (err) {
-    console.error(err);
-    showError("Sin conexión con el servidor");
+    showToast("Error de conexión");
   }
 }
 
-/***************************************************
- * HOME
- ***************************************************/
-async function mostrarHome() {
-  document.getElementById("loginScreen").classList.remove("active");
-  document.getElementById("homeScreen").classList.add("active");
+/*****************************************************
+ * 🏠 HOME
+ *****************************************************/
+async function cargarHome() {
+  document.getElementById("greeting").textContent = `👋 Hola ${vendedor}`;
 
-  document.getElementById("greeting").textContent = `👋 Buen día, ${VENDEDOR}`;
-
-  cargarRutaInteligente();
-}
-
-/***************************************************
- * CARGAR RUTA
- ***************************************************/
-async function cargarRutaInteligente() {
-  const resp = await fetch(`${WORKER_URL}?accion=getDataParaCoach&vendedor=${VENDEDOR}`);
+  const resp = await fetch(`${API}?accion=getDataParaCoach&vendedor=${vendedor}`);
   const data = await resp.json();
+  if (!data.ok) return showToast("No se pudo cargar datos");
 
-  if (!data.ok) return showError("No se pudo cargar los datos");
-
-  const ruta = ordenarRuta(data);
+  const ruta = ordenarRuta(data.cartera, data.historial);
   renderRuta(ruta);
   obtenerClima();
 }
 
-/***************************************************
- * ORDEN INTELIGENTE DE RUTA
- ***************************************************/
-function ordenarRuta(data) {
+/*****************************************************
+ * 📍 ORDEN INTELIGENTE DE VISITA
+ *****************************************************/
+function ordenarRuta(cartera, historial) {
   const hoy = new Date();
   const last = {};
 
-  data.historial.forEach(h => {
+  historial.forEach(h => {
     const d = new Date(h.fecha);
     if (!last[h.numeroCliente] || d > last[h.numeroCliente]) last[h.numeroCliente] = d;
   });
 
   const g1 = [], g2 = [], g3 = [];
 
-  data.cartera.forEach(c => {
+  cartera.forEach(c => {
     const f = last[c.numeroCliente];
     if (!f) return g1.push(c);
+
     const diff = (hoy - f) / 86400000;
     if (diff > 14) g1.push(c);
     else if (diff > 7) g2.push(c);
@@ -94,70 +93,40 @@ function ordenarRuta(data) {
   return [...g1, ...g2, ...g3];
 }
 
-/***************************************************
- * MOSTRAR RUTA
- ***************************************************/
+/*****************************************************
+ * 🧾 Mostrar lista
+ *****************************************************/
 function renderRuta(lista) {
   const cont = document.getElementById("routeList");
   cont.innerHTML = "";
   lista.forEach(c => {
     cont.innerHTML += `
       <div class="client">
-        <strong>${c.numeroCliente}</strong> — ${c.nombre}<br>
-        <small>${c.domicilio} · ${c.localidad}</small>
+        <b>${c.numeroCliente}</b> — ${c.nombre}<br>
+        <small>${c.localidad}</small>
       </div>`;
   });
 }
 
-/***************************************************
- * CLIMA
- ***************************************************/
-async function obtenerClima() {
+/*****************************************************
+ * ⛅ Clima del vendedor
+ *****************************************************/
+function obtenerClima() {
   if (!navigator.geolocation) return;
-
   navigator.geolocation.getCurrentPosition(async pos => {
-    const weather = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`
-    ).then(r => r.json());
-
-    showToast(`🌤️ Hoy ${weather.current_weather.temperature}°C`, 2600);
+    const { latitude, longitude } = pos.coords;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+    const weather = await fetch(url).then(r => r.json());
+    showToast(`Hoy ${weather.current_weather.temperature}°C 🌤️`, 2600);
   });
 }
 
-/***************************************************
- * FCM TOKEN
- ***************************************************/
-async function registrarTokenFCM(vendedor) {
-  if (!navigator.serviceWorker) return;
-  if (!window.FCM || !FCM.getToken) return;
-
-  try {
-    const token = await FCM.getToken();
-    if (!token) return;
-
-    await fetch(WORKER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accion: "guardarToken", vendedor, token })
-    });
-
-    console.log("✅ Token guardado:", token);
-
-  } catch (e) {
-    console.warn("No se pudo guardar token", e);
-  }
-}
-
-/***************************************************
- * TOAST + ERRORS
- ***************************************************/
+/*****************************************************
+ * 🍞 Toast
+ *****************************************************/
 function showToast(msg, time = 2500) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), time);
-}
-
-function showError(msg) {
-  showToast(msg, 2600);
 }
