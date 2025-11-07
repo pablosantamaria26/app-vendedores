@@ -3,49 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
   <title>Mercado Limpio - Clientes</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json" />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- Icono -->
+  <link rel="icon" href="./ml-icon-192.png">
+
+  <!-- Forzar tema inicial claro -->
+  <meta name="theme-color" content="#004aad">
 </head>
 
 <body>
 
-<div id="themeToggle" class="theme-toggle">🌙</div>
+<!-- 🔵 Botón Tema -->
+<div id="themeToggle" class="theme-toggle" title="Cambiar tema">🌙</div>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
 <div id="loginScreen" class="screen active">
   <div class="login-wrapper">
 
-    <h1 class="login-title">Mercado Limpio<br><span>Clientes</span></h1>
+    <h1 class="login-title">
+      Mercado Limpio<br>
+      <span>Clientes</span>
+    </h1>
 
-    <input id="pinInput" 
-      type="password" 
-      maxlength="4" 
-      inputmode="numeric" 
+    <input id="pinInput"
+      type="password"
+      maxlength="4"
+      inputmode="numeric"
       pattern="[0-9]*"
-      autocomplete="one-time-code"
       class="pin-input"
       placeholder="PIN"
       autofocus
     />
 
     <p class="login-hint">Ingrese su PIN</p>
+    <p id="loginError" class="login-error"></p>
 
   </div>
 </div>
 
-<!-- HOME -->
+<!-- ================= HOME ================= -->
 <div id="homeScreen" class="screen">
+
   <div class="header">
-    <h2 id="greeting"></h2>
+    <h2 id="greeting">Cargando...</h2>
   </div>
 
-  <div id="toast" class="toast">Cargando…</div>
+  <!-- Toast flotante para clima / coach -->
+  <div id="toast" class="toast hidden"></div>
 
+  <!-- Aquí se inserta la ruta -->
   <div id="routeList" class="list"></div>
 
 </div>
 
-<script src="app.js"></script>
+<!-- ================= SCRIPTS ================= -->
+
+<!-- App Principal -->
+<script src="./app.js"></script>
+
+<!-- Registrar Service Worker FCM -->
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./firebase-messaging-sw.js")
+      .then(() => console.log("✅ Service Worker registrado"))
+      .catch(err => console.log("❌ Error registrando SW:", err));
+  }
+</script>
+
 </body>
 </html>
