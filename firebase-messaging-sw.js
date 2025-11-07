@@ -31,17 +31,24 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // --------------------------------------------------
-// 📩 Notificaciones en segundo plano
+// 📩 Notificaciones en segundo plano (app cerrada o minimizada)
 // --------------------------------------------------
 messaging.onBackgroundMessage((payload) => {
   console.log("📨 Notificación en background:", payload);
 
-  const notif = payload.notification || {};
-  self.registration.showNotification(notif.title || "Nueva alerta", {
-    body: notif.body || "",
-    icon: "ml-icon-192.png",
-    badge: "ml-icon-192.png",
-    data: payload.data || {}
+  // Soporte para mensajes personalizados hacia cada vendedor
+  const vendedor = payload.data?.vendedor ? ` — ${payload.data.vendedor}` : "";
+
+  const titulo = (payload.notification?.title || "Nueva alerta") + vendedor;
+  const cuerpo = payload.notification?.body || "";
+
+  self.registration.showNotification(titulo, {
+    body: cuerpo,
+    icon: "/ml-icon-192.png",
+    badge: "/ml-icon-192.png",
+    data: {
+      url: payload.data?.url || "https://pablosantamaria26.github.io/app-vendedores/"
+    }
   });
 });
 
@@ -50,17 +57,16 @@ messaging.onBackgroundMessage((payload) => {
 // --------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
-  const APP_URL = self.location.origin + "/app-vendedores/";
+  const destino = event.notification.data.url || "https://pablosantamaria26.github.io/app-vendedores/";
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((tabs) => {
       for (const tab of tabs) {
-        if (tab.url.startsWith(APP_URL) && "focus" in tab) {
+        if (tab.url.startsWith(destino) && "focus" in tab) {
           return tab.focus();
         }
       }
-      return clients.openWindow(APP_URL);
+      return clients.openWindow(destino);
     })
   );
 });
