@@ -1,9 +1,13 @@
-// ---- CONFIG ----
+/***************************************************
+ * 🟦 CONFIGURACIÓN
+ ***************************************************/
 const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-let vendedor = null;
+let VENDEDOR = null;
 
-// ---- Cambio de Tema ----
+/***************************************************
+ * 🌗 CAMBIO DE TEMA
+ ***************************************************/
 const toggle = document.getElementById("themeToggle");
 toggle.onclick = () => {
   const isNight = document.documentElement.getAttribute("data-theme") === "noche";
@@ -11,75 +15,85 @@ toggle.onclick = () => {
   toggle.textContent = isNight ? "🌙" : "☀️";
 };
 
-// ---- Login Auto PIN ----
+/***************************************************
+ * 🔐 LOGIN POR PIN (4 dígitos → ingresa solo)
+ ***************************************************/
 const pinInput = document.getElementById("pinInput");
 window.addEventListener("load", () => setTimeout(() => pinInput.focus(), 200));
 
 pinInput.addEventListener("input", async () => {
   if (pinInput.value.length === 4) {
-    vendedor = localStorage.getItem("vendedor");
-    if (!vendedor) vendedor = prompt("Ingrese su nombre (MAYUSC):").trim().toUpperCase();
-    localStorage.setItem("vendedor", vendedor);
-    login(vendedor, pinInput.value);
+    loginConPin(pinInput.value);
   }
 });
 
-// ---- Login ----
-async function login(vendedor, pin) {
-  showToast("Verificando...", 1500);
+async function loginConPin(pin) {
+  showToast("Verificando…", 1200);
 
-  const r = await fetch(API_URL + "/login", {
-    method: "POST",
-    body: JSON.stringify({ vendedor, pin }),
-  }).then(r => r.json());
+  try {
+    const resp = await fetch(`${WORKER_URL}?accion=loginConPin&pin=${pin}`);
+    const data = await resp.json();
 
-  if (!r.ok) return showToast("PIN incorrecto", 2000);
+    if (!data.ok) {
+      showError("PIN incorrecto");
+      return;
+    }
 
+    VENDEDOR = data.vendedor; // ← viene desde Config_Vendedores
+    localStorage.setItem("VENDEDOR", VENDEDOR);
+
+    mostrarHome();
+    registrarTokenFCM(VENDEDOR);
+
+  } catch (err) {
+    console.error(err);
+    showError("Error de conexión");
+  }
+}
+
+/***************************************************
+ * ✅ HOME
+ ***************************************************/
+async function mostrarHome() {
   document.getElementById("loginScreen").classList.remove("active");
   document.getElementById("homeScreen").classList.add("active");
 
-  cargarHome();
+  document.getElementById("greeting").textContent = `👋 Buen día, ${VENDEDOR}`;
+
+  cargarRutaInteligente();
 }
 
-// ---- Toast ----
-function showToast(msg, time=2500) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), time);
+/***************************************************
+ * 🚚 CARGAR RUTA Y DATOS
+ ***************************************************/
+async function cargarRutaInteligente() {
+  const resp = await fetch(`${WORKER_URL}?accion=getDataParaCoach&vendedor=${VENDEDOR}`);
+  const data = await resp.json();
+
+  if (!data.ok) return showError("No se pudo cargar la cartera");
+
+  const rutaOrdenada = ordenarRuta(data);
+  renderRuta(rutaOrdenada);
+  obtenerClima();
 }
 
-// ---- Home ----
-async function cargarHome() {
-  document.getElementById("greeting").textContent = `👋 Buen día, ${vendedor}`;
-
-  // Cargar datos del vendedor
-  const data = await fetch(API_URL + "/datos", {
-    method: "POST",
-    body: JSON.stringify({ vendedor }),
-  }).then(r => r.json());
-
-  // Clasificación + orden inteligente
-  const ruta = ordenarRuta(data);
-  renderRuta(ruta);
-
-  // Clima
-  obtenerClima(ruta);
-}
-
-// ---- Orden estratégico de ruta ----
+/***************************************************
+ * 🧠 ORDENAR RUTA (Prioridad: sin compra → 14d → 7d → recientes)
+ ***************************************************/
 function ordenarRuta(data) {
   const hoy = new Date();
   const last = {};
+
   data.historial.forEach(h => {
     const d = new Date(h.fecha);
     if (!last[h.numeroCliente] || d > last[h.numeroCliente]) last[h.numeroCliente] = d;
   });
 
-  const g1=[], g2=[], g3=[];
+  const g1 = [], g2 = [], g3 = [];
+
   data.cartera.forEach(c => {
     const f = last[c.numeroCliente];
-    if (!f) return g1.push(c);
+    if (!f) return g1.push(c); // sin compra registrada
     const diff = (hoy - f) / 86400000;
     if (diff > 14) g1.push(c);
     else if (diff > 7) g2.push(c);
@@ -89,23 +103,76 @@ function ordenarRuta(data) {
   return [...g1, ...g2, ...g3];
 }
 
-// ---- Mostrar ruta ----
+/***************************************************
+ * 📍 MOSTRAR RUTA EN PANTALLA
+ ***************************************************/
 function renderRuta(lista) {
   const cont = document.getElementById("routeList");
   cont.innerHTML = "";
   lista.forEach(c => {
-    cont.innerHTML += `<div class="client">${c.numeroCliente} — ${c.nombre}</div>`;
+    cont.innerHTML += `
+      <div class="client">
+        <strong>${c.numeroCliente}</strong> — ${c.nombre} <br>
+        <small>${c.domicilio} · ${c.localidad}</small>
+      </div>`;
   });
 }
 
-// ---- Clima ----
-async function obtenerClima(lista) {
+/***************************************************
+ * ⛅ CLIMA
+ ***************************************************/
+async function obtenerClima() {
   if (!navigator.geolocation) return;
 
   navigator.geolocation.getCurrentPosition(async pos => {
     const lat = pos.coords.latitude;
     const lon = pos.coords.longitude;
-    const weather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`).then(r=>r.json());
-    showToast(`Hoy ${weather.current_weather.temperature}°C 🌤️`, 2600);
+
+    const weather = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+    ).then(r => r.json());
+
+    showToast(`🌤️ Hoy ${weather.current_weather.temperature}°C`);
   });
+}
+
+/***************************************************
+ * 🔔 REGISTRAR TOKEN (FCM)
+ ***************************************************/
+async function registrarTokenFCM(vendedor) {
+  if (!("Notification" in window)) return;
+
+  const { getToken } = window.FCM || {};
+  if (!getToken) return;
+
+  try {
+    const token = await getToken();
+    if (!token) return;
+
+    await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accion: "guardarToken", vendedor, token })
+    });
+
+    console.log("✅ Token guardado:", token);
+
+  } catch (e) {
+    console.warn("No se pudo guardar token FCM");
+  }
+}
+
+/***************************************************
+ * 🍞 TOAST / ERRORES
+ ***************************************************/
+function showToast(msg, time = 2500) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), time);
+}
+
+function showError(msg) {
+  document.getElementById("loginError")?.classList.add("error");
+  document.getElementById("loginError").textContent = msg;
 }
