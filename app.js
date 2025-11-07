@@ -194,6 +194,89 @@ function irCliente(lat,lng){
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`,"_blank");
 }
 
+
+/* ================================
+   📈 Resumen + gráfico (Chart.js)
+================================ */
+async function cargarResumen(clave){
+  const cont=document.getElementById("contenedorResumen");
+  const canvas=document.getElementById("graficoResumen");
+  if(cont) cont.innerHTML="⏳ Analizando desempeño...";
+
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch(`${URL_API_BASE}?accion=getResumenVendedor&clave=${clave}`),
+      fetch(`${URL_API_BASE}?accion=getPrediccionesVendedor&clave=${clave}`)
+    ]);
+
+    const res=await r1.json();
+    const ana=await r2.json();
+
+    if(cont){
+      cont.innerHTML=`
+        <h3>${res.fecha||""}</h3>
+        <p>🚶 Visitas: <b>${res.total||0}</b> — 🛒 Compraron: <b>${res.compraron||0}</b></p>
+        <p>🎯 Tasa: <b>${res.tasa||0}%</b></p>
+        <p>🤖 ${ana.mensaje||""}</p>
+      `;
+    }
+
+    if(canvas && window.Chart){
+      const ctx = canvas.getContext("2d");
+      if(canvas._chartInstance) canvas._chartInstance.destroy();
+      canvas._chartInstance = new Chart(ctx,{
+        type:"doughnut",
+        data:{
+          labels:["Compraron","No compraron"],
+          datasets:[{
+            data:[res.compraron||0,(res.total||0)-(res.compraron||0)],
+            backgroundColor:["#00c851","#ff4444"]
+          }]
+        },
+        options:{ plugins:{ legend:{ display:false }}}
+      });
+    }
+  }catch(e){
+    console.error("❌ Error resumen:", e);
+    if(cont) cont.innerHTML="❌ Error al cargar resumen.";
+  }
+}
+
+/* ================================
+   📅 Calendario (listado simple)
+================================ */
+async function cargarCalendario(){
+  const cont=document.getElementById("contenedorCalendario");
+  const clave=localStorage.getItem("vendedorClave");
+  if(!cont) return;
+  if(!clave){ cont.innerHTML="⚠️ Debes iniciar sesión primero."; return; }
+
+  cont.innerHTML="⏳ Cargando calendario...";
+  try{
+    const resp = await fetch(`${URL_API_BASE}?accion=getCalendarioVisitas&clave=${clave}`);
+    const data = await resp.json();
+    if(!data || !data.length){ cont.innerHTML="📭 No hay visitas programadas."; return; }
+
+    let html = `<div class="lista-calendario">`;
+    data.forEach(f=>{
+      html += `
+        <div class="cal-item">
+          <div class="cal-info">
+            <b>${f.fecha||""}</b> — ${f.dia||""}<br><span>📍 ${f.localidad||""}</span>
+          </div>
+          <div class="cal-estado">${f.compro?"✅":"❌"}</div>
+        </div>`;
+    });
+    html += `</div>`;
+    cont.innerHTML = html;
+
+  }catch(e){
+    console.error("Error calendario:", e);
+    cont.innerHTML = "❌ Error al cargar calendario.";
+  }
+}
+
+
 /* ================================
    🔥 Toast
 ================================ */
@@ -204,6 +287,8 @@ function toast(msg){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(),2500);
 }
+
+
 
 /* ================================
    🎯 Exportar funciones al DOM
