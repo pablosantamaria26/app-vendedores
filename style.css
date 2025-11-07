@@ -1,178 +1,83 @@
-/* ================================
-   🎨 VARIABLES BASE / LIGHT + DARK
-================================ */
 :root {
-  --azul: #004aad;
-  --azul-oscuro: #002b73;
-  --celeste: #eaf3ff;
-  --blanco: #ffffff;
-  --gris-claro: #f7f9fc;
-  --sombra: rgba(0, 0, 0, 0.1);
-  --gradiente: linear-gradient(135deg, #004aad, #0079ff);
-  --texto: #222;
-  --ok: #00c851;
-  --no: #ff4444;
+  --fondo: #ECEFF1;
+  --texto: #111;
+  --card-bg: #fff;
+  --grad: linear-gradient(135deg, #004aad, #0079ff);
 }
 
-body[data-dark="true"] {
-  --azul: #58a6ff;
-  --azul-oscuro: #1f6feb;
-  --celeste: #1c2128;
-  --blanco: #0d1117;
-  --gris-claro: #010409;
-  --sombra: rgba(255, 255, 255, 0.08);
-  --gradiente: linear-gradient(135deg, #1f6feb, #58a6ff);
-  --texto: #e6edf3;
+/* Tema noche */
+[data-theme="noche"] {
+  --fondo: #000;
+  --texto: #fff;
+  --card-bg: #111;
+  --grad: linear-gradient(135deg, #001f3f, #003b7c);
 }
 
-/* ================================
-   BASE
-================================ */
 body {
-  font-family: 'Inter', system-ui, -apple-system, Roboto, sans-serif;
-  background: var(--gris-claro);
-  color: var(--texto);
   margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  transition: background .5s ease, color .5s ease;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: 'Inter', sans-serif;
+  transition: 0.4s;
 }
 
-/* ================================
-   LOGIN MODERNO
-================================ */
-#login {
-  position: fixed;
-  inset: 0;
-  background: var(--gradiente);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fondoAnimado 8s ease-in-out infinite alternate;
-  z-index: 999;
-}
-@keyframes fondoAnimado {
-  0% { background: linear-gradient(135deg, #004aad, #0079ff); }
-  100% { background: linear-gradient(135deg, #0079ff, #00bfff); }
-}
-.login-card {
-  background: rgba(255, 255, 255, .1);
-  backdrop-filter: blur(12px);
-  padding: 2em;
-  border-radius: 18px;
-  text-align: center;
-  color: #fff;
-  width: 90%;
-  max-width: 360px;
-}
-.login-card input {
-  font-size: 2em;
-  letter-spacing: .35em;
-  border: none;
-  border-radius: 10px;
-  padding: .5em;
-  width: 80%;
-  margin: .7em 0;
-  background: rgba(255,255,255,.9);
-  color: #004aad;
+.screen { display: none; padding: 20px; }
+.screen.active { display: block; }
+
+.login-wrapper { margin-top: 22vh; text-align: center; }
+
+.login-title {
+  font-size: 2.4rem;
   font-weight: 700;
-}
-.teclado-numerico {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: .6em;
-}
-.teclado-numerico button {
-  background: var(--blanco);
-  color: var(--azul);
-  font-size: 1.4em;
-  padding: .6em 0;
-  border-radius: 12px;
-  border: none;
-  transition: .25s;
-}
-.teclado-numerico button:hover {
-  background: var(--azul);
-  color: #fff;
-  transform: scale(1.05);
+  background: var(--grad);
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
-/* ================================
-   HEADER
-================================ */
-header {
-  background: var(--gradiente);
-  color: var(--blanco);
-  padding: 1.1em;
+.pin-input {
+  width: 180px;
   text-align: center;
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  box-shadow: 0 2px 8px var(--sombra);
-}
-header h1 { margin: 0; font-size: 1.35rem; }
-.modo-toggle { position:absolute; right:14px; top:14px; cursor:pointer; font-size:1.5rem; }
-
-/* ================================
-   MENÚ INFERIOR
-================================ */
-.menu {
-  position: fixed; bottom: 0; left: 0; width: 100%;
-  display: flex; background: var(--blanco); border-top: 1px solid var(--borde);
-}
-.menu button {
-  flex: 1; border:none; padding: 12px 0; background: transparent; cursor:pointer;
-  font-size: 1rem;
-}
-.menu button.activo { background: var(--azul); color:#fff; font-weight:700; }
-
-/* ================================
-   SECCIONES
-================================ */
-.seccion { padding: 1em; animation: fade .25s ease; }
-@keyframes fade { from{opacity:0;} to{opacity:1;} }
-
-/* ================================
-   TARJETAS
-================================ */
-.cliente {
-  background: var(--blanco);
-  border-left: 6px solid var(--azul);
-  border-radius: 12px;
-  padding: 1em;
-  margin-bottom: 1em;
-  box-shadow: 0 4px 12px var(--sombra);
-  transition: .25s;
-}
-.cliente:hover { transform: scale(1.02); }
-.badge { background: var(--celeste); padding: 3px 8px; border-radius: 999px; font-size: .85rem; }
-.acciones { display:flex; gap:.5em; margin-top:.6em; flex-wrap:wrap; }
-.cliente button {
-  padding: .6em 1.2em; border-radius:10px; border:none; font-weight:600; cursor:pointer;
-  background: var(--gradiente); color:#fff; transition:.25s;
-}
-.cliente button:hover { transform:scale(1.06); }
-
-.btn-ok { background: var(--ok) !important; }
-.btn-no { background: var(--no) !important; }
-
-textarea {
-  width:100%; border-radius:10px; border:1px solid var(--borde);
-  padding:.6em; background:var(--blanco); margin-top:.4em; color:var(--texto);
+  font-size: 2.2rem;
+  padding: 12px;
+  border: none;
+  border-bottom: 3px solid var(--texto);
+  background: transparent;
+  outline: none;
+  margin-top: 30px;
 }
 
-/* ================================
-   MAPA
-================================ */
-#mapaFull { height: 72vh; border-radius:14px; overflow:hidden; }
-
-/* ================================
-   TOAST
-================================ */
 .toast {
-  position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
-  background:var(--azul); color:#fff; padding:10px 16px; border-radius:10px;
-  animation:pop .2s forwards, fadeout .2s forwards 2.6s;
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card-bg);
+  padding: 12px 18px;
+  border-radius: 6px;
+  box-shadow: 0 3px 12px #0002;
+  opacity: 0;
+  transition: all 0.4s;
+  pointer-events: none;
 }
-@keyframes pop { to{opacity:1; transform:translateX(-50%) translateY(0);} }
-@keyframes fadeout { to{opacity:0;} }
+
+.toast.show { opacity: 1; }
+
+.theme-toggle {
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  font-size: 1.3rem;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #0003;
+}
+
+.list .client {
+  background: var(--card-bg);
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px #0002;
+}
