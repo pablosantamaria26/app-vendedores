@@ -1,27 +1,17 @@
 /***************************************************
- * 🟦 CONFIGURACIÓN
+ * CONFIG
  ***************************************************/
 const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
 let VENDEDOR = null;
 
 /***************************************************
- * 🌗 CAMBIO DE TEMA
- ***************************************************/
-const toggle = document.getElementById("themeToggle");
-toggle.onclick = () => {
-  const isNight = document.documentElement.getAttribute("data-theme") === "noche";
-  document.documentElement.setAttribute("data-theme", isNight ? "dia" : "noche");
-  toggle.textContent = isNight ? "🌙" : "☀️";
-};
-
-/***************************************************
- * 🔐 LOGIN POR PIN (4 dígitos → ingresa solo)
+ * LOGIN AUTOMÁTICO AL ESCRIBIR 4 NÚMEROS
  ***************************************************/
 const pinInput = document.getElementById("pinInput");
 window.addEventListener("load", () => setTimeout(() => pinInput.focus(), 200));
 
-pinInput.addEventListener("input", async () => {
+pinInput.addEventListener("input", () => {
   if (pinInput.value.length === 4) {
     loginConPin(pinInput.value);
   }
@@ -36,10 +26,11 @@ async function loginConPin(pin) {
 
     if (!data.ok) {
       showError("PIN incorrecto");
+      pinInput.value = "";
       return;
     }
 
-    VENDEDOR = data.vendedor; // ← viene desde Config_Vendedores
+    VENDEDOR = data.vendedor;
     localStorage.setItem("VENDEDOR", VENDEDOR);
 
     mostrarHome();
@@ -47,12 +38,12 @@ async function loginConPin(pin) {
 
   } catch (err) {
     console.error(err);
-    showError("Error de conexión");
+    showError("Sin conexión con el servidor");
   }
 }
 
 /***************************************************
- * ✅ HOME
+ * HOME
  ***************************************************/
 async function mostrarHome() {
   document.getElementById("loginScreen").classList.remove("active");
@@ -64,21 +55,21 @@ async function mostrarHome() {
 }
 
 /***************************************************
- * 🚚 CARGAR RUTA Y DATOS
+ * CARGAR RUTA
  ***************************************************/
 async function cargarRutaInteligente() {
   const resp = await fetch(`${WORKER_URL}?accion=getDataParaCoach&vendedor=${VENDEDOR}`);
   const data = await resp.json();
 
-  if (!data.ok) return showError("No se pudo cargar la cartera");
+  if (!data.ok) return showError("No se pudo cargar los datos");
 
-  const rutaOrdenada = ordenarRuta(data);
-  renderRuta(rutaOrdenada);
+  const ruta = ordenarRuta(data);
+  renderRuta(ruta);
   obtenerClima();
 }
 
 /***************************************************
- * 🧠 ORDENAR RUTA (Prioridad: sin compra → 14d → 7d → recientes)
+ * ORDEN INTELIGENTE DE RUTA
  ***************************************************/
 function ordenarRuta(data) {
   const hoy = new Date();
@@ -93,7 +84,7 @@ function ordenarRuta(data) {
 
   data.cartera.forEach(c => {
     const f = last[c.numeroCliente];
-    if (!f) return g1.push(c); // sin compra registrada
+    if (!f) return g1.push(c);
     const diff = (hoy - f) / 86400000;
     if (diff > 14) g1.push(c);
     else if (diff > 7) g2.push(c);
@@ -104,7 +95,7 @@ function ordenarRuta(data) {
 }
 
 /***************************************************
- * 📍 MOSTRAR RUTA EN PANTALLA
+ * MOSTRAR RUTA
  ***************************************************/
 function renderRuta(lista) {
   const cont = document.getElementById("routeList");
@@ -112,41 +103,36 @@ function renderRuta(lista) {
   lista.forEach(c => {
     cont.innerHTML += `
       <div class="client">
-        <strong>${c.numeroCliente}</strong> — ${c.nombre} <br>
+        <strong>${c.numeroCliente}</strong> — ${c.nombre}<br>
         <small>${c.domicilio} · ${c.localidad}</small>
       </div>`;
   });
 }
 
 /***************************************************
- * ⛅ CLIMA
+ * CLIMA
  ***************************************************/
 async function obtenerClima() {
   if (!navigator.geolocation) return;
 
   navigator.geolocation.getCurrentPosition(async pos => {
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
-
     const weather = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+      `https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`
     ).then(r => r.json());
 
-    showToast(`🌤️ Hoy ${weather.current_weather.temperature}°C`);
+    showToast(`🌤️ Hoy ${weather.current_weather.temperature}°C`, 2600);
   });
 }
 
 /***************************************************
- * 🔔 REGISTRAR TOKEN (FCM)
+ * FCM TOKEN
  ***************************************************/
 async function registrarTokenFCM(vendedor) {
-  if (!("Notification" in window)) return;
-
-  const { getToken } = window.FCM || {};
-  if (!getToken) return;
+  if (!navigator.serviceWorker) return;
+  if (!window.FCM || !FCM.getToken) return;
 
   try {
-    const token = await getToken();
+    const token = await FCM.getToken();
     if (!token) return;
 
     await fetch(WORKER_URL, {
@@ -158,12 +144,12 @@ async function registrarTokenFCM(vendedor) {
     console.log("✅ Token guardado:", token);
 
   } catch (e) {
-    console.warn("No se pudo guardar token FCM");
+    console.warn("No se pudo guardar token", e);
   }
 }
 
 /***************************************************
- * 🍞 TOAST / ERRORES
+ * TOAST + ERRORS
  ***************************************************/
 function showToast(msg, time = 2500) {
   const t = document.getElementById("toast");
@@ -173,6 +159,5 @@ function showToast(msg, time = 2500) {
 }
 
 function showError(msg) {
-  document.getElementById("loginError")?.classList.add("error");
-  document.getElementById("loginError").textContent = msg;
+  showToast(msg, 2600);
 }
