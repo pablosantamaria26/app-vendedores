@@ -16,63 +16,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<style>
-:root{
- --azul:#007aff; --azul2:#005fcc;
- --bg:#f4f6f8; --card:#fff; --txt:#111; --borde:#dce1e8; --sombra:rgba(0,0,0,.08);
- --ok:#00c851; --no:#ff4444;
-}
-body[data-dark="true"]{
- --azul:#5aa3ff; --azul2:#2f6adb;
- --bg:#0d1117; --card:#111827; --txt:#e6edf3; --borde:#1f2a38; --sombra:rgba(255,255,255,.08);
-}
-
-body{
- margin:0; background:var(--bg); color:var(--txt);
- font-family: Inter, system-ui, -apple-system, Roboto, sans-serif;
- overflow-x:hidden;
-}
-
-/* Header */
-header{background:var(--azul);color:#fff;text-align:center;padding:14px;font-size:1.25rem;position:sticky;top:0;z-index:20;}
-header .modo-toggle{position:absolute;top:14px;right:14px;cursor:pointer}
-
-/* Login */
-#login{position:fixed;inset:0;background:linear-gradient(135deg,#007aff,#00b4d8);
-display:flex;justify-content:center;align-items:center;z-index:9999;}
-.login-card{background:#fff;color:#222;padding:22px;border-radius:14px;text-align:center;width:85%;max-width:340px;}
-.login-card input{width:80%;padding:10px;font-size:1.4rem;text-align:center;border-radius:8px;border:2px solid var(--azul);}
-.teclado-numerico button{width:30%;padding:10px;margin:4px;border:none;border-radius:8px;background:var(--azul);color:#fff;font-size:1.1rem;}
-
-/* Secciones */
-.seccion{display:none;padding:12px;}
-.seccion.visible{display:block;}
-h2{text-align:center;margin:0 0 10px;color:var(--azul);}
-
-/* Tarjetas cliente */
-.cliente{background:var(--card);padding:14px;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 8px var(--sombra);border:1px solid var(--borde);}
-.cliente h3{margin:0 0 6px;}
-.badge{background:#eef2ff;padding:3px 8px;border-radius:999px;font-size:.85rem;border:1px solid var(--borde);}
-.acciones{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
-.cliente button{border:none;border-radius:8px;padding:8px 12px;color:#fff;background:var(--azul);}
-.btn-secundario{background:#00b894}
-textarea{width:100%;margin-top:6px;border-radius:8px;padding:8px;border:1px solid var(--borde);background:var(--card);color:var(--txt)}
-
-/* Mapa */
-#mapaFull{height:70vh;border-radius:12px;overflow:hidden;}
-
-/* Menu */
-.menu{position:fixed;bottom:0;left:0;width:100%;display:flex;background:var(--card);border-top:1px solid var(--borde);}
-.menu button{flex:1;padding:10px;border:none;background:transparent;font-size:1rem;}
-.menu button.activo{background:var(--azul);color:#fff;font-weight:700}
-
-/* Toast */
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
-background:var(--azul);color:#fff;padding:10px 16px;border-radius:10px;opacity:0;
-animation:pop .25s forwards,fadeout .25s forwards 2.6s;}
-@keyframes pop{to{opacity:1;transform:translateX(-50%) translateY(0);}}
-@keyframes fadeout{to{opacity:0;}}
-</style>
+<link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
@@ -98,7 +42,11 @@ animation:pop .25s forwards,fadeout .25s forwards 2.6s;}
 
 <section id="seccion-ruta" class="seccion visible">
  <h2>🗺️ Ruta del Día</h2>
- <div id="estado" style="text-align:center;margin-bottom:10px"></div>
+
+ <!-- NUEVOS CONTENEDORES CLAVE -->
+ <div id="infoRuta" style="text-align:center;font-size:1rem;margin-bottom:12px;color:var(--azul2);font-weight:600;"></div>
+ <div id="resumenDia" class="panel-resumen" style="margin-bottom:18px;"></div>
+
  <div id="contenedor"></div>
 </section>
 
