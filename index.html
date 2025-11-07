@@ -1,65 +1,50 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>🧠 App Vendedores Inteligente</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" href="ml-favicon-32.png">
-<link rel="apple-touch-icon" href="ml-icon-192.png">
-<meta name="theme-color" content="#007aff">
-
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Mercado Limpio - Clientes</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
 
-<div id="login">
- <div class="login-card">
-  <h1>🧠 App Vendedores</h1>
-  <input type="password" id="clave" maxlength="4" placeholder="••••">
-  <div class="teclado-numerico">
-   <button onclick="agregarDigito('1')">1</button><button onclick="agregarDigito('2')">2</button><button onclick="agregarDigito('3')">3</button>
-   <button onclick="agregarDigito('4')">4</button><button onclick="agregarDigito('5')">5</button><button onclick="agregarDigito('6')">6</button>
-   <button onclick="agregarDigito('7')">7</button><button onclick="agregarDigito('8')">8</button><button onclick="agregarDigito('9')">9</button>
-   <button onclick="borrarDigito()">⌫</button><button onclick="agregarDigito('0')">0</button><button onclick="login()">✔️</button>
+<div id="themeToggle" class="theme-toggle">🌙</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen active">
+  <div class="login-wrapper">
+
+    <h1 class="login-title">Mercado Limpio<br><span>Clientes</span></h1>
+
+    <input id="pinInput" 
+      type="password" 
+      maxlength="4" 
+      inputmode="numeric" 
+      pattern="[0-9]*"
+      autocomplete="one-time-code"
+      class="pin-input"
+      placeholder="PIN"
+      autofocus
+    />
+
+    <p class="login-hint">Ingrese su PIN</p>
+
   </div>
-  <p id="error"></p>
- </div>
 </div>
 
-<header>
- <span id="titulo">🧠 App</span>
- <div class="modo-toggle" onclick="toggleModoOscuro()">🌙</div>
-</header>
+<!-- HOME -->
+<div id="homeScreen" class="screen">
+  <div class="header">
+    <h2 id="greeting"></h2>
+  </div>
 
-<section id="seccion-ruta" class="seccion visible">
- <h2>🗺️ Ruta del Día</h2>
+  <div id="toast" class="toast">Cargando…</div>
 
- <!-- NUEVOS CONTENEDORES CLAVE -->
- <div id="infoRuta" style="text-align:center;font-size:1rem;margin-bottom:12px;color:var(--azul2);font-weight:600;"></div>
- <div id="resumenDia" class="panel-resumen" style="margin-bottom:18px;"></div>
+  <div id="routeList" class="list"></div>
 
- <div id="contenedor"></div>
-</section>
-
-<section id="seccion-mapa" class="seccion">
- <h2>📍 Mapa</h2>
- <div id="mapaFull"></div>
-</section>
-
-<footer class="menu">
- <button onclick="mostrarSeccion('ruta')" class="activo">🗺️ Ruta</button>
- <button onclick="mostrarSeccion('mapa')">📍 Mapa</button>
- <button onclick="logout()">🚪</button>
-</footer>
+</div>
 
 <script src="app.js"></script>
 </body>
