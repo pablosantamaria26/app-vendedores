@@ -1,5 +1,6 @@
 // ---- CONFIG ----
-const API_URL = "https://TU-WORKER-URL"; // ← lo cambiamos cuando armemos el Worker
+const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+
 let vendedor = null;
 
 // ---- Cambio de Tema ----
