@@ -1,22 +1,21 @@
-/*****************************************************
- * 🌎 CONFIG
- *****************************************************/
-const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+/*****************************************
+ * 🌐 CONFIG
+ *****************************************/
+const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-/*****************************************************
- * 🎨 CAMBIO DE TEMA (Día / Noche)
- *****************************************************/
+/*****************************************
+ * 🎨 CAMBIO DE TEMA
+ *****************************************/
 const toggle = document.getElementById("themeToggle");
 toggle.onclick = () => {
-  const current = document.documentElement.getAttribute("data-theme") || "dia";
-  const next = current === "dia" ? "noche" : "dia";
-  document.documentElement.setAttribute("data-theme", next);
-  toggle.textContent = next === "dia" ? "🌙" : "☀️";
+  const isNight = document.documentElement.getAttribute("data-theme") === "noche";
+  document.documentElement.setAttribute("data-theme", isNight ? "dia" : "noche");
+  toggle.textContent = isNight ? "🌙" : "☀️";
 };
 
-/*****************************************************
- * 🔐 LOGIN POR PIN AUTOMÁTICO
- *****************************************************/
+/*****************************************
+ * 🔐 LOGIN AUTOMÁTICO CON PIN (4 DÍGITOS)
+ *****************************************/
 const pinInput = document.getElementById("pinInput");
 let vendedor = null;
 
@@ -28,62 +27,70 @@ pinInput.addEventListener("input", async () => {
   }
 });
 
+/*****************************************
+ * 🟦 LOGIN → API
+ *****************************************/
 async function loginConPin(pin) {
-  showToast("Verificando PIN...");
+  showToast("Verificando...", 1500);
 
   try {
-    const resp = await fetch(`${API}?accion=loginConPin&pin=${pin}`);
+    const url = `${WORKER_URL}/?accion=loginConPin&pin=${encodeURIComponent(pin)}`;
+
+    const resp = await fetch(url);
     const data = await resp.json();
 
-    if (!data.ok) return showToast("PIN incorrecto ❌");
+    if (!data.ok) return showToast("PIN incorrecto", 2000);
 
-    vendedor = data.vendedor;
+    vendedor = data.vendedor;  // ← viene desde la tabla Config_Vendedores
     localStorage.setItem("vendedor", vendedor);
 
+    // Pasamos a la pantalla principal
     document.getElementById("loginScreen").classList.remove("active");
     document.getElementById("homeScreen").classList.add("active");
 
-    showToast(`Bienvenido ${vendedor} 👋`, 2000);
+    showToast(`Bienvenido ${vendedor} 👋`, 2500);
     cargarHome();
 
   } catch (err) {
-    showToast("Error de conexión");
+    console.error(err);
+    showToast("Error de conexión", 2500);
   }
 }
 
-/*****************************************************
- * 🏠 HOME
- *****************************************************/
+/*****************************************
+ * 🌤️ HOME + RUTA + CLIMA
+ *****************************************/
 async function cargarHome() {
-  document.getElementById("greeting").textContent = `👋 Hola ${vendedor}`;
 
-  const resp = await fetch(`${API}?accion=getDataParaCoach&vendedor=${vendedor}`);
+  document.getElementById("greeting").textContent = `👋 Buen día, ${vendedor}`;
+
+  // Pedimos datos al backend
+  const resp = await fetch(`${WORKER_URL}/?accion=getDataParaCoach&vendedor=${encodeURIComponent(vendedor)}`);
   const data = await resp.json();
-  if (!data.ok) return showToast("No se pudo cargar datos");
 
-  const ruta = ordenarRuta(data.cartera, data.historial);
-  renderRuta(ruta);
+  const rutaOrdenada = ordenarRuta(data);
+  renderRuta(rutaOrdenada);
+
   obtenerClima();
 }
 
-/*****************************************************
- * 📍 ORDEN INTELIGENTE DE VISITA
- *****************************************************/
-function ordenarRuta(cartera, historial) {
+/*****************************************
+ * ♟️ ORDEN ESTRATÉGICO DE VISITA
+ *****************************************/
+function ordenarRuta(data) {
   const hoy = new Date();
   const last = {};
 
-  historial.forEach(h => {
+  data.historial.forEach(h => {
     const d = new Date(h.fecha);
     if (!last[h.numeroCliente] || d > last[h.numeroCliente]) last[h.numeroCliente] = d;
   });
 
-  const g1 = [], g2 = [], g3 = [];
+  const g1=[], g2=[], g3=[];
 
-  cartera.forEach(c => {
+  data.cartera.forEach(c => {
     const f = last[c.numeroCliente];
     if (!f) return g1.push(c);
-
     const diff = (hoy - f) / 86400000;
     if (diff > 14) g1.push(c);
     else if (diff > 7) g2.push(c);
@@ -93,38 +100,34 @@ function ordenarRuta(cartera, historial) {
   return [...g1, ...g2, ...g3];
 }
 
-/*****************************************************
- * 🧾 Mostrar lista
- *****************************************************/
+/*****************************************
+ * 📋 MOSTRAR LISTA
+ *****************************************/
 function renderRuta(lista) {
   const cont = document.getElementById("routeList");
   cont.innerHTML = "";
   lista.forEach(c => {
-    cont.innerHTML += `
-      <div class="client">
-        <b>${c.numeroCliente}</b> — ${c.nombre}<br>
-        <small>${c.localidad}</small>
-      </div>`;
+    cont.innerHTML += `<div class="client">${c.numeroCliente} — ${c.nombre}</div>`;
   });
 }
 
-/*****************************************************
- * ⛅ Clima del vendedor
- *****************************************************/
+/*****************************************
+ * 🌤️ CLIMA
+ *****************************************/
 function obtenerClima() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(async pos => {
-    const { latitude, longitude } = pos.coords;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
-    const weather = await fetch(url).then(r => r.json());
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    const weather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`).then(r=>r.json());
     showToast(`Hoy ${weather.current_weather.temperature}°C 🌤️`, 2600);
   });
 }
 
-/*****************************************************
- * 🍞 Toast
- *****************************************************/
-function showToast(msg, time = 2500) {
+/*****************************************
+ * 💬 TOAST
+ *****************************************/
+function showToast(msg, time=2500) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
