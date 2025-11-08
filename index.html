@@ -1,33 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Mercado Limpio - Clientes</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Mercado Limpio - Ruta Inteligente</title>
 
-  <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./style.css">
-  <link rel="icon" href="./ml-icon-192.png">
-  <meta name="theme-color" content="#004aad">
+  <meta name="theme-color" content="#007aff"/>
+
+  <!-- Google Maps JS -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk"></script>
+
 </head>
 
 <body>
 
+<!-- 🔵 Botón Tema -->
 <div id="themeToggle" class="theme-toggle">🌙</div>
 
 <!-- LOGIN -->
 <div id="loginScreen" class="screen active">
   <div class="login-wrapper">
-    <h1 class="login-title">Mercado Limpio<br><span>Clientes</span></h1>
-    <input id="pinInput" type="password" maxlength="6" inputmode="numeric" class="pin-input" placeholder="PIN" autofocus />
+    <h1 class="login-title">Mercado Limpio<br><span>Vendedores</span></h1>
+    <input id="pinInput" type="password" maxlength="6" inputmode="numeric" class="pin-input" placeholder="PIN" autofocus/>
     <p class="login-hint">Ingrese su PIN</p>
   </div>
 </div>
 
 <!-- HOME -->
 <div id="homeScreen" class="screen">
+
   <div class="header">
-    <h2 id="greeting"></h2>
+    <h2 id="greeting">...</h2>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -36,19 +40,10 @@
 
   <h3 class="sub-title">Ruta del día</h3>
   <div id="routeList" class="list"></div>
+
 </div>
 
 <script src="./app.js"></script>
-
-<!-- GOOGLE MAPS -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk&libraries=geometry"></script>
-
-<!-- Service Worker -->
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./firebase-messaging-sw.js");
-}
-</script>
 
 </body>
 </html>
