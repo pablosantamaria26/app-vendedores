@@ -3,81 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-
   <title>Mercado Limpio - Clientes</title>
 
-  <!-- PWA -->
   <link rel="manifest" href="./manifest.json" />
-
-  <!-- Estilos -->
   <link rel="stylesheet" href="./style.css">
-
-  <!-- Icono -->
   <link rel="icon" href="./ml-icon-192.png">
-
-  <!-- Forzar tema inicial claro -->
   <meta name="theme-color" content="#004aad">
 </head>
 
 <body>
 
-<!-- 🔵 Botón Tema -->
-<div id="themeToggle" class="theme-toggle" title="Cambiar tema">🌙</div>
+<div id="themeToggle" class="theme-toggle">🌙</div>
 
-<!-- ================= LOGIN ================= -->
+<!-- LOGIN -->
 <div id="loginScreen" class="screen active">
   <div class="login-wrapper">
-
-    <h1 class="login-title">
-      Mercado Limpio<br>
-      <span>Clientes</span>
-    </h1>
-
-  <input id="pinInput"
-  type="password"
-  maxlength="6"
-  inputmode="numeric"
-  pattern="[0-9]*"
-  class="pin-input"
-  placeholder="PIN"
-  autofocus
-/>
-
-
-
+    <h1 class="login-title">Mercado Limpio<br><span>Clientes</span></h1>
+    <input id="pinInput" type="password" maxlength="6" inputmode="numeric" class="pin-input" placeholder="PIN" autofocus />
     <p class="login-hint">Ingrese su PIN</p>
-    <p id="loginError" class="login-error"></p>
-
   </div>
 </div>
 
-<!-- ================= HOME ================= -->
+<!-- HOME -->
 <div id="homeScreen" class="screen">
-
   <div class="header">
-    <h2 id="greeting">Cargando...</h2>
+    <h2 id="greeting"></h2>
   </div>
 
-  <!-- Toast flotante para clima / coach -->
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast"></div>
 
-  <!-- Aquí se inserta la ruta -->
+  <div id="map"></div>
+
+  <h3 class="sub-title">Ruta del día</h3>
   <div id="routeList" class="list"></div>
-
 </div>
 
-<!-- ================= SCRIPTS ================= -->
-
-<!-- App Principal -->
 <script src="./app.js"></script>
 
-<!-- Registrar Service Worker FCM -->
+<!-- GOOGLE MAPS -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk&libraries=geometry"></script>
+
+<!-- Service Worker -->
 <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./firebase-messaging-sw.js")
-      .then(() => console.log("✅ Service Worker registrado"))
-      .catch(err => console.log("❌ Error registrando SW:", err));
-  }
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./firebase-messaging-sw.js");
+}
 </script>
 
 </body>
