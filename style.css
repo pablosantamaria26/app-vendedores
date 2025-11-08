@@ -1,14 +1,14 @@
 :root {
-  --bg: #f7f9fc;
+  --bg: #f2f5fa;
   --text: #111;
   --card: #fff;
-  --accent: #0079ff;
+  --accent: #007aff;
 }
 
 [data-theme="noche"] {
-  --bg: #111;
-  --text: #f1f1f1;
-  --card: #1e1e1e;
+  --bg: #0f1114;
+  --text: #e6e6e6;
+  --card: #1a1d21;
   --accent: #4da3ff;
 }
 
@@ -23,54 +23,60 @@ body {
 .screen { display: none; height: 100vh; }
 .screen.active { display: flex; flex-direction: column; }
 
-.login-wrapper {
-  margin: auto;
-  text-align: center;
-}
-
+.login-wrapper { margin: auto; text-align: center; }
 .login-title { font-size: 32px; font-weight: 800; }
 .login-title span { color: var(--accent); }
+
 .pin-input {
-  font-size: 32px;
-  text-align: center;
-  width: 160px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 2px solid var(--accent);
-  margin-top: 20px;
+  font-size: 32px; text-align: center;
+  width: 160px; padding: 14px;
+  border-radius: 12px; border: 3px solid var(--accent);
+  margin-top: 20px; background: var(--card);
 }
 
-/* HEADER */
-.header { padding: 15px; font-size: 20px; text-align: center; background: var(--accent); color: white; }
+/* ENCABEZADO */
+.header {
+  padding: 15px; text-align: center;
+  font-size: 22px; font-weight: 700;
+  background: var(--accent); color: white;
+}
 
 /* MAPA */
 #map { width: 100%; height: 35vh; }
 
-/* LISTA DE CLIENTES */
-.list { padding: 10px; display: flex; flex-direction: column; gap: 12px; }
-.client-card {
-  background: var(--card);
-  border-radius: 14px;
-  padding: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+/* LISTA */
+.list {
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
 }
-.client-card.active { border: 2px solid var(--accent); }
+
+.client-card {
+  background: var(--card);
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+}
+
+.client-card.active {
+  border: 2px solid var(--accent);
+}
 
 /* BOTONES */
-.btn-row { display: flex; gap: 8px; margin-top: 8px; }
+.btn-row { margin-top: 10px; display: flex; gap: 10px; }
 .btn {
   flex: 1;
-  padding: 10px 0;
-  border-radius: 10px;
   text-align: center;
+  padding: 12px;
   background: var(--accent);
+  border-radius: 10px;
   color: white;
   font-weight: 600;
   cursor: pointer;
 }
+
+.btn.red { background: #d13232; }
 
 /* TOAST */
 .toast {
@@ -78,10 +84,10 @@ body {
   bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--card);
   padding: 14px 18px;
+  background: var(--card);
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  box-shadow: 0 5px 14px rgba(0,0,0,.3);
   opacity: 0;
   transition: .3s;
 }
@@ -90,50 +96,8 @@ body {
 /* TEMA */
 .theme-toggle {
   position: fixed;
-  right: 12px;
-  top: 12px;
-  font-size: 22px;
+  right: 14px;
+  top: 14px;
+  font-size: 24px;
   cursor: pointer;
 }
-.admin {
-  padding: 20px;
-  font-family: system-ui;
-}
-
-.admin h2 {
-  margin-bottom: 16px;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.admin-item {
-  padding: 12px;
-  background: white;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #ddd;
-  font-size: 16px;
-}
-
-.admin-add input {
-  width: 100%;
-  margin: 6px 0;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 6px;
-  border: 1px solid #bbb;
-}
-
-.admin-add button,
-.volver {
-  margin-top: 12px;
-  width: 100%;
-  padding: 12px;
-  background: #007aff;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
