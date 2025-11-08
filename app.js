@@ -23,14 +23,25 @@ const pinInput = document.getElementById("pinInput");
 pinInput.addEventListener("input", () => {
   const v = pinInput.value;
 
-  if (v.length === 6) {           // clave maestra → admin
+  // Si es clave maestra → siempre 6 dígitos
+  if (v === CLAVE_MAESTRA) {
+    pinInput.value = "";
+    abrirPanelAdmin();
+    return;
+  }
+
+  // Si tiene entre 1 y 6 dígitos → esperar completar
+  if (v.length < 4) return;
+
+  // Cuando llega a 4 → intentamos login vendedor
+  if (v.length === 4) {
     intentarLogin(v);
     pinInput.value = "";
   }
 
-  if (v.length === 4) {           // vendedor → login normal
-    intentarLogin(v);
-    pinInput.value = "";
+  // Si escribe más de 4 dígitos → lo limpiamos
+  if (v.length > 4) {
+    pinInput.value = v.slice(0, 4);
   }
 });
 
