@@ -5,38 +5,53 @@ const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 const CLAVE_MAESTRA = "281730";
 
 /*****************************************
- * 🧱 BASE DE VENDEDORES (LocalStorage)
+ * 🗄️ Vendedores en almacenamiento local
  *****************************************/
-function obtenerVendedores() {
+function getVendedores() {
   return JSON.parse(localStorage.getItem("vendedoresML") || "[]");
 }
-function guardarVendedores(v) {
-  localStorage.setItem("vendedoresML", JSON.stringify(v));
+
+function saveVendedores(vendedores) {
+  localStorage.setItem("vendedoresML", JSON.stringify(vendedores));
 }
 
 /*****************************************
- * 🔐 LOGIN
+ * 🔐 LOGIN POR PIN
  *****************************************/
 const pinInput = document.getElementById("pinInput");
+
 pinInput.addEventListener("input", () => {
-  if (pinInput.value.length === 4) login(pinInput.value);
+  if (pinInput.value.length === 4) intentarLogin(pinInput.value);
 });
 
-function login(pin) {
-  const vendedores = obtenerVendedores();
-  const vend = vendedores.find(v => v.pin === pin);
-
-  if (!vend) {
-    if (pin === CLAVE_MAESTRA) return abrirAdmin();
-    showToast("PIN incorrecto", 2000);
+function intentarLogin(pin) {
+  // 1) Si es clave maestra → abrir configuración
+  if (pin === CLAVE_MAESTRA) {
+    abrirPanelAdmin();
     return;
   }
 
-  localStorage.setItem("vendedorActual", vend.nombre);
-  entrarHome(vend.nombre);
+  // 2) Buscar vendedor por PIN
+  const vendedores = getVendedores();
+  const vendedor = vendedores.find(v => v.pin === pin && v.activo);
+
+  if (!vendedor) {
+    showToast("PIN incorrecto", 2000);
+    pinInput.value = "";
+    return;
+  }
+
+  // 3) Guardar vendedor activo
+  localStorage.setItem("vendedorActual", vendedor.nombre);
+
+  // 4) Entrar a Home
+  abrirHome(vendedor.nombre);
 }
 
-function entrarHome(nombre) {
+/*****************************************
+ * 🏠 HOME
+ *****************************************/
+function abrirHome(nombre) {
   document.getElementById("loginScreen").classList.remove("active");
   document.getElementById("homeScreen").classList.add("active");
   document.getElementById("greeting").textContent = `👋 Buen día, ${nombre}`;
@@ -45,7 +60,7 @@ function entrarHome(nombre) {
 }
 
 /*****************************************
- * 🧭 CARGA DE DATOS DESDE GAS
+ * 📡 Obtener datos de la hoja vía Worker
  *****************************************/
 async function cargarDatos(vendedor) {
   try {
@@ -53,18 +68,17 @@ async function cargarDatos(vendedor) {
     const data = await resp.json();
     renderRuta(ordenarRuta(data));
     obtenerClima();
-  } catch (err) {
-    showToast("Sin conexión — Usando datos guardados", 3000);
+  } catch {
+    showToast("Sin conexión — usando datos guardados", 3000);
   }
 }
 
 /*****************************************
- * ♟️ ORDEN DE RUTA
+ * ♟️ Orden inteligente de ruta
  *****************************************/
 function ordenarRuta(data) {
   const hoy = new Date();
   const last = {};
-
   data.historial.forEach(h => {
     const d = new Date(h.fecha);
     if (!last[h.numeroCliente] || d > last[h.numeroCliente]) last[h.numeroCliente] = d;
@@ -84,7 +98,7 @@ function ordenarRuta(data) {
 }
 
 /*****************************************
- * 📋 RENDER RUTA
+ * 📋 Mostrar ruta
  *****************************************/
 function renderRuta(lista) {
   const cont = document.getElementById("routeList");
@@ -95,23 +109,23 @@ function renderRuta(lista) {
 }
 
 /*****************************************
- * 🌤️ CLIMA
+ * 🌤️ Clima
  *****************************************/
 function obtenerClima() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(async pos => {
-    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`).then(r => r.json());
-    showToast(`Hoy ${w.current_weather.temperature}°C 🌤️`, 2600);
+    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current_weather=true`).then(r=>r.json());
+    showToast(`Hoy ${w.current_weather.temperature}°C 🌤️`, 2500);
   });
 }
 
 /*****************************************
- * ☀️/🌙 Tema
+ * 🎨 Tema
  *****************************************/
 document.getElementById("themeToggle").onclick = () => {
   const d = document.documentElement;
-  const isNight = d.getAttribute("data-theme") === "noche";
-  d.setAttribute("data-theme", isNight ? "dia" : "noche");
+  const oscuro = d.getAttribute("data-theme") === "noche";
+  d.setAttribute("data-theme", oscuro ? "dia" : "noche");
 };
 
 /*****************************************
@@ -127,39 +141,44 @@ function showToast(msg, time=2500) {
 /*****************************************
  * 🛠️ PANEL ADMINISTRADOR
  *****************************************/
-function abrirAdmin() {
+function abrirPanelAdmin() {
   document.body.innerHTML = `
   <div class="screen active admin">
-    <h2>Panel Administrador</h2>
-    
-    <div id="listaVend"></div>
+    <h2>Panel de Configuración</h2>
+
+    <div id="listaVendedores"></div>
 
     <div class="admin-add">
-      <input id="nuevoNombre" placeholder="Nombre (MARTIN)">
-      <input id="nuevoPIN" placeholder="PIN (4 dígitos)" inputmode="numeric" maxlength="4">
+      <input id="nombreVend" placeholder="Nombre (MARTIN)">
+      <input id="pinVend" placeholder="PIN (0001)" inputmode="numeric" maxlength="4">
       <button onclick="agregarVendedor()">Agregar</button>
     </div>
 
     <button class="volver" onclick="location.reload()">Salir</button>
   </div>
   `;
-  refrescarListaAdmin();
+
+  refrescarListaVendedores();
 }
 
-function refrescarListaAdmin() {
-  const cont = document.getElementById("listaVend");
-  const vendedores = obtenerVendedores();
-  cont.innerHTML = vendedores.map(v => 
+function refrescarListaVendedores() {
+  const cont = document.getElementById("listaVendedores");
+  const vendedores = getVendedores();
+  cont.innerHTML = vendedores.map(v =>
     `<div class="admin-item">${v.nombre} — ${v.pin}</div>`
   ).join("");
 }
 
 function agregarVendedor() {
-  const nombre = document.getElementById("nuevoNombre").value.trim().toUpperCase();
-  const pin = document.getElementById("nuevoPIN").value.trim();
-  if (!nombre || !pin) return;
-  const vendedores = obtenerVendedores();
-  vendedores.push({ nombre, pin });
-  guardarVendedores(vendedores);
-  refrescarListaAdmin();
+  const nombre = document.getElementById("nombreVend").value.trim().toUpperCase();
+  const pin = document.getElementById("pinVend").value.trim();
+
+  if (!nombre || !pin) return showToast("Complete los datos", 2000);
+
+  const vendedores = getVendedores();
+  vendedores.push({ nombre, pin, activo: true });
+  saveVendedores(vendedores);
+
+  refrescarListaVendedores();
+  showToast("Vendedor agregado ✅", 2000);
 }
