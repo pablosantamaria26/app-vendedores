@@ -2,7 +2,7 @@
  * ⚙️ CONFIG
  *****************************************/
 const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
-const CLAVE_MAESTRA = "281730";
+const CLAVE_MAESTRA = "2817";
 
 /*****************************************
  * 🗄️ Vendedores en almacenamiento local
