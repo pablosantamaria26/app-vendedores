@@ -21,8 +21,19 @@ function saveVendedores(vendedores) {
 const pinInput = document.getElementById("pinInput");
 
 pinInput.addEventListener("input", () => {
-  if (pinInput.value.length === 4) intentarLogin(pinInput.value);
+  const v = pinInput.value;
+
+  if (v.length === 6) {           // clave maestra → admin
+    intentarLogin(v);
+    pinInput.value = "";
+  }
+
+  if (v.length === 4) {           // vendedor → login normal
+    intentarLogin(v);
+    pinInput.value = "";
+  }
 });
+
 
 function intentarLogin(pin) {
   // 1) Si es clave maestra → abrir configuración
