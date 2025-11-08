@@ -95,3 +95,45 @@ body {
   font-size: 22px;
   cursor: pointer;
 }
+.admin {
+  padding: 20px;
+  font-family: system-ui;
+}
+
+.admin h2 {
+  margin-bottom: 16px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.admin-item {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+.admin-add input {
+  width: 100%;
+  margin: 6px 0;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+}
+
+.admin-add button,
+.volver {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  background: #007aff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
