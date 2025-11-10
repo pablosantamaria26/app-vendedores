@@ -286,11 +286,25 @@ function cargarMarcadores() {
     if (!map || !markers) return;
     markers.clearLayers();
     const grupo = [];
-    estado.ruta.forEach(c => {
+    estado.ruta.forEach((c, i) => { // ¡Importante! Necesitamos el índice 'i'
         if (c.lat && c.lng) {
             const color = c.visitado ? (c.compro ? '#2ED573' : '#FF4757') : '#4CC9F0';
-            L.circleMarker([c.lat, c.lng], { radius: 8, fillColor: color, color: '#fff', weight: 2, fillOpacity: 1 })
-             .bindPopup(`<b>${c.nombre}</b><br>${c.domicilio}`).addTo(markers);
+            const marker = L.circleMarker([c.lat, c.lng], {
+                radius: 10, // Un poco más grandes para tocar fácil
+                fillColor: color,
+                color: '#fff',
+                weight: 3,
+                fillOpacity: 1
+            }).addTo(markers);
+
+            // ALERTA: Esto conecta el mapa con el modal del cliente
+            marker.on('click', () => {
+                // Cerramos el mapa primero para ver el modal
+                document.getElementById("modal-mapa").classList.add("hidden");
+                // Abrimos el modal del cliente correspondiente
+                abrirModalCliente(i);
+            });
+
             grupo.push([c.lat, c.lng]);
         }
     });
