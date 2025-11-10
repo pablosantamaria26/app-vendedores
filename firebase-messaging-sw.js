@@ -1,6 +1,6 @@
-// ==================================================
+// =================================================
 // 🔔 Service Worker FCM - App Vendedores Inteligente
-// ==================================================
+// =================================================
 
 self.addEventListener("install", () => {
   console.log("⚡ Nueva versión del Service Worker instalada");
