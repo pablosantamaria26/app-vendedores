@@ -156,15 +156,17 @@ body {
     padding-bottom: calc(80px + var(--safe-bottom));
 }
 .card {
-    background: var(--bg-secondary);
+    background: #1E2229; /* Un gris azulado oscuro, mejor contraste */
     border-radius: 16px;
     padding: 16px;
     margin-bottom: 12px;
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    border: 1px solid #2A303C; /* Borde sutil */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* Sombrita elevadora */
 }
+
 .card.visitado { opacity: 0.7; background: var(--bg-main); border-color: var(--bg-tertiary); }
 .card.compro-si { border-left: 4px solid var(--success); }
 .card.compro-no { border-left: 4px solid var(--danger); }
