@@ -6,17 +6,20 @@
     <meta name="theme-color" content="#0E1116">
     <title>App Vendedores Pro</title>
 
-    <link rel="stylesheet" href="style.css">
+    <!-- Estilos -->
+    <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="ml-icon-192.png">
+    <!-- PWA -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" href="./ml-icon-192.png">
+    <link rel="apple-touch-icon" href="./ml-icon-192.png">
 </head>
 <body>
 
     <div id="toast-container"></div>
 
+    <!-- LOGIN -->
     <section id="view-login" class="view active">
         <div class="login-box">
             <div class="logo-placeholder">🚀</div>
@@ -31,6 +34,7 @@
         </div>
     </section>
 
+    <!-- APP -->
     <section id="view-app" class="view hidden">
         <header class="app-header">
             <div class="header-top">
@@ -51,12 +55,12 @@
             </div>
         </header>
 
-        <main id="listaClientes" class="cliente-list">
-            </main>
+        <main id="listaClientes" class="cliente-list"></main>
 
         <button id="fabMapa" class="fab">🗺️</button>
     </section>
 
+    <!-- MAPA -->
     <div id="modal-mapa" class="full-modal hidden">
         <div class="modal-header">
             <h3>Mapa de Ruta</h3>
@@ -65,6 +69,7 @@
         <div id="map"></div>
     </div>
 
+    <!-- MOTIVO NO COMPRA -->
     <div id="sheet-motivo" class="bottom-sheet-container hidden">
         <div class="sheet-overlay" id="overlay-motivo"></div>
         <div class="bottom-sheet">
@@ -84,26 +89,26 @@
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="app.js"></script>
-
+    <script src="./app.js"></script>
 
 <script>
 if ("serviceWorker" in navigator) {
-  // SW principal (offline, caching, app shell)
-  navigator.serviceWorker.register("/app-vendedores/service-worker.js")
-    .then(()=>console.log("✅ SW principal OK"))
+
+  // SW principal (offline / PWA shell)
+  navigator.serviceWorker.register("./service-worker.js", { scope: "./" })
+    .then(()=>console.log("✅ SW principal activo"))
     .catch(err=>console.error("❌ Error SW principal:", err));
 
-  // SW para notificaciones push
-  navigator.serviceWorker.register("/app-vendedores/firebase-messaging-sw.js")
-    .then(()=>console.log("📨 SW Firebase OK"))
+  // SW push notifications (Firebase)
+  navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" })
+    .then(()=>console.log("📨 SW Firebase activo"))
     .catch(err=>console.error("❌ Error SW Firebase:", err));
 }
 </script>
-
 
 </body>
 </html>
