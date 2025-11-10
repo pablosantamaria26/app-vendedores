@@ -1,16 +1,19 @@
 /* === CONFIG === */
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-let estado = { vendedor: "", nombre: "", ruta: [], motivoSeleccionado: "" };
+let estado = {
+    vendedor: "",
+    nombre: "",
+    ruta: [],
+    motivoSeleccionado: "",
+    ubicacionActual: null // Nueva propiedad para guardar lat/lng del vendedor
+};
 let map, markers;
 
 /* === INICIO SEGURO === */
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🚀 App iniciada");
-    try {
-        initFirebase(); // Intentar cargar Firebase sin bloquear
-    } catch (e) { console.warn("Firebase bloqueado:", e); }
-    
+    try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
     checkSesion();
     initTheme();
 
@@ -19,26 +22,39 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("claveInput").addEventListener("keyup", (e) => e.key === "Enter" && login());
     document.getElementById("fabMapa").addEventListener("click", toggleMapa);
     document.getElementById("btnCerrarMapa").addEventListener("click", toggleMapa);
-    
     document.getElementById("listaClientes").addEventListener("click", manejarClicksLista);
+    
+    // Eventos Modales Nuevos
+    document.getElementById("btnCancelarModal").addEventListener("click", cerrarModalCliente);
+    document.getElementById("btnIrCliente").addEventListener("click", irACliente);
+    document.getElementById("overlay-motivo").addEventListener("click", cerrarMotivo);
+    document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
+
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener("click", () => setTheme(btn.dataset.theme));
     });
+
+    document.getElementById("motivoOptions").addEventListener("click", (e) => {
+        if (!e.target.classList.contains('chip')) return;
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        e.target.classList.add('selected');
+        estado.motivoSeleccionado = e.target.dataset.val;
+        document.getElementById("motivoOtro").classList.toggle("hidden", estado.motivoSeleccionado !== "Otro");
+    });
 });
 
-/* === FIREBASE (INTENTO SEGURO) === */
+/* === FIREBASE === */
 let messaging;
 function initFirebase() {
-    if (typeof firebase === 'undefined') return; // Si el script fue bloqueado
-    const firebaseConfig = {
+    if (typeof firebase === 'undefined') return;
+    firebase.initializeApp({
         apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
         authDomain: "app-vendedores-inteligente.firebaseapp.com",
         projectId: "app-vendedores-inteligente",
         storageBucket: "app-vendedores-inteligente.appspot.com",
         messagingSenderId: "583313989429",
         appId: "1:583313989429:web:c4f78617ad957c3b11367c"
-    };
-    firebase.initializeApp(firebaseConfig);
+    });
     messaging = firebase.messaging();
 }
 
@@ -49,6 +65,9 @@ async function login() {
 
     btnLoading(true);
     try {
+        // Pedimos ubicación antes de cargar la ruta para tenerla lista
+        await obtenerUbicacion();
+
         const res = await fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
         const data = await res.json();
 
@@ -59,10 +78,7 @@ async function login() {
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false }));
         
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave, nombre: estado.nombre }));
-        
-        // Intentar activar notificaciones sin esperar
-        activarNotificaciones().catch(e => console.warn("No se pudo activar notificaciones:", e));
-        
+        activarNotificaciones().catch(e => console.warn("Notificaciones off:", e));
         iniciarApp();
 
     } catch (e) {
@@ -76,46 +92,54 @@ async function login() {
 function checkSesion() {
     try {
         const sesion = JSON.parse(localStorage.getItem("vendedor_sesion"));
-        if (sesion && sesion.clave) {
-            document.getElementById("claveInput").value = sesion.clave;
-        }
+        if (sesion && sesion.clave) document.getElementById("claveInput").value = sesion.clave;
     } catch (e) { localStorage.removeItem("vendedor_sesion"); }
 }
 
-function iniciarApp() {
+async function iniciarApp() {
     document.getElementById("view-login").classList.remove("active");
-    // Forzar un reflow para asegurar que la transición funcione
-    void document.getElementById("view-app").offsetWidth;
+    void document.getElementById("view-app").offsetWidth; // Force reflow
     document.getElementById("view-app").classList.add("active");
-    
     document.getElementById("vendedorNombre").innerText = estado.nombre;
+    
+    // Si no tenemos ubicación aún, la pedimos en segundo plano
+    if (!estado.ubicacionActual) obtenerUbicacion().then(() => renderRuta());
+
     renderRuta();
     actualizarProgreso();
 }
 
-async function activarNotificaciones() {
-    if (!messaging) return;
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-        const token = await messaging.getToken().catch(() => null);
-        if (token) {
-            fetch(API, {
-                method: "POST",
-                body: JSON.stringify({ accion: "registrarToken", vendedor: estado.vendedor, token })
-            });
-        }
-    }
+function obtenerUbicacion() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve();
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                resolve();
+            },
+            (err) => { console.warn("Sin ubicación:", err); resolve(); },
+            { enableHighAccuracy: false, timeout: 5000 }
+        );
+    });
 }
 
-/* === RENDER UI === */
+/* === RENDER UI (CON DISTANCIA Y FRECUENCIA) === */
 function renderRuta() {
     const container = document.getElementById("listaClientes");
     container.innerHTML = ""; 
 
     estado.ruta.forEach((c, i) => {
+        let distanciaHTML = "";
+        if (estado.ubicacionActual && c.lat && c.lng) {
+            const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
+            distanciaHTML = `<div class="distancia-badge">🚗 ${(dist*2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
+        }
+
         const card = document.createElement('div');
         card.className = `card ${c.visitado ? 'visitado' : ''} ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}`;
+        card.dataset.i = i; // Para identificar click en la tarjeta
         card.innerHTML = `
+            ${distanciaHTML}
             <div class="card-header">
                 <h3>${c.nombre}</h3>
                 <span class="badge ${c.visitado ? (c.compro ? 'si' : 'no') : 'pendiente'}">
@@ -124,7 +148,7 @@ function renderRuta() {
             </div>
             <div class="card-body">
                 <p>📍 ${c.domicilio}</p>
-                <p>🏙️ ${c.localidad}</p>
+                <p>📊 Frecuencia: ${c.frecuencia || 0} compras</p>
             </div>
             ${!c.visitado ? `
             <div class="card-actions">
@@ -142,31 +166,66 @@ function manejarClicksLista(e) {
     const btnVenta = e.target.closest('.btn-venta');
     const btnNoVenta = e.target.closest('.btn-noventa');
 
-    if (card && !btnVenta && !btnNoVenta) {
-        document.querySelectorAll('.card.expanded').forEach(c => c !== card && c.classList.remove('expanded'));
-        card.classList.toggle('expanded');
+    if (!card) return;
+
+    if (btnVenta) {
+        registrarVenta(parseInt(btnVenta.dataset.i), true);
+    } else if (btnNoVenta) {
+        abrirMotivo(parseInt(btnNoVenta.dataset.i));
+    } else {
+        // Click en la tarjeta (no en botones) -> Abrir modal cliente
+        abrirModalCliente(parseInt(card.dataset.i));
     }
-    if (btnVenta) registrarVenta(parseInt(btnVenta.dataset.i), true);
-    if (btnNoVenta) abrirMotivo(parseInt(btnNoVenta.dataset.i));
 }
 
-function actualizarProgreso() {
-    const total = estado.ruta.length;
-    const visitados = estado.ruta.filter(c => c.visitado).length;
-    const porcentaje = total === 0 ? 0 : (visitados / total) * 100;
+/* === MODAL CLIENTE & ÚLTIMO PEDIDO === */
+let clienteModalIndex = null;
 
-    const circle = document.querySelector('.progress-ring .progreso-value');
-    if (circle) {
-        const radius = 16; // Radio fijo del SVG
-        const circumference = radius * 2 * Math.PI;
-        circle.style.strokeDasharray = `${circumference} ${circumference}`;
-        circle.style.strokeDashoffset = circumference - (porcentaje / 100) * circumference;
+async function abrirModalCliente(index) {
+    clienteModalIndex = index;
+    const c = estado.ruta[index];
+    
+    document.getElementById("modal-cliente-nombre").innerText = c.nombre;
+    document.getElementById("modal-cliente-direccion").innerText = c.domicilio;
+    document.getElementById("modal-ultimo-pedido").innerText = "⌛ Cargando...";
+    document.getElementById("btnCopiarPedido").classList.add("hidden");
+
+    const modal = document.getElementById("modal-cliente");
+    modal.classList.remove("hidden");
+    setTimeout(() => modal.classList.add("active"), 10);
+
+    try {
+        const res = await fetch(`${API}?accion=getUltimoPedido&cliente=${c.numeroCliente}`);
+        const data = await res.json();
+        if (data.ok && data.ultimoPedido) {
+            document.getElementById("modal-ultimo-pedido").innerText = `${data.ultimoPedido.fecha}\n${data.ultimoPedido.texto}`;
+            const btnCopiar = document.getElementById("btnCopiarPedido");
+            btnCopiar.classList.remove("hidden");
+            btnCopiar.onclick = () => {
+                navigator.clipboard.writeText(data.ultimoPedido.texto);
+                toast("📋 ¡Pedido copiado!");
+            };
+        } else {
+            document.getElementById("modal-ultimo-pedido").innerText = "Sin pedidos recientes.";
+        }
+    } catch (e) {
+        document.getElementById("modal-ultimo-pedido").innerText = "Error al cargar.";
     }
+}
 
-    document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
-    const mensajes = ["¡Dale gas! ⛽", "Hoy se rompe 🚀", "¡Actitud ganadora! 🦁", "Ya casi estamos 💪"];
-    document.getElementById("mensajeCoach").innerText = porcentaje === 100 ? "🎉 ¡Ruta finalizada!" : 
-        `${estado.nombre.split(' ')[0]}, ${mensajes[Math.floor(Math.random() * mensajes.length)]}`;
+function cerrarModalCliente() {
+    const modal = document.getElementById("modal-cliente");
+    modal.classList.remove("active");
+    setTimeout(() => modal.classList.add("hidden"), 300);
+}
+
+function irACliente() {
+    const c = estado.ruta[clienteModalIndex];
+    if (c.lat && c.lng) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`, '_blank');
+    } else {
+        toast("⚠️ Sin coordenadas");
+    }
 }
 
 /* === ACCIONES & MOTIVOS === */
@@ -179,47 +238,35 @@ async function registrarVenta(index, compro, motivo = "") {
     fetch(API, {
         method: "POST",
         body: JSON.stringify({ accion: "registrarVisita", vendedor: estado.nombre, cliente: cliente.numeroCliente, compro, motivo })
-    }).catch(e => { console.error(e); toast("⚠️ Guardado local"); });
+    }).catch(() => toast("⚠️ Guardado local"));
 }
 
-let clienteIndex = null;
-const sheet = document.getElementById("sheet-motivo");
-
+let clienteMotivoIndex = null;
 function abrirMotivo(index) {
-    clienteIndex = index;
+    clienteMotivoIndex = index;
     estado.motivoSeleccionado = "";
-    document.querySelectorAll('#motivoOptions .chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     document.getElementById("motivoOtro").classList.add("hidden");
-    document.getElementById("motivoOtro").value = "";
-    sheet.classList.remove("hidden");
-    setTimeout(() => sheet.classList.add("active"), 10);
+    document.getElementById("sheet-motivo").classList.remove("hidden");
+    setTimeout(() => document.getElementById("sheet-motivo").classList.add("active"), 10);
 }
 
-document.getElementById("overlay-motivo").onclick = () => {
-    sheet.classList.remove("active");
-    setTimeout(() => sheet.classList.add("hidden"), 300);
-};
+function cerrarMotivo() {
+    document.getElementById("sheet-motivo").classList.remove("active");
+    setTimeout(() => document.getElementById("sheet-motivo").classList.add("hidden"), 300);
+}
 
-document.getElementById("motivoOptions").addEventListener("click", (e) => {
-    if (!e.target.classList.contains('chip')) return;
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-    e.target.classList.add('selected');
-    estado.motivoSeleccionado = e.target.dataset.val;
-    document.getElementById("motivoOtro").classList.toggle("hidden", estado.motivoSeleccionado !== "Otro");
-});
-
-document.getElementById("btnConfirmarMotivo").onclick = () => {
+function confirmarMotivo() {
     let motivo = estado.motivoSeleccionado;
     if (!motivo) return toast("⚠️ Selecciona un motivo");
-    if (motivo === "Otro") {
-        motivo = document.getElementById("motivoOtro").value.trim();
-        if (!motivo) return toast("⚠️ Escribe el motivo");
-    }
-    registrarVenta(clienteIndex, false, motivo);
-    document.getElementById("overlay-motivo").click(); // Cerrar usando el mismo handler
-};
+    if (motivo === "Otro") motivo = document.getElementById("motivoOtro").value.trim();
+    if (!motivo) return toast("⚠️ Escribe el motivo");
+    
+    registrarVenta(clienteMotivoIndex, false, motivo);
+    cerrarMotivo();
+}
 
-/* === MAPA (CARGA LAZY) === */
+/* === MAPA & UTILIDADES === */
 function toggleMapa() {
     const modal = document.getElementById("modal-mapa");
     if (modal.classList.contains("hidden")) {
@@ -229,11 +276,7 @@ function toggleMapa() {
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '©OpenStreetMap' }).addTo(map);
             markers = L.layerGroup().addTo(map);
         }
-        if (map) {
-            setTimeout(() => { map.invalidateSize(); cargarMarcadores(); }, 200);
-        } else {
-            toast("❌ Mapa no disponible (bloqueado por navegador)");
-        }
+        if (map) setTimeout(() => { map.invalidateSize(); cargarMarcadores(); }, 200);
     } else {
         modal.classList.add("hidden");
     }
@@ -254,20 +297,41 @@ function cargarMarcadores() {
     if (grupo.length) map.fitBounds(grupo, { padding: [50, 50] });
 }
 
-/* === UTILIDADES === */
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function actualizarProgreso() {
+    const total = estado.ruta.length;
+    const visitados = estado.ruta.filter(c => c.visitado).length;
+    const porc = total === 0 ? 0 : (visitados / total) * 100;
+    document.querySelector('.progreso-value').style.strokeDashoffset = 100 - porc;
+    document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
+    document.getElementById("mensajeCoach").innerText = porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
+}
+
+async function activarNotificaciones() {
+    if (!messaging) return;
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+        const token = await messaging.getToken().catch(() => null);
+        if (token) fetch(API, { method: "POST", body: JSON.stringify({ accion: "registrarToken", vendedor: estado.vendedor, token }) });
+    }
+}
+
 function toast(msg) {
-    const t = document.createElement('div');
-    t.className = 'toast'; t.innerText = msg;
-    document.getElementById('toast-container').appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+    document.getElementById('toast-container').appendChild(t); setTimeout(() => t.remove(), 3000);
 }
 function btnLoading(isLoading) {
-    const btn = document.getElementById("btnIngresar");
-    btn.disabled = isLoading; btn.innerHTML = isLoading ? "⌛..." : "INGRESAR";
+    const btn = document.getElementById("btnIngresar"); btn.disabled = isLoading; btn.innerHTML = isLoading ? "⌛..." : "INGRESAR";
 }
 function setTheme(theme) {
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    document.body.setAttribute('data-theme', theme); localStorage.setItem('theme', theme);
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
 }
 function initTheme() { setTheme(localStorage.getItem('theme') || 'foco'); }
