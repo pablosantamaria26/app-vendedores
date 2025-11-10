@@ -88,22 +88,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
-    <script>
+
+
+<script>
 if ("serviceWorker" in navigator) {
+  // SW principal para PWA + caché + offline
   navigator.serviceWorker.register("./service-worker.js")
-    .then(()=>console.log("✅ SW registrado"))
+    .then(()=>console.log("✅ SW principal activo"))
     .catch(err=>console.warn("SW error:", err));
+
+  // SW de mensajes (no controla alcance, solo push)
+  navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" })
+    .then(()=>console.log("📨 SW de notificaciones listo"))
+    .catch(err=>console.warn("SW mensajes error:", err));
 }
 </script>
 
-
-    <script>
-        // Registro del Service Worker para PWA y Notificaciones
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('firebase-messaging-sw.js')
-                .then(reg => console.log('✅ SW registrado', reg.scope))
-                .catch(err => console.error('❌ Error SW', err));
-        }
-    </script>
 </body>
 </html>
