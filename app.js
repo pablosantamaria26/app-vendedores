@@ -6,14 +6,17 @@ let estado = {
     nombre: "",
     ruta: [],
     motivoSeleccionado: "",
-    ubicacionActual: null // Nueva propiedad para guardar lat/lng del vendedor
+    ubicacionActual: null
 };
 let map, markers;
 
-/* === INICIO SEGURO === */
+/* === INICIO SEGURO & EVENTOS GLOBALES === */
 document.addEventListener("DOMContentLoaded", () => {
     console.log("🚀 App iniciada");
+    
+    // Intentamos iniciar Firebase (si los scripts cargaron)
     try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
+    
     checkSesion();
     initTheme();
 
@@ -24,29 +27,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnCerrarMapa").addEventListener("click", toggleMapa);
     document.getElementById("listaClientes").addEventListener("click", manejarClicksLista);
     
-    // Eventos Modales Nuevos
+    // Eventos Modales
     document.getElementById("btnCancelarModal").addEventListener("click", cerrarModalCliente);
     document.getElementById("btnIrCliente").addEventListener("click", irACliente);
+    
+    // Eventos Motivos
     document.getElementById("overlay-motivo").addEventListener("click", cerrarMotivo);
     document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
-    // CERRAR MODAL AL TOCAR FUERA
-    document.getElementById("modal-cliente").addEventListener("click", (e) => {
-        // Si el target es exactamente el overlay (lo oscuro), cerramos.
-        if (e.target.id === "modal-cliente") {
-            cerrarModalCliente();
-        }
-    });
+    document.getElementById("motivoOptions").addEventListener("click", manejarMotivoChips);
 
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener("click", () => setTheme(btn.dataset.theme));
-    });
-
-    document.getElementById("motivoOptions").addEventListener("click", (e) => {
-        if (!e.target.classList.contains('chip')) return;
-        document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-        e.target.classList.add('selected');
-        estado.motivoSeleccionado = e.target.dataset.val;
-        document.getElementById("motivoOtro").classList.toggle("hidden", estado.motivoSeleccionado !== "Otro");
     });
 });
 
@@ -72,21 +63,21 @@ async function login() {
 
     btnLoading(true);
     try {
-        // Pedimos ubicación antes de cargar la ruta para tenerla lista
-        await obtenerUbicacion();
-
+        await obtenerUbicacion(); // Obtener ubicación para cálculo de distancia
+        
         const res = await fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
         const data = await res.json();
 
-        if (!data.ok) throw new Error(data.error || "Clave incorrecta");
+        if (!data.ok) throw new Error(data.error || "Clave incorrecta o error de servidor");
 
         estado.vendedor = clave;
         estado.nombre = data.vendedor || "Vendedor";
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false }));
         
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave, nombre: estado.nombre }));
-        activarNotificaciones().catch(e => console.warn("Notificaciones off:", e));
+        
         iniciarApp();
+        activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e)); // Activación de Notificaciones
 
     } catch (e) {
         console.error(e);
@@ -103,15 +94,11 @@ function checkSesion() {
     } catch (e) { localStorage.removeItem("vendedor_sesion"); }
 }
 
-async function iniciarApp() {
+function iniciarApp() {
     document.getElementById("view-login").classList.remove("active");
-    void document.getElementById("view-app").offsetWidth; // Force reflow
+    void document.getElementById("view-app").offsetWidth;
     document.getElementById("view-app").classList.add("active");
     document.getElementById("vendedorNombre").innerText = estado.nombre;
-    
-    // Si no tenemos ubicación aún, la pedimos en segundo plano
-    if (!estado.ubicacionActual) obtenerUbicacion().then(() => renderRuta());
-
     renderRuta();
     actualizarProgreso();
 }
@@ -122,13 +109,45 @@ function obtenerUbicacion() {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                renderRuta(); // Refresca las distancias si se obtiene después del login
                 resolve();
             },
-            (err) => { console.warn("Sin ubicación:", err); resolve(); },
+            () => resolve(), // Resuelve aunque falle
             { enableHighAccuracy: false, timeout: 5000 }
         );
     });
 }
+
+// --- FUNCIÓN DE ACCIÓN Y UX ---
+function manejarClicksLista(e) {
+    const card = e.target.closest('.card');
+    const btnVenta = e.target.closest('.btn-venta');
+    const btnNoVenta = e.target.closest('.btn-noventa');
+
+    if (!card) return;
+    const index = parseInt(card.dataset.i);
+
+    if (btnVenta) {
+        // VENTA (si toca el botón)
+        registrarVenta(index, true);
+    } else if (btnNoVenta) {
+        // MOTIVO (si toca el botón)
+        abrirMotivo(index);
+    } else {
+        // CLICK EN TARJETA (abrir modal cliente o expandir acciones)
+        if (estado.ruta[index].visitado) {
+            // Si ya está visitado, solo expandir para ver notas
+            card.classList.toggle('expanded');
+        } else if(card.classList.contains('expanded')) {
+            // Si está expandido y toca, lo cerramos
+            card.classList.remove('expanded');
+        } else {
+            // Si no está visitado y no está expandido, abrir modal de detalle/navegación
+            abrirModalCliente(index);
+        }
+    }
+}
+
 
 /* === RENDER UI (CON DISTANCIA Y FRECUENCIA) === */
 function renderRuta() {
@@ -139,12 +158,15 @@ function renderRuta() {
         let distanciaHTML = "";
         if (estado.ubicacionActual && c.lat && c.lng) {
             const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
-            distanciaHTML = `<div class="distancia-badge">🚗 ${(dist*2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
+            distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
         }
+        
+        const frecuenciaTexto = c.frecuencia || "Sin historial previo";
 
         const card = document.createElement('div');
         card.className = `card ${c.visitado ? 'visitado' : ''} ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}`;
-        card.dataset.i = i; // Para identificar click en la tarjeta
+        card.dataset.i = i; 
+
         card.innerHTML = `
             ${distanciaHTML}
             <div class="card-header">
@@ -155,7 +177,7 @@ function renderRuta() {
             </div>
             <div class="card-body">
                 <p>📍 ${c.domicilio}</p>
-                <p>📊 Frecuencia: ${c.frecuencia || 0} compras</p>
+                <p>📊 Frecuencia: ${frecuenciaTexto}</p>
             </div>
             ${!c.visitado ? `
             <div class="card-actions">
@@ -166,23 +188,6 @@ function renderRuta() {
         `;
         container.appendChild(card);
     });
-}
-
-function manejarClicksLista(e) {
-    const card = e.target.closest('.card');
-    const btnVenta = e.target.closest('.btn-venta');
-    const btnNoVenta = e.target.closest('.btn-noventa');
-
-    if (!card) return;
-
-    if (btnVenta) {
-        registrarVenta(parseInt(btnVenta.dataset.i), true);
-    } else if (btnNoVenta) {
-        abrirMotivo(parseInt(btnNoVenta.dataset.i));
-    } else {
-        // Click en la tarjeta (no en botones) -> Abrir modal cliente
-        abrirModalCliente(parseInt(card.dataset.i));
-    }
 }
 
 /* === MODAL CLIENTE & ÚLTIMO PEDIDO === */
@@ -231,11 +236,12 @@ function irACliente() {
     if (c.lat && c.lng) {
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`, '_blank');
     } else {
-        toast("⚠️ Sin coordenadas");
+        toast("⚠️ Cliente sin coordenadas");
     }
 }
 
-/* === ACCIONES & MOTIVOS === */
+
+/* === MOTIVO NO COMPRA Y ACCIONES === */
 async function registrarVenta(index, compro, motivo = "") {
     const cliente = estado.ruta[index];
     cliente.visitado = true; cliente.compro = compro; cliente.motivo = motivo;
@@ -252,7 +258,7 @@ let clienteMotivoIndex = null;
 function abrirMotivo(index) {
     clienteMotivoIndex = index;
     estado.motivoSeleccionado = "";
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('#motivoOptions .chip').forEach(c => c.classList.remove('selected'));
     document.getElementById("motivoOtro").classList.add("hidden");
     document.getElementById("sheet-motivo").classList.remove("hidden");
     setTimeout(() => document.getElementById("sheet-motivo").classList.add("active"), 10);
@@ -263,6 +269,14 @@ function cerrarMotivo() {
     setTimeout(() => document.getElementById("sheet-motivo").classList.add("hidden"), 300);
 }
 
+function manejarMotivoChips(e) {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    e.target.classList.add('selected');
+    estado.motivoSeleccionado = e.target.dataset.val;
+    document.getElementById("motivoOtro").classList.toggle("hidden", estado.motivoSeleccionado !== "Otro");
+}
+
 function confirmarMotivo() {
     let motivo = estado.motivoSeleccionado;
     if (!motivo) return toast("⚠️ Selecciona un motivo");
@@ -271,6 +285,46 @@ function confirmarMotivo() {
     
     registrarVenta(clienteMotivoIndex, false, motivo);
     cerrarMotivo();
+}
+
+/* === NOTIFICACIONES PUSH === */
+async function activarNotificaciones() {
+    if (!messaging) return;
+    
+    const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
+
+    try {
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+            const token = await messaging.getToken({ vapidKey: VAPID_KEY }).catch((err) => {
+                console.error("ERROR: Fallo getToken() con VAPID:", err);
+                return null;
+            });
+
+            if (token) {
+                const tokenGuardado = localStorage.getItem("fcm_token_enviado");
+                
+                if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
+                    await fetch(API, {
+                        method: "POST",
+                        body: JSON.stringify({ 
+                            accion: "registrarToken", 
+                            vendedor: estado.vendedor, 
+                            token: token,
+                            dispositivo: navigator.userAgent
+                        })
+                    });
+                    
+                    localStorage.setItem("fcm_token_enviado", token);
+                    localStorage.setItem("vendedor_actual", estado.vendedor);
+                    toast("🔔 Notificaciones activadas");
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Error general en activación de notificaciones:", e);
+    }
 }
 
 /* === MAPA & UTILIDADES === */
@@ -293,22 +347,14 @@ function cargarMarcadores() {
     if (!map || !markers) return;
     markers.clearLayers();
     const grupo = [];
-    estado.ruta.forEach((c, i) => { // ¡Importante! Necesitamos el índice 'i'
+    estado.ruta.forEach((c, i) => {
         if (c.lat && c.lng) {
             const color = c.visitado ? (c.compro ? '#2ED573' : '#FF4757') : '#4CC9F0';
-            const marker = L.circleMarker([c.lat, c.lng], {
-                radius: 10, // Un poco más grandes para tocar fácil
-                fillColor: color,
-                color: '#fff',
-                weight: 3,
-                fillOpacity: 1
-            }).addTo(markers);
+            const marker = L.circleMarker([c.lat, c.lng], { radius: 10, fillColor: color, color: '#fff', weight: 3, fillOpacity: 1 }).addTo(markers);
 
-            // ALERTA: Esto conecta el mapa con el modal del cliente
+            // Alerta: Conecta el mapa con el modal del cliente
             marker.on('click', () => {
-                // Cerramos el mapa primero para ver el modal
                 document.getElementById("modal-mapa").classList.add("hidden");
-                // Abrimos el modal del cliente correspondiente
                 abrirModalCliente(i);
             });
 
@@ -330,61 +376,10 @@ function actualizarProgreso() {
     const total = estado.ruta.length;
     const visitados = estado.ruta.filter(c => c.visitado).length;
     const porc = total === 0 ? 0 : (visitados / total) * 100;
-    document.querySelector('.progreso-value').style.strokeDashoffset = 100 - porc;
+    const circle = document.querySelector('.progreso-value');
+    if (circle) circle.style.strokeDashoffset = 100 - porc;
     document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
     document.getElementById("mensajeCoach").innerText = porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
-}
-
-
-async function activarNotificaciones() {
-    if (!messaging) return;
-    
-    const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
-
-    try {
-        console.log("DEBUG: 1. Pidiendo permiso de Notificación..."); // LOG 1
-        const permission = await Notification.requestPermission();
-
-        if (permission === "granted") {
-            console.log("DEBUG: 2. Permiso concedido. Obteniendo token con VAPID..."); // LOG 2
-            
-            const token = await messaging.getToken({ vapidKey: VAPID_KEY }).catch((err) => {
-                console.error("ERROR: Fallo getToken() con VAPID:", err); // LOG 3
-                return null;
-            });
-
-            if (token) {
-                console.log("DEBUG: 3. Token generado. Enviando a la API."); // LOG 4
-                
-                const tokenGuardado = localStorage.getItem("fcm_token_enviado");
-                
-                if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
-                    console.log("DEBUG: 4. Token NO duplicado. Iniciando fetch a API."); // LOG 5
-                    await fetch(API, {
-                        method: "POST",
-                        body: JSON.stringify({ 
-                            accion: "registrarToken", 
-                            vendedor: estado.vendedor, 
-                            token: token,
-                            dispositivo: navigator.userAgent
-                        })
-                    });
-                    
-                    localStorage.setItem("fcm_token_enviado", token);
-                    localStorage.setItem("vendedor_actual", estado.vendedor);
-                    toast("🔔 Notificaciones activadas");
-                } else {
-                    console.log("DEBUG: 4. Token SÍ duplicado, no se envía."); // LOG 6
-                }
-            } else {
-                 console.log("DEBUG: 3. Token es NULL, no se envía."); // LOG 7
-            }
-        } else {
-             console.log("DEBUG: Permiso denegado por el usuario."); // LOG 8
-        }
-    } catch (e) {
-        console.warn("Error general en activación de notificaciones:", e);
-    }
 }
 
 function toast(msg) {
