@@ -1,37 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>App Vendedores</title>
-
-<link rel="manifest" href="manifest.json" />
-<link rel="stylesheet" href="style.css" />
-
-<script defer src="app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Vendedores</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-<header class="topbar">
-  <div class="title">Ruta del Día</div>
-  <div id="progressText" class="progress-text">Visitaste 0 de 0</div>
-</header>
+<body class="temaC">
 
-<section class="theme-switcher">
-  <button class="theme-btn" data-theme="foco">FOCO</button>
-  <button class="theme-btn" data-theme="campeon">CAMPEÓN</button>
-  <button class="theme-btn" data-theme="actitud">ACTITUD</button>
-</section>
+  <!-- HEADER -->
+  <header>
+    <h2 id="tituloRuta">Ruta del Día</h2>
+    <span id="contadorVisitas">Visitaste 0 de 0</span>
 
-<section id="loginView">
-  <h2>Ingreso Vendedor</h2>
-  <input id="claveInput" placeholder="0001" />
-  <button id="btnLogin">Ingresar</button>
-</section>
+    <div class="temas">
+      <button data-tema="temaA">FOCO</button>
+      <button data-tema="temaB">CAMPEÓN</button>
+      <button data-tema="temaC" class="active">ACTITUD</button>
+    </div>
+  </header>
 
-<section id="rutaView" style="display:none;">
-  <div id="listaClientes"></div>
-</section>
+  <!-- LOGIN -->
+  <section id="login">
+    <h3>Ingreso Vendedor</h3>
+    <input id="claveInput" maxlength="4" placeholder="0001" autocomplete="off">
+    <button id="btnLogin">Ingresar</button>
+  </section>
+
+  <!-- SALUDO SUPERIOR -->
+  <section id="saludo" class="hidden">
+    <h3 id="saludoTexto"></h3>
+  </section>
+
+  <!-- LISTA DE CLIENTES -->
+  <section id="listaClientes" class="hidden"></section>
+
+  <script src="app.js"></script>
 
 </body>
 </html>
