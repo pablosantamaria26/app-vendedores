@@ -1,141 +1,118 @@
-const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+// WORKER URL
+const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-let clave = "";
-let clientes = [];
-let visitados = 0;
+let vendedorClave = "";
+let lista = [];
+let visitas = {};
 
-/**************
- * LOGIN
- **************/
-document.getElementById("btnLogin").onclick = async () => {
-  clave = document.getElementById("inputClave").value.trim();
-  if (!clave) return alert("Ingresá tu clave");
+const $ = (id) => document.getElementById(id);
 
-  // 1) Validamos clave consultando al backend
-  const test = await fetch(`${WORKER_URL}?accion=getRutaDelDia&clave=${clave}`);
-  const data = await test.json();
-
-  if (!data.ok) {
-    alert("Clave incorrecta");
-    return;
-  }
-
-  // 2) Obtener ubicación y cargar ruta
-  const { lat, lng } = await obtenerUbicacion();
-  cargarRuta(lat, lng);
+window.onload = () => {
+  cargarTemaGuardado();
+  $("btnLogin").onclick = login;
+  document.querySelectorAll(".theme-btn").forEach(btn =>
+    btn.onclick = () => setTema(btn.dataset.theme)
+  );
 };
 
+async function login() {
+  vendedorClave = $("claveInput").value.trim();
+  if (!vendedorClave) return alert("Ingresá tu clave");
 
-/**************
- * THEMES
- **************/
-document.querySelectorAll(".tema-btn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.body.className = btn.dataset.tema;
-  });
-});
+  const res = await fetch(API + "?accion=getRutaDelDia&clave=" + vendedorClave);
+  const data = await res.json();
 
-/**************
- * LIMPIAR NOMBRE
- **************/
-function limpiarNombreCliente(nombre) {
-  const match = nombre.match(/\((.*?)\)\s*(.*)/);
-  if (match) return { fantasia: match[2].trim(), persona: match[1].trim() };
-  return { fantasia: nombre.trim(), persona: "" };
+  if (!data.ok) return alert("Clave incorrecta");
+
+  lista = data.cartera || [];
+  $("loginView").style.display = "none";
+  $("rutaView").style.display = "block";
+  render();
+  actualizarMotivador();
 }
 
-/**************
- * OBTENER UBICACIÓN
- **************/
-function obtenerUbicacion(){
-  return new Promise(resolve=>{
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve({lat:pos.coords.latitude, lng:pos.coords.longitude}),
-      ()  => resolve({lat:null,lng:null}),
-      {enableHighAccuracy:true, timeout:5000}
-    );
-  });
-}
-
-/**************
- * CARGAR RUTA
- **************/
-async function cargarRuta(lat,lng){
-  const r = await fetch(`${WORKER_URL}?accion=getRutaDelDia&clave=${clave}&lat=${lat}&lng=${lng}`);
-  const data = await r.json();
-
-  clientes = data.cartera || [];
-  visitados = 0;
-
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("estado").classList.remove("hidden");
-  document.getElementById("listaClientes").classList.remove("hidden");
-
-  renderLista();
-}
-
-/**************
- * RENDER LISTA
- **************/
-function renderLista(){
-  document.getElementById("progresoTexto").innerText = `Visitaste ${visitados} de ${clientes.length}`;
-
-  const cont = document.getElementById("listaClientes");
+function render() {
+  const cont = $("listaClientes");
   cont.innerHTML = "";
 
-  clientes.forEach(cli => {
-    const { fantasia, persona } = limpiarNombreCliente(cli.nombre);
+  lista.forEach(cli => {
+    const id = cli.numeroCliente;
+    const visitado = visitas[id]?.estado || "no";
+    const compro = visitas[id]?.compro || false;
 
-    const div = document.createElement("div");
-    div.className = "cliente-card";
+    cont.innerHTML += `
+      <div class="card">
+        <h3>${cli.nombre}</h3>
+        <small>${cli.domicilio} — ${cli.localidad}</small>
+        <textarea id="n_${id}" placeholder="Notas..."></textarea>
 
-    div.innerHTML = `
-      <div class="nombre">${fantasia || cli.nombre}</div>
-      <div class="persona">${persona || ""}</div>
-      <div class="dom">${cli.domicilio} – ${cli.localidad}</div>
-      <textarea placeholder="Notas..." class="nota-input"></textarea>
+        <div id="b_${id}" class="btn-line ${visitado === "si" ? "btn-active" : ""}" 
+          onclick="toggleVisita('${id}')">
+          ${visitado === "si" ? "Visitado" : "Sin visitar"}
+        </div>
 
-      <div class="btn-row">
-        <button class="btn visitar">Sin visitar</button>
-        <button class="btn compro hidden">Compró ✅</button>
-        <button class="btn nocompro hidden">No compró ❌</button>
+        ${visitado === "si" ? `
+          <div class="btn-line ${compro ? "btn-active" : ""}" 
+            onclick="toggleCompra('${id}')">
+            ${compro ? "Compró ✅" : "No compró"}
+          </div>
+
+          <div class="btn-line" onclick="guardarVisita('${id}')">Guardar visita</div>
+        `:''}
       </div>
     `;
-
-    const nota = div.querySelector(".nota-input");
-    const btnVisitar = div.querySelector(".visitar");
-    const btnCompro = div.querySelector(".compro");
-    const btnNoCompro = div.querySelector(".nocompro");
-
-    btnVisitar.onclick = () => {
-      btnVisitar.classList.add("hidden");
-      btnCompro.classList.remove("hidden");
-      btnNoCompro.classList.remove("hidden");
-    };
-
-    btnCompro.onclick = () => guardarVisita(cli.numeroCliente, true, nota.value);
-    btnNoCompro.onclick = () => guardarVisita(cli.numeroCliente, false, nota.value);
-
-    cont.appendChild(div);
   });
+
+  actualizarMotivador();
 }
 
-/**************
- * GUARDAR VISITA
- **************/
-async function guardarVisita(cliente, compro, notas){
-  await fetch(WORKER_URL, {
+/* interacción */
+function toggleVisita(id){
+  visitas[id] = visitas[id] || {};
+  visitas[id].estado = visitas[id].estado === "si" ? "no" : "si";
+  render();
+}
+
+function toggleCompra(id){
+  visitas[id] = visitas[id] || {};
+  visitas[id].compro = !visitas[id].compro;
+  render();
+}
+
+/* guardar en backend */
+async function guardarVisita(id){
+  const cli = lista.find(x=>x.numeroCliente===id);
+  const notas = $("n_"+id).value.trim();
+  const compro = visitas[id]?.compro || false;
+
+  await fetch(API,{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({
       accion:"registrarVisita",
-      vendedor:clave,
-      cliente,
+      vendedor:vendedorClave,
+      cliente:id,
       compro,
       notas
     })
   });
 
-  visitados++;
-  renderLista();
+  alert("Visita guardada ✅");
+}
+
+/* motivador */
+function actualizarMotivador(){
+  const total = lista.length;
+  const hechos = Object.values(visitas).filter(v=>v.estado==="si").length;
+  $("progressText").innerText = `Visitaste ${hechos} de ${total}`;
+}
+
+/* temas */
+function setTema(t){
+  document.body.className = t;
+  localStorage.setItem("temaVendedores",t);
+}
+function cargarTemaGuardado(){
+  const t = localStorage.getItem("temaVendedores") || "foco";
+  document.body.className = t;
 }
