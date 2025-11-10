@@ -9,7 +9,9 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="ml-icon-192.png">
 </head>
 <body>
 
@@ -82,7 +84,18 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
+
+    <script>
+        // Registro del Service Worker para PWA y Notificaciones
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('firebase-messaging-sw.js')
+                .then(reg => console.log('✅ SW registrado', reg.scope))
+                .catch(err => console.error('❌ Error SW', err));
+        }
+    </script>
 </body>
 </html>
