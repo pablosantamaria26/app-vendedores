@@ -1,42 +1,66 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App Vendedores</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>App Vendedores</title>
+<link rel="stylesheet" href="style.css" />
+
+<!-- MAPA -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 </head>
+<body>
 
-<body class="temaC">
+<div id="login">
+  <h2>Ingreso Vendedor</h2>
+  <input id="claveInput" type="text" placeholder="0001" maxlength="4"/>
+  <button id="btnIngresar">Ingresar</button>
+</div>
 
-  <!-- HEADER -->
-  <header>
-    <h2 id="tituloRuta">Ruta del Día</h2>
-    <span id="contadorVisitas">Visitaste 0 de 0</span>
+<header id="header" class="hidden">
+  <h1>Ruta del Día</h1>
+  <p id="progreso"></p>
+  <div id="temas">
+    <button data-theme="foco">FOCO</button>
+    <button data-theme="campeon">CAMPEÓN</button>
+    <button data-theme="actitud">ACTITUD</button>
+  </div>
+  <p id="mensajeCoach"></p>
+</header>
 
-    <div class="temas">
-      <button data-tema="temaA">FOCO</button>
-      <button data-tema="temaB">CAMPEÓN</button>
-      <button data-tema="temaC" class="active">ACTITUD</button>
-    </div>
-  </header>
+<div id="contenido" class="hidden">
+  
+  <div id="listaClientes"></div>
 
-  <!-- LOGIN -->
-  <section id="login">
-    <h3>Ingreso Vendedor</h3>
-    <input id="claveInput" maxlength="4" placeholder="0001" autocomplete="off">
-    <button id="btnLogin">Ingresar</button>
-  </section>
+  <footer id="footer">
+    <button id="btnVerMapa">🗺 Ver mapa</button>
+  </footer>
 
-  <!-- SALUDO SUPERIOR -->
-  <section id="saludo" class="hidden">
-    <h3 id="saludoTexto"></h3>
-  </section>
+</div>
 
-  <!-- LISTA DE CLIENTES -->
-  <section id="listaClientes" class="hidden"></section>
+<div id="mapaContainer" class="hidden">
+  <div id="map"></div>
+  <button id="btnCerrarMapa">Cerrar mapa</button>
+</div>
 
-  <script src="app.js"></script>
+<!-- Modal Motivo -->
+<div id="modalMotivo" class="modal hidden">
+  <div class="modal-content">
+    <h3>¿Por qué NO compró?</h3>
+    <select id="motivoSelect">
+      <option value="Precio">Precio</option>
+      <option value="No estaba el dueño">No estaba el dueño</option>
+      <option value="Otro">Otro...</option>
+    </select>
+    <textarea id="motivoOtro" class="hidden" placeholder="Escribir motivo..."></textarea>
 
+    <button id="btnGuardarMotivo">Guardar</button>
+    <button id="btnCancelarMotivo" class="cancel">Cancelar</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
