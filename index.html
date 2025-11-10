@@ -88,6 +88,14 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
+    <script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js")
+    .then(()=>console.log("✅ SW registrado"))
+    .catch(err=>console.warn("SW error:", err));
+}
+</script>
+
 
     <script>
         // Registro del Service Worker para PWA y Notificaciones
