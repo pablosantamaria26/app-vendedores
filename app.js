@@ -29,6 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnIrCliente").addEventListener("click", irACliente);
     document.getElementById("overlay-motivo").addEventListener("click", cerrarMotivo);
     document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
+    // CERRAR MODAL AL TOCAR FUERA
+    document.getElementById("modal-cliente").addEventListener("click", (e) => {
+        // Si el target es exactamente el overlay (lo oscuro), cerramos.
+        if (e.target.id === "modal-cliente") {
+            cerrarModalCliente();
+        }
+    });
 
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener("click", () => setTheme(btn.dataset.theme));
