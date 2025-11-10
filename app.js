@@ -1,118 +1,79 @@
-// WORKER URL
-const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-let vendedorClave = "";
-let lista = [];
-let visitas = {};
+// ---------------------------
+// AUTO LOGIN SI YA ESTÁ
+// ---------------------------
+window.addEventListener("load", () => {
+  let clave = localStorage.getItem("claveVendedor");
+  if(clave){ iniciar(clave); }
+});
 
-const $ = (id) => document.getElementById(id);
+// ---------------------------
+// LOGIN
+// ---------------------------
+const inputClave = document.getElementById("claveInput");
+const btnLogin = document.getElementById("btnLogin");
 
-window.onload = () => {
-  cargarTemaGuardado();
-  $("btnLogin").onclick = login;
-  document.querySelectorAll(".theme-btn").forEach(btn =>
-    btn.onclick = () => setTema(btn.dataset.theme)
-  );
+btnLogin.onclick = () => {
+  if(inputClave.value.trim().length >= 4){
+    iniciar(inputClave.value.trim());
+  }
 };
 
-async function login() {
-  vendedorClave = $("claveInput").value.trim();
-  if (!vendedorClave) return alert("Ingresá tu clave");
+inputClave.addEventListener("keyup", (e)=>{
+  if(inputClave.value.length === 4) iniciar(inputClave.value.trim());
+});
 
-  const res = await fetch(API + "?accion=getRutaDelDia&clave=" + vendedorClave);
-  const data = await res.json();
+// ---------------------------
+// INICIAR APP
+// ---------------------------
+async function iniciar(clave){
+  try{
+    const r = await fetch(`${WORKER_URL}?accion=getRutaDelDia&clave=${clave}`);
+    const data = await r.json();
+    if(!data.ok) return alert("Clave incorrecta");
 
-  if (!data.ok) return alert("Clave incorrecta");
+    localStorage.setItem("claveVendedor", clave);
 
-  lista = data.cartera || [];
-  $("loginView").style.display = "none";
-  $("rutaView").style.display = "block";
-  render();
-  actualizarMotivador();
+    // SALUDO
+    const vendedor = obtenerVendedor(clave);
+    document.getElementById("saludoTexto").innerText =
+      `Vamos ${vendedor} 💥 Hoy se gana zona.`;
+
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("saludo").classList.remove("hidden");
+
+    renderLista(data.cartera);
+  }catch(err){
+    alert("Error conexión");
+  }
 }
 
-function render() {
-  const cont = $("listaClientes");
+// Trae nombre desde hoja config
+function obtenerVendedor(clave){
+  if(clave === "0001") return "MARTÍN"; // acá después lo haremos automático
+  return "VENDEDOR";
+}
+
+// ---------------------------
+// RENDER LISTA
+// ---------------------------
+function renderLista(lista){
+  const cont = document.getElementById("listaClientes");
   cont.innerHTML = "";
+  cont.classList.remove("hidden");
 
-  lista.forEach(cli => {
-    const id = cli.numeroCliente;
-    const visitado = visitas[id]?.estado || "no";
-    const compro = visitas[id]?.compro || false;
+  document.getElementById("contadorVisitas").innerText =
+    `Visitaste 0 de ${lista.length}`;
 
-    cont.innerHTML += `
-      <div class="card">
-        <h3>${cli.nombre}</h3>
-        <small>${cli.domicilio} — ${cli.localidad}</small>
-        <textarea id="n_${id}" placeholder="Notas..."></textarea>
-
-        <div id="b_${id}" class="btn-line ${visitado === "si" ? "btn-active" : ""}" 
-          onclick="toggleVisita('${id}')">
-          ${visitado === "si" ? "Visitado" : "Sin visitar"}
-        </div>
-
-        ${visitado === "si" ? `
-          <div class="btn-line ${compro ? "btn-active" : ""}" 
-            onclick="toggleCompra('${id}')">
-            ${compro ? "Compró ✅" : "No compró"}
-          </div>
-
-          <div class="btn-line" onclick="guardarVisita('${id}')">Guardar visita</div>
-        `:''}
-      </div>
+  lista.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <h4>${c.nombre}</h4>
+      <small>${c.domicilio} — ${c.localidad}</small>
+      <div class="estado">Sin visitar</div>
     `;
+    cont.appendChild(div);
   });
-
-  actualizarMotivador();
-}
-
-/* interacción */
-function toggleVisita(id){
-  visitas[id] = visitas[id] || {};
-  visitas[id].estado = visitas[id].estado === "si" ? "no" : "si";
-  render();
-}
-
-function toggleCompra(id){
-  visitas[id] = visitas[id] || {};
-  visitas[id].compro = !visitas[id].compro;
-  render();
-}
-
-/* guardar en backend */
-async function guardarVisita(id){
-  const cli = lista.find(x=>x.numeroCliente===id);
-  const notas = $("n_"+id).value.trim();
-  const compro = visitas[id]?.compro || false;
-
-  await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      accion:"registrarVisita",
-      vendedor:vendedorClave,
-      cliente:id,
-      compro,
-      notas
-    })
-  });
-
-  alert("Visita guardada ✅");
-}
-
-/* motivador */
-function actualizarMotivador(){
-  const total = lista.length;
-  const hechos = Object.values(visitas).filter(v=>v.estado==="si").length;
-  $("progressText").innerText = `Visitaste ${hechos} de ${total}`;
-}
-
-/* temas */
-function setTema(t){
-  document.body.className = t;
-  localStorage.setItem("temaVendedores",t);
-}
-function cargarTemaGuardado(){
-  const t = localStorage.getItem("temaVendedores") || "foco";
-  document.body.className = t;
 }
