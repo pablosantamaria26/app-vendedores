@@ -11,10 +11,20 @@ document.getElementById("btnLogin").onclick = async () => {
   clave = document.getElementById("inputClave").value.trim();
   if (!clave) return alert("Ingresá tu clave");
 
-  obtenerUbicacion().then(({ lat, lng }) => {
-    cargarRuta(lat, lng);
-  });
+  // 1) Validamos clave consultando al backend
+  const test = await fetch(`${WORKER_URL}?accion=getRutaDelDia&clave=${clave}`);
+  const data = await test.json();
+
+  if (!data.ok) {
+    alert("Clave incorrecta");
+    return;
+  }
+
+  // 2) Obtener ubicación y cargar ruta
+  const { lat, lng } = await obtenerUbicacion();
+  cargarRuta(lat, lng);
 };
+
 
 /**************
  * THEMES
