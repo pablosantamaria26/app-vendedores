@@ -1,5 +1,24 @@
 /* === CONFIG === */
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
+  authDomain: "app-vendedores-inteligente.firebaseapp.com",
+  projectId: "app-vendedores-inteligente",
+  storageBucket: "app-vendedores-inteligente.appspot.com",
+  messagingSenderId: "583313989429",
+  appId: "1:583313989429:web:c4f78617ad957c3b11367c"
+};
+
+// Inicializar Firebase solo si está disponible
+let messaging;
+try {
+    firebase.initializeApp(firebaseConfig);
+    messaging = firebase.messaging();
+} catch (e) {
+    console.warn("Firebase no disponible (¿estás offline?)", e);
+}
+
 let estado = {
     vendedor: "",
     nombre: "",
@@ -19,14 +38,13 @@ document.getElementById("claveInput").onkeyup = (e) => e.key === "Enter" && logi
 document.getElementById("fabMapa").onclick = toggleMapa;
 document.getElementById("btnCerrarMapa").onclick = toggleMapa;
 
-// Delegación de eventos para la lista (mejor performance)
+// Delegación de eventos (mejor performance)
 document.getElementById("listaClientes").onclick = (e) => {
     const card = e.target.closest('.card');
     const btnVenta = e.target.closest('.btn-venta');
     const btnNoVenta = e.target.closest('.btn-noventa');
 
     if (card && !btnVenta && !btnNoVenta) {
-        // Toggle acordeón al tocar la tarjeta
         document.querySelectorAll('.card.expanded').forEach(c => c !== card && c.classList.remove('expanded'));
         card.classList.toggle('expanded');
     }
@@ -34,7 +52,6 @@ document.getElementById("listaClientes").onclick = (e) => {
     if (btnNoVenta) abrirMotivo(btnNoVenta.dataset.i);
 };
 
-// Eventos de Temas
 document.querySelectorAll('.theme-btn').forEach(btn => {
     btn.onclick = () => setTheme(btn.dataset.theme);
 });
@@ -46,22 +63,24 @@ async function login() {
 
     btnLoading(true);
     try {
-        const res = await fetch(`${API}?accion=getRutaDelDia&clave=${clave}`);
+        // Evitar caché en el login con timestamp
+        const res = await fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
         const data = await res.json();
 
-        if (!data.ok) throw new Error("Clave incorrecta");
+        if (!data.ok) throw new Error("Clave incorrecta o error de servidor");
 
-        // Guardar estado
         estado.vendedor = clave;
         estado.nombre = data.vendedor || "Vendedor";
-        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false })); // Reseteo local simple
+        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false }));
         
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave, nombre: estado.nombre }));
         
+        activarNotificaciones();
         iniciarApp();
 
     } catch (e) {
-        toast("❌ Error: " + e.message);
+        console.error(e);
+        toast("❌ Error: " + (e.message || "Verifica tu conexión"));
     } finally {
         btnLoading(false);
     }
@@ -71,24 +90,42 @@ function checkSesion() {
     const sesion = JSON.parse(localStorage.getItem("vendedor_sesion"));
     if (sesion) {
         document.getElementById("claveInput").value = sesion.clave;
-        // Opcional: auto-login
-        // login();
+        // Opcional: login() automático aquí si quieres
     }
 }
 
 function iniciarApp() {
     document.getElementById("view-login").classList.remove("active");
     document.getElementById("view-app").classList.add("active");
-    
     document.getElementById("vendedorNombre").innerText = estado.nombre;
     renderRuta();
     actualizarProgreso();
 }
 
+/* === FIREBASE NOTIFICACIONES === */
+async function activarNotificaciones() {
+    if (!messaging) return;
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            const token = await messaging.getToken().catch(() => null);
+            if (token && estado.vendedor) {
+                fetch(API, {
+                    method: "POST",
+                    body: JSON.stringify({ accion: "registrarToken", vendedor: estado.vendedor, token })
+                });
+                console.log("🔔 Token actualizado");
+            }
+        }
+    } catch (e) {
+        console.warn("No se pudieron activar notificaciones", e);
+    }
+}
+
 /* === RENDER UI === */
 function renderRuta() {
     const container = document.getElementById("listaClientes");
-    container.innerHTML = ""; // Limpiar
+    container.innerHTML = ""; 
 
     estado.ruta.forEach((c, i) => {
         const card = document.createElement('div');
@@ -97,7 +134,7 @@ function renderRuta() {
             <div class="card-header">
                 <h3>${c.nombre}</h3>
                 <span class="badge ${c.visitado ? (c.compro ? 'si' : 'no') : 'pendiente'}">
-                    ${c.visitado ? (c.compro ? 'VENTA' : 'NO COMPRÓ') : 'PENDIENTE'}
+                    ${c.visitado ? (c.compro ? 'VENTA' : 'NO') : 'PENDIENTE'}
                 </span>
             </div>
             <div class="card-body">
@@ -107,7 +144,7 @@ function renderRuta() {
             ${!c.visitado ? `
             <div class="card-actions">
                 <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
-                <button class="btn-action btn-noventa" data-i="${i}">❌ NO</button>
+                <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
             </div>
             ` : ''}
         `;
@@ -118,36 +155,34 @@ function renderRuta() {
 function actualizarProgreso() {
     const total = estado.ruta.length;
     const visitados = estado.ruta.filter(c => c.visitado).length;
-    const porcentaje = total === 0 ? 0 : Math.round((visitados / total) * 100);
+    const porcentaje = total === 0 ? 0 : (visitados / total) * 100;
 
-    // Actualizar anillo de progreso SVG
     const circle = document.querySelector('.progress-ring .progreso-value');
-    const radius = circle.r.baseVal.value;
-    const circumference = radius * 2 * Math.PI;
-    circle.style.strokeDasharray = `${circumference} ${circumference}`;
-    circle.style.strokeDashoffset = circumference - (porcentaje / 100) * circumference;
+    if (circle) {
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference - (porcentaje / 100) * circumference;
+    }
 
     document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
     
-    // Mensaje Coach dinámico
-    const mensajes = ["¡Vamos por más!", "Hoy rompes la zona 🚀", "¡Actitud ganadora!", "Casi llegamos 💪"];
-    document.getElementById("mensajeCoach").innerText = porcentaje === 100 ? "🎉 ¡Ruta completada!" : 
+    const mensajes = ["¡Dale gas!", "Hoy se rompe 🚀", "¡Actitud ganadora!", "Ya casi estamos 💪"];
+    document.getElementById("mensajeCoach").innerText = porcentaje === 100 ? "🎉 ¡Ruta finalizada!" : 
         `${estado.nombre.split(' ')[0]}, ${mensajes[Math.floor(Math.random() * mensajes.length)]}`;
 }
 
 /* === ACCIONES === */
 async function registrarVenta(index, compro, motivo = "") {
     const cliente = estado.ruta[index];
-    
-    // Optimistic UI update (actualizamos antes de esperar al servidor)
     cliente.visitado = true;
     cliente.compro = compro;
     cliente.motivo = motivo;
+    
     renderRuta();
     actualizarProgreso();
     if (compro) toast("🎉 ¡Venta registrada!");
 
-    // Enviar al servidor en background
     try {
          await fetch(API, {
             method: "POST",
@@ -160,55 +195,49 @@ async function registrarVenta(index, compro, motivo = "") {
             })
         });
     } catch (e) {
-        console.error("Error guardando visita", e);
-        toast("⚠️ Error de conexión, se guardó localmente");
-        // Aquí podrías implementar una cola de reintentos si falla
+        console.error("Error sync visita", e);
+        toast("⚠️ Guardado local (sin conexión)");
     }
 }
 
-/* === MOTIVO NO COMPRA (BOTTOM SHEET) === */
-let clienteActualIndex = null;
-const sheetMotivo = document.getElementById("sheet-motivo");
-const overlayMotivo = document.getElementById("overlay-motivo");
+/* === MOTIVO (BOTTOM SHEET) === */
+let clienteIndex = null;
+const sheet = document.getElementById("sheet-motivo");
+const overlay = document.getElementById("overlay-motivo");
 
 function abrirMotivo(index) {
-    clienteActualIndex = index;
+    clienteIndex = index;
     estado.motivoSeleccionado = "";
     document.querySelectorAll('#motivoOptions .chip').forEach(c => c.classList.remove('selected'));
     document.getElementById("motivoOtro").classList.add("hidden");
     document.getElementById("motivoOtro").value = "";
     
-    sheetMotivo.classList.remove("hidden");
-    // Pequeño timeout para que la animación CSS funcione
-    setTimeout(() => sheetMotivo.classList.add("active"), 10);
+    sheet.classList.remove("hidden");
+    setTimeout(() => sheet.classList.add("active"), 10);
 }
 
 function cerrarMotivo() {
-    sheetMotivo.classList.remove("active");
-    setTimeout(() => sheetMotivo.classList.add("hidden"), 300);
+    sheet.classList.remove("active");
+    setTimeout(() => sheet.classList.add("hidden"), 300);
 }
 
-// Eventos del Sheet
-overlayMotivo.onclick = cerrarMotivo;
-
+overlay.onclick = cerrarMotivo;
 document.getElementById("motivoOptions").onclick = (e) => {
     if (!e.target.classList.contains('chip')) return;
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
     e.target.classList.add('selected');
     estado.motivoSeleccionado = e.target.dataset.val;
-    
     document.getElementById("motivoOtro").classList.toggle("hidden", estado.motivoSeleccionado !== "Otro");
 };
 
 document.getElementById("btnConfirmarMotivo").onclick = () => {
-    if (!estado.motivoSeleccionado) return toast("⚠️ Selecciona un motivo");
-    let motivoFinal = estado.motivoSeleccionado;
-    if (motivoFinal === "Otro") {
-        motivoFinal = document.getElementById("motivoOtro").value.trim();
-        if (!motivoFinal) return toast("⚠️ Escribe el motivo");
+    let motivo = estado.motivoSeleccionado;
+    if (!motivo) return toast("⚠️ Selecciona un motivo");
+    if (motivo === "Otro") {
+        motivo = document.getElementById("motivoOtro").value.trim();
+        if (!motivo) return toast("⚠️ Escribe el motivo");
     }
-    
-    registrarVenta(clienteActualIndex, false, motivoFinal);
+    registrarVenta(clienteIndex, false, motivo);
     cerrarMotivo();
     toast("Visita registrada");
 };
@@ -216,22 +245,19 @@ document.getElementById("btnConfirmarMotivo").onclick = () => {
 /* === MAPA === */
 function toggleMapa() {
     const modal = document.getElementById("modal-mapa");
-    const estaAbierto = !modal.classList.contains("hidden");
-    
-    if (estaAbierto) {
-        modal.classList.add("hidden");
-    } else {
+    if (modal.classList.contains("hidden")) {
         modal.classList.remove("hidden");
         if (!map) initMapa();
-        setTimeout(() => map.invalidateSize(), 300); // Fix render leaflet
-        cargarMarcadores();
+        setTimeout(() => { map.invalidateSize(); cargarMarcadores(); }, 200);
+    } else {
+        modal.classList.add("hidden");
     }
 }
 
 function initMapa() {
     map = L.map('map').setView([-34.6, -58.4], 10);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '©OpenStreetMap, ©CartoDB'
+        attribution: '©OpenStreetMap'
     }).addTo(map);
     markers.addTo(map);
 }
@@ -242,14 +268,13 @@ function cargarMarcadores() {
     estado.ruta.forEach(c => {
         if (c.lat && c.lng) {
             const color = c.visitado ? (c.compro ? '#2ED573' : '#FF4757') : '#4CC9F0';
-            const marker = L.circleMarker([c.lat, c.lng], {
+            L.circleMarker([c.lat, c.lng], {
                 radius: 8, fillColor: color, color: '#fff', weight: 2, fillOpacity: 1
-            }).bindPopup(`<b>${c.nombre}</b><br>${c.domicilio}`);
-            markers.addLayer(marker);
+            }).bindPopup(`<b>${c.nombre}</b><br>${c.domicilio}`).addTo(markers);
             grupo.push([c.lat, c.lng]);
         }
     });
-    if (grupo.length > 0) map.fitBounds(grupo, { padding: [50, 50] });
+    if (grupo.length) map.fitBounds(grupo, { padding: [50, 50] });
 }
 
 /* === UTILIDADES === */
@@ -267,15 +292,12 @@ function btnLoading(isLoading) {
     btn.innerHTML = isLoading ? "⌛ Cargando..." : "INGRESAR";
 }
 
-function setTheme(themeName) {
-    document.body.setAttribute('data-theme', themeName);
-    localStorage.setItem('theme', themeName);
-    document.querySelectorAll('.theme-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.theme === themeName);
-    });
+function setTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
 }
 
 function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'foco';
-    setTheme(savedTheme);
+    setTheme(localStorage.getItem('theme') || 'foco');
 }
