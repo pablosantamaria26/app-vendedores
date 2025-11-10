@@ -20,23 +20,17 @@ async function iniciar(){
   const data = await resp.json();
   if(!data.ok) return alert("Clave incorrecta");
 
-  datosRuta = data.cartera;
-  vendedorNombre = obtenerNombreVendedor();
-  
+  datosRuta = data.cartera.map(c => ({...c, visitado:false}));
+
+  vendedorNombre = data.vendedor || datosRuta[0]?.vendedor || vendedorClave;
+
   document.getElementById("login").classList.add("hidden");
   document.getElementById("header").classList.remove("hidden");
   document.getElementById("contenido").classList.remove("hidden");
 
   cargarLista();
   actualizarProgreso();
-}
-
-/* Obtenemos el nombre desde ConfigVendedores, pero como ya lo trae el backend vía rutas, lo tomamos del primer match */
-function obtenerNombreVendedor(){
-  if(datosRuta.length===0) return "";
-  return datosRuta[0].vendedor || (()=>{
-    return "Vendedor";
-  })();
+  mostrarCoach();
 }
 
 /* === RENDER LISTA === */
@@ -45,14 +39,20 @@ function cargarLista(){
   cont.innerHTML = "";
 
   datosRuta.forEach((c,i)=>{
+    const estado = c.visitado ? (c.compro ? "✅ Compró" : "❌ No compró") : "Sin visitar";
+
     const card = document.createElement("div");
     card.className="card";
     card.innerHTML = `
       <h3>${(c.nombre || "").trim()}</h3>
       <small>${c.domicilio} — ${c.localidad}</small>
-      <textarea placeholder="Notas..." data-i="${i}"></textarea>
-      <div class="estado" data-i="${i}">Sin visitar</div>
-      <div class="btnRowHidden" id="btnRow-${i}">
+      <textarea placeholder="Notas..." data-i="${i}" ${c.visitado?"disabled":""}>${c.notas||""}</textarea>
+
+      <div class="estado ${c.visitado ? "hecho":""}" data-i="${i}">
+        ${estado}
+      </div>
+
+      <div class="btnRowWrapper ${c.visitado ? "hidden":""}" id="btnRow-${i}">
         <div class="btnRow">
           <button data-act="si" data-i="${i}">COMPRÓ</button>
           <button data-act="no" data-i="${i}">NO COMPRÓ</button>
@@ -68,22 +68,24 @@ function cargarLista(){
 function manejarClickTarjetas(e){
   if(e.target.classList.contains("estado")){
     const i = e.target.dataset.i;
-    document.getElementById(`btnRow-${i}`).className="btnRow";
+    document.getElementById(`btnRow-${i}`).classList.toggle("hidden");
   }
 
   if(e.target.dataset.act==="si"){
-    guardarVisita(e.target.dataset.i, true);
+    guardarVisita(Number(e.target.dataset.i), true);
   }
 
   if(e.target.dataset.act==="no"){
-    abrirMotivo(e.target.dataset.i);
+    abrirMotivo(Number(e.target.dataset.i));
   }
 }
 
 /* === MODAL MOTIVO === */
 let indexMotivo = null;
+
 document.getElementById("motivoSelect").onchange = ()=>{
-  document.getElementById("motivoOtro").classList.toggle("hidden",
+  document.getElementById("motivoOtro").classList.toggle(
+    "hidden",
     document.getElementById("motivoSelect").value!=="Otro"
   );
 };
@@ -98,13 +100,8 @@ document.getElementById("btnGuardarMotivo").onclick = ()=>{
   cerrarMotivo();
 };
 
-function abrirMotivo(i){
-  indexMotivo = i;
-  document.getElementById("modalMotivo").classList.remove("hidden");
-}
-function cerrarMotivo(){
-  document.getElementById("modalMotivo").classList.add("hidden");
-}
+function abrirMotivo(i){ indexMotivo = i; document.getElementById("modalMotivo").classList.remove("hidden"); }
+function cerrarMotivo(){ document.getElementById("modalMotivo").classList.add("hidden"); }
 
 /* === GUARDAR VISITA === */
 async function guardarVisita(i, compro, motivo=""){
@@ -124,34 +121,38 @@ async function guardarVisita(i, compro, motivo=""){
     })
   });
 
-  // mover tarjeta
-  const item = datosRuta.splice(i,1)[0];
-  datosRuta.push(item);
+  // actualizar estado interno
+  cliente.visitado = true;
+  cliente.compro = compro;
+  cliente.notas = notas;
+
   cargarLista();
   actualizarProgreso();
 }
 
-/* === PROGRESO === */
+/* === PROGRESO + COACH === */
 function actualizarProgreso(){
   const total = datosRuta.length;
-  const visitados = total - datosRuta.length;
+  const visitados = datosRuta.filter(c=>c.visitado).length;
   document.getElementById("progreso").innerText = `Visitaste ${visitados} de ${total}`;
+}
+
+function mostrarCoach(){
+  document.getElementById("mensajeCoach").innerText =
+    `Vamos ${vendedorNombre.toUpperCase()} ✨ Hoy se gana zona.`;
 }
 
 /* === MAPA === */
 document.getElementById("btnVerMapa").onclick = mostrarMapa;
-document.getElementById("btnCerrarMapa").onclick = ()=>{
+document.getElementById("btnCerrarMapa").onclick = ()=> 
   document.getElementById("mapaContainer").classList.add("hidden");
-};
 
 function mostrarMapa(){
   document.getElementById("mapaContainer").classList.remove("hidden");
 
   if(!map){
     map = L.map('map').setView([-34.85,-58.39], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      maxZoom:19
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ maxZoom:19 }).addTo(map);
     markerGroup = L.layerGroup().addTo(map);
   }
 
@@ -166,7 +167,5 @@ function mostrarMapa(){
 
 /* === TEMAS === */
 document.querySelectorAll("#temas button").forEach(btn=>{
-  btn.onclick = ()=> {
-    document.body.className = btn.dataset.theme;
-  }
+  btn.onclick = ()=> document.body.className = btn.dataset.theme;
 });
