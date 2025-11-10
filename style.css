@@ -1,100 +1,101 @@
 :root {
-  --bg: #ffffff;
-  --card: #fafafa;
-  --text: #222;
-  --accent: #007bff;
-}
-
-/* Tema 1: FOCO */
-body.foco {
-  --bg: #ffffff;
-  --card: #f4f7ff;
-  --text: #1b1f2a;
-  --accent: #0066ff;
-}
-
-/* Tema 2: CAMPEÓN */
-body.campeon {
-  --bg: #fff9f2;
-  --card: #fff3e0;
-  --text: #3a2400;
-  --accent: #ff7b00;
-}
-
-/* Tema 3: ACTITUD */
-body.actitud {
-  --bg: #111;
-  --card: #1c1c1c;
-  --text: #f2f2f2;
-  --accent: #00e676;
+  --bg: #fafafa;
+  --card: #ffffff;
+  --text: #333;
+  --accent: #6a5acd;
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
   margin: 0;
+  background: var(--bg);
   font-family: sans-serif;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Header */
-header {
-  padding: 8px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#tema-selector .tema-btn {
-  margin-left: 4px;
-  padding: 4px 8px;
-  border: none;
+.topbar {
+  position: sticky;
+  top: 0;
   background: var(--accent);
   color: white;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.hidden { display: none; }
-
-/* Tarjetas */
-.cliente-card {
-  background: var(--card);
-  border-radius: 8px;
   padding: 12px;
-  margin: 8px;
-  border-left: 5px solid var(--accent);
-}
-
-.cliente-card .nombre {
-  font-size: 18px;
   font-weight: bold;
+  text-align: center;
+  z-index: 50;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
 }
 
-.cliente-card .persona {
-  font-size: 13px;
-  opacity: 0.7;
-}
-
-.cliente-card .dom {
+.progress-text {
   font-size: 14px;
-  margin-top: 4px;
+  opacity: .85;
 }
 
-.btn-row {
-  margin-top: 10px;
+.theme-switcher {
   display: flex;
-  gap: 8px;
+  justify-content: center;
+  padding: 10px;
+  gap: 10px;
 }
 
-.btn {
-  flex: 1;
-  padding: 8px;
-  border-radius: 5px;
+.theme-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: transform .15s;
+}
+.theme-btn:active { transform: scale(.92); }
+
+#loginView {
+  margin-top: 60px;
+  text-align: center;
+}
+#loginView input {
+  padding: 8px; margin-right: 6px;
+  border-radius: 6px;
 }
 
-.visitar { background: #ccc; }
-.visitado { background: var(--accent); color: white; }
-.compro { background: #28a745; color: white; }
-.nocompro { background: #e63946; color: white; }
+#listaClientes {
+  padding: 12px;
+}
+
+.card {
+  background: var(--card);
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  animation: fadeIn .4s ease;
+}
+
+.card h3 { margin: 0 0 6px 0; font-size: 17px; }
+.card small { opacity: .7; }
+
+textarea {
+  width: 100%; height: 40px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.btn-line {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  background: #dedede;
+  transition: background .3s, transform .15s;
+}
+.btn-line:active { transform: scale(.95); }
+
+.btn-active { background: var(--accent); color:white; }
+
+/* -------- THEMES -------- */
+body.foco { --bg:#f4f2ff; --card:#ffffff; --text:#342e69; --accent:#7260ff; }
+body.campeon { --bg:#fff4e8; --card:#ffffff; --text:#6b3e00; --accent:#ff8c00; }
+body.actitud { --bg:#e7fff4; --card:#ffffff; --text:#005734; --accent:#00b067; }
+
+/* animation */
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px);} }
