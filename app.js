@@ -335,12 +335,40 @@ function actualizarProgreso() {
     document.getElementById("mensajeCoach").innerText = porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
 }
 
+// --- EN 'activarNotificaciones()' ---
 async function activarNotificaciones() {
     if (!messaging) return;
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-        const token = await messaging.getToken().catch(() => null);
-        if (token) fetch(API, { method: "POST", body: JSON.stringify({ accion: "registrarToken", vendedor: estado.vendedor, token }) });
+    
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            const token = await messaging.getToken().catch(() => null);
+            if (token) {
+                // VERIFICACIÓN DE TOKEN ÚNICO
+                const tokenGuardado = localStorage.getItem("fcm_token_enviado");
+                // Solo enviamos si el token es nuevo o cambió el usuario
+                if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
+                    console.log("🔄 Enviando nuevo token al servidor...");
+                    await fetch(API, {
+                        method: "POST",
+                        body: JSON.stringify({ 
+                            accion: "registrarToken", 
+                            vendedor: estado.vendedor, 
+                            token: token,
+                            dispositivo: navigator.userAgent // Info extra útil para debug
+                        })
+                    });
+                    // Marcamos como enviado para este usuario
+                    localStorage.setItem("fcm_token_enviado", token);
+                    localStorage.setItem("vendedor_actual", estado.vendedor);
+                    toast("🔔 Notificaciones activadas");
+                } else {
+                    console.log("✅ Token ya registrado previamente.");
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Error al activar notificaciones:", e);
     }
 }
 
