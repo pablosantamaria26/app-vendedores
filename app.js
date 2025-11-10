@@ -335,18 +335,26 @@ function actualizarProgreso() {
     document.getElementById("mensajeCoach").innerText = porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
 }
 
-// --- EN 'activarNotificaciones()' ---
+
 async function activarNotificaciones() {
     if (!messaging) return;
     
+    // ** TU CLAVE PÚBLICA VAPID VA AQUÍ **
+    const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
+
     try {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
-            const token = await messaging.getToken().catch(() => null);
+            
+            // AGREGAMOS LA CLAVE VAPID EN EL MÉTODO getToken
+            const token = await messaging.getToken({ vapidKey: VAPID_KEY }).catch((err) => {
+                console.error("Error al obtener token (VAPID):", err);
+                return null;
+            });
+
             if (token) {
-                // VERIFICACIÓN DE TOKEN ÚNICO
                 const tokenGuardado = localStorage.getItem("fcm_token_enviado");
-                // Solo enviamos si el token es nuevo o cambió el usuario
+                
                 if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
                     console.log("🔄 Enviando nuevo token al servidor...");
                     await fetch(API, {
@@ -355,10 +363,10 @@ async function activarNotificaciones() {
                             accion: "registrarToken", 
                             vendedor: estado.vendedor, 
                             token: token,
-                            dispositivo: navigator.userAgent // Info extra útil para debug
+                            dispositivo: navigator.userAgent
                         })
                     });
-                    // Marcamos como enviado para este usuario
+                    
                     localStorage.setItem("fcm_token_enviado", token);
                     localStorage.setItem("vendedor_actual", estado.vendedor);
                     toast("🔔 Notificaciones activadas");
@@ -368,7 +376,7 @@ async function activarNotificaciones() {
             }
         }
     } catch (e) {
-        console.warn("Error al activar notificaciones:", e);
+        console.warn("Error general en activación de notificaciones:", e);
     }
 }
 
