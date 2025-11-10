@@ -6,11 +6,9 @@
     <meta name="theme-color" content="#0E1116">
     <title>App Vendedores Pro</title>
 
-    <!-- Estilos -->
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    <!-- PWA -->
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" href="./ml-icon-192.png">
     <link rel="apple-touch-icon" href="./ml-icon-192.png">
@@ -19,22 +17,18 @@
 
     <div id="toast-container"></div>
 
-    <!-- LOGIN -->
     <section id="view-login" class="view active">
         <div class="login-box">
             <div class="logo-placeholder">🚀</div>
             <h1>Bienvenido</h1>
             <p>Ingresa tu clave de ruta</p>
-            
             <div class="input-group">
                 <input type="tel" id="claveInput" placeholder="Ej: 0001" maxlength="4" autocomplete="off">
             </div>
-            
             <button id="btnIngresar" class="btn-primary big">INGRESAR</button>
         </div>
     </section>
 
-    <!-- APP -->
     <section id="view-app" class="view">
         <header class="app-header">
             <div class="header-top">
@@ -55,12 +49,12 @@
             </div>
         </header>
 
-        <main id="listaClientes" class="cliente-list"></main>
+        <main id="listaClientes" class="cliente-list">
+            </main>
 
         <button id="fabMapa" class="fab">🗺️</button>
     </section>
 
-    <!-- MAPA -->
     <div id="modal-mapa" class="full-modal hidden">
         <div class="modal-header">
             <h3>Mapa de Ruta</h3>
@@ -69,7 +63,6 @@
         <div id="map"></div>
     </div>
 
-    <!-- MOTIVO NO COMPRA -->
     <div id="sheet-motivo" class="bottom-sheet-container hidden">
         <div class="sheet-overlay" id="overlay-motivo"></div>
         <div class="bottom-sheet">
@@ -89,26 +82,40 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <div id="modal-cliente" class="modal-overlay hidden">
+        <div class="modal-card slide-up">
+            <h3 id="modal-cliente-nombre">Nombre Cliente</h3>
+            <p id="modal-cliente-direccion">Dirección</p>
+            
+            <div class="ultimo-pedido-box">
+                <h4>🛍️ Último Pedido:</h4>
+                <p id="modal-ultimo-pedido">Cargando...</p>
+                <button id="btnCopiarPedido" class="btn-secondary hidden">📋 Copiar Pedido</button>
+            </div>
+
+            <div class="modal-actions-row">
+                <button id="btnCancelarModal" class="btn-cancel">Cancelar</button>
+                <button id="btnIrCliente" class="btn-confirm">🚀 IR AHORA</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="./app.js"></script>
 
-<script>
-if ("serviceWorker" in navigator) {
-
-  // SW principal (offline / PWA shell)
-  navigator.serviceWorker.register("./service-worker.js", { scope: "./" })
-    .then(()=>console.log("✅ SW principal activo"))
-    .catch(err=>console.error("❌ Error SW principal:", err));
-
-  // SW push notifications (Firebase)
-  navigator.serviceWorker.register("./firebase-messaging-sw.js", { scope: "./" })
-    .then(()=>console.log("📨 SW Firebase activo"))
-    .catch(err=>console.error("❌ Error SW Firebase:", err));
-}
-</script>
+    <script>
+    if ("serviceWorker" in navigator) {
+        // SW Push Notifications (Firebase) - Prioritario para alertas
+        navigator.serviceWorker.register("./firebase-messaging-sw.js")
+            .then(reg => console.log("📨 SW Firebase activo", reg.scope))
+            .catch(err => console.warn("❌ Error SW Firebase:", err));
+            
+        // Opcional: SW para caché offline (si lo necesitas más adelante)
+        // navigator.serviceWorker.register("./service-worker.js");
+    }
+    </script>
 
 </body>
 </html>
