@@ -1,110 +1,131 @@
-const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev/";
-let vendedor = null;
-let cartera = [];
+const WORKER_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
-function login(){
-  const clave = document.getElementById("claveInput").value.trim();
-  fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({accion:"login", clave})
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    if(!d.ok) return alert("Clave incorrecta");
-    vendedor = d.vendedor;
-    localStorage.setItem("clave", clave);
-    document.getElementById("login-screen").style.display="none";
-    document.getElementById("app-screen").style.display="block";
-    cargarRuta();
+let clave = "";
+let clientes = [];
+let visitados = 0;
+
+/**************
+ * LOGIN
+ **************/
+document.getElementById("btnLogin").onclick = async () => {
+  clave = document.getElementById("inputClave").value.trim();
+  if (!clave) return alert("Ingresá tu clave");
+
+  obtenerUbicacion().then(({ lat, lng }) => {
+    cargarRuta(lat, lng);
+  });
+};
+
+/**************
+ * THEMES
+ **************/
+document.querySelectorAll(".tema-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.body.className = btn.dataset.tema;
+  });
+});
+
+/**************
+ * LIMPIAR NOMBRE
+ **************/
+function limpiarNombreCliente(nombre) {
+  const match = nombre.match(/\((.*?)\)\s*(.*)/);
+  if (match) return { fantasia: match[2].trim(), persona: match[1].trim() };
+  return { fantasia: nombre.trim(), persona: "" };
+}
+
+/**************
+ * OBTENER UBICACIÓN
+ **************/
+function obtenerUbicacion(){
+  return new Promise(resolve=>{
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({lat:pos.coords.latitude, lng:pos.coords.longitude}),
+      ()  => resolve({lat:null,lng:null}),
+      {enableHighAccuracy:true, timeout:5000}
+    );
   });
 }
 
-function cargarRuta(){
-  navigator.geolocation.getCurrentPosition(pos=>{
-    fetch(API,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        accion:"getRutaDelDia",
-        clave: localStorage.getItem("clave"),
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      })
-    })
-    .then(r=>r.json())
-    .then(d=>{
-      cartera = d.cartera;
-      renderLista();
-    });
-  });
+/**************
+ * CARGAR RUTA
+ **************/
+async function cargarRuta(lat,lng){
+  const r = await fetch(`${WORKER_URL}?accion=getRutaDelDia&clave=${clave}&lat=${lat}&lng=${lng}`);
+  const data = await r.json();
+
+  clientes = data.cartera || [];
+  visitados = 0;
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("estado").classList.remove("hidden");
+  document.getElementById("listaClientes").classList.remove("hidden");
+
+  renderLista();
 }
 
+/**************
+ * RENDER LISTA
+ **************/
 function renderLista(){
-  const total = cartera.length;
-  const visitados = cartera.filter(c=>c.estado).length;
-  const compraron = cartera.filter(c=>c.estado==="compro").length;
-  const avance = (visitados/total)*100;
+  document.getElementById("progresoTexto").innerText = `Visitaste ${visitados} de ${clientes.length}`;
 
-  document.getElementById("headerTitle").innerHTML = vendedor+" — Ruta de hoy";
-  document.getElementById("progressInfo").innerHTML = `Visitaste ${visitados}/${total} clientes — Compraron ${compraron}`;
-  document.getElementById("coachMsg").innerHTML = coach(avance);
+  const cont = document.getElementById("listaClientes");
+  cont.innerHTML = "";
 
-  let html="";
-  cartera.forEach((c,i)=>{
-    const cls = c.estado || "sin-visitar";
-    html+=`
-      <div class="card ${cls}">
-        <strong>${c.nombre}</strong><br>
-        📍 ${c.domicilio} — ${c.localidad}<br>
-        ${c.distancia?`🛣 ${c.distancia.toFixed(1)} km`:``}
-        <button onclick="marcar(${i})">Registrar Visita</button>
+  clientes.forEach(cli => {
+    const { fantasia, persona } = limpiarNombreCliente(cli.nombre);
+
+    const div = document.createElement("div");
+    div.className = "cliente-card";
+
+    div.innerHTML = `
+      <div class="nombre">${fantasia || cli.nombre}</div>
+      <div class="persona">${persona || ""}</div>
+      <div class="dom">${cli.domicilio} – ${cli.localidad}</div>
+      <textarea placeholder="Notas..." class="nota-input"></textarea>
+
+      <div class="btn-row">
+        <button class="btn visitar">Sin visitar</button>
+        <button class="btn compro hidden">Compró ✅</button>
+        <button class="btn nocompro hidden">No compró ❌</button>
       </div>
     `;
+
+    const nota = div.querySelector(".nota-input");
+    const btnVisitar = div.querySelector(".visitar");
+    const btnCompro = div.querySelector(".compro");
+    const btnNoCompro = div.querySelector(".nocompro");
+
+    btnVisitar.onclick = () => {
+      btnVisitar.classList.add("hidden");
+      btnCompro.classList.remove("hidden");
+      btnNoCompro.classList.remove("hidden");
+    };
+
+    btnCompro.onclick = () => guardarVisita(cli.numeroCliente, true, nota.value);
+    btnNoCompro.onclick = () => guardarVisita(cli.numeroCliente, false, nota.value);
+
+    cont.appendChild(div);
   });
-  document.getElementById("listaClientes").innerHTML = html;
 }
 
-function marcar(i){
-  const c = cartera[i];
-  const compro = confirm(`¿${c.nombre} compró? Aceptar = Sí / Cancelar = No`);
-  let motivo="";
-  if(!compro){
-    motivo = prompt("Motivo:\nNo estaba / Sin dinero / Otra distribuidora / No necesita / Otro","No estaba") || "";
-  }
-  const notas = prompt("Notas adicionales (opcional):","") || "";
-
-  fetch(API,{
+/**************
+ * GUARDAR VISITA
+ **************/
+async function guardarVisita(cliente, compro, notas){
+  await fetch(WORKER_URL, {
     method:"POST",
-    headers:{"Content-Type":"application/json"},
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({
       accion:"registrarVisita",
-      vendedor,
-      cliente:c.numero,
+      vendedor:clave,
+      cliente,
       compro,
-      motivo,
       notas
     })
   });
 
-  cartera[i].estado = compro?"compro":"no-compro";
+  visitados++;
   renderLista();
 }
-
-function coach(p){
-  if(p<20) return "Arrancamos 💪 Vamos con todo.";
-  if(p<50) return "Buen ritmo 🚀 Seguimos.";
-  if(p<80) return "Más de la mitad 🔥 Vamos!";
-  if(p<100) return "Últimos clientes 💥 No aflojes.";
-  return "¡JORNADA COMPLETA! 🎉 Excelente trabajo.";
-}
-
-/* Tema */
-function setTheme(name){
-  document.body.classList.remove("theme-foco","theme-ruta","theme-fuerza");
-  document.body.classList.add("theme-"+name);
-  localStorage.setItem("tema",name);
-}
-(function restoreTheme(){
-  setTheme(localStorage.getItem("tema")||"foco");
-})();
