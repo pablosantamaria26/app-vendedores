@@ -1,36 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>App Vendedores</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Vendedores</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <!-- Selector de tema -->
-  <div class="theme-bar">
-    <div class="theme-btn" onclick="setTheme('foco')">FOCO</div>
-    <div class="theme-btn" onclick="setTheme('ruta')">RUTA</div>
-    <div class="theme-btn" onclick="setTheme('fuerza')">FUERZA</div>
+<header>
+  <div id="titulo-app">🛒 Ruta del Día</div>
+  <div id="tema-selector">
+      <button class="tema-btn" data-tema="foco">FOCO</button>
+      <button class="tema-btn" data-tema="campeon">CAMPEÓN</button>
+      <button class="tema-btn" data-tema="actitud">ACTITUD</button>
   </div>
+</header>
 
-  <!-- LOGIN -->
-  <div id="login-screen">
-    <h2>Ingreso Vendedor</h2>
-    <input id="claveInput" type="text" placeholder="Clave (0001)" />
-    <button onclick="login()">Ingresar</button>
-  </div>
+<section id="login">
+  <h2>Ingresar Clave</h2>
+  <input id="inputClave" type="password" placeholder="Clave del vendedor">
+  <button id="btnLogin">Entrar</button>
+</section>
 
-  <!-- APP -->
-  <div id="app-screen" style="display:none;">
+<section id="estado" class="hidden">
+  <div id="progresoTexto">Visitaste 0 de 0</div>
+</section>
 
-    <header id="headerTitle"></header>
-    <div id="progressInfo"></div>
-    <div id="coachMsg"></div>
-
-    <div id="listaClientes"></div>
-  </div>
+<section id="listaClientes" class="hidden"></section>
 
 <script src="app.js"></script>
 </body>
