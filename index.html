@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>App Vendedores</title>
-<link rel="stylesheet" href="style.css">
+
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="style.css" />
+
+<script defer src="app.js"></script>
 </head>
 
 <body>
-
-<header>
-  <div id="titulo-app">🛒 Ruta del Día</div>
-  <div id="tema-selector">
-      <button class="tema-btn" data-tema="foco">FOCO</button>
-      <button class="tema-btn" data-tema="campeon">CAMPEÓN</button>
-      <button class="tema-btn" data-tema="actitud">ACTITUD</button>
-  </div>
+<header class="topbar">
+  <div class="title">Ruta del Día</div>
+  <div id="progressText" class="progress-text">Visitaste 0 de 0</div>
 </header>
 
-<section id="login">
-  <h2>Ingresar Clave</h2>
-  <input id="inputClave" type="password" placeholder="Clave del vendedor">
-  <button id="btnLogin">Entrar</button>
+<section class="theme-switcher">
+  <button class="theme-btn" data-theme="foco">FOCO</button>
+  <button class="theme-btn" data-theme="campeon">CAMPEÓN</button>
+  <button class="theme-btn" data-theme="actitud">ACTITUD</button>
 </section>
 
-<section id="estado" class="hidden">
-  <div id="progresoTexto">Visitaste 0 de 0</div>
+<section id="loginView">
+  <h2>Ingreso Vendedor</h2>
+  <input id="claveInput" placeholder="0001" />
+  <button id="btnLogin">Ingresar</button>
 </section>
 
-<section id="listaClientes" class="hidden"></section>
+<section id="rutaView" style="display:none;">
+  <div id="listaClientes"></div>
+</section>
 
-<script src="app.js"></script>
 </body>
 </html>
