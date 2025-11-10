@@ -1,30 +1,32 @@
 :root {
-  --bg:#ffffff;
-  --text:#111;
-  --card:#f5f5f5;
-  --accent:#007bff;
-  --accent-text:#fff;
+  --bg: #ffffff;
+  --card: #fafafa;
+  --text: #222;
+  --accent: #007bff;
 }
 
-/* Temas */
-.theme-foco {
-  --bg:#e8ecf3;
-  --text:#1b2a41;
-  --card:#ffffff;
-  --accent:#1b5bff;
+/* Tema 1: FOCO */
+body.foco {
+  --bg: #ffffff;
+  --card: #f4f7ff;
+  --text: #1b1f2a;
+  --accent: #0066ff;
 }
-.theme-ruta {
-  --bg:#111;
-  --text:#fafafa;
-  --card:#1e1e1e;
-  --accent:#00ff84;
-  --accent-text:#000;
+
+/* Tema 2: CAMPEÓN */
+body.campeon {
+  --bg: #fff9f2;
+  --card: #fff3e0;
+  --text: #3a2400;
+  --accent: #ff7b00;
 }
-.theme-fuerza {
-  --bg:#f3e8ff;
-  --text:#3d2666;
-  --card:#ffffff;
-  --accent:#7b2cff;
+
+/* Tema 3: ACTITUD */
+body.actitud {
+  --bg: #111;
+  --card: #1c1c1c;
+  --text: #f2f2f2;
+  --accent: #00e676;
 }
 
 body {
@@ -34,61 +36,65 @@ body {
   font-family: sans-serif;
 }
 
-.theme-bar {
-  display:flex;
-  gap:6px;
-  padding:10px;
+/* Header */
+header {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.theme-btn {
-  flex:1;
-  padding:6px;
-  text-align:center;
-  border-radius:6px;
+
+#tema-selector .tema-btn {
+  margin-left: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.hidden { display: none; }
+
+/* Tarjetas */
+.cliente-card {
   background: var(--card);
-  border:1px solid var(--accent);
-  cursor:pointer;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px;
+  border-left: 5px solid var(--accent);
 }
 
-#login-screen, #app-screen {
-  padding: 16px;
+.cliente-card .nombre {
+  font-size: 18px;
+  font-weight: bold;
 }
 
-#headerTitle {
-  font-size:18px;
-  font-weight:bold;
-  margin-bottom:8px;
+.cliente-card .persona {
+  font-size: 13px;
+  opacity: 0.7;
 }
 
-#progressInfo {
-  font-size:14px;
-  opacity:.8;
+.cliente-card .dom {
+  font-size: 14px;
+  margin-top: 4px;
 }
 
-#coachMsg {
-  margin-top:6px;
-  font-weight:bold;
-  font-size:14px;
+.btn-row {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
 }
 
-.card {
-  background: var(--card);
-  border-radius:12px;
-  padding:12px;
-  margin-top:12px;
-  transition:0.25s;
+.btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
 }
 
-.card.sin-visitar { border-left:6px solid gray; }
-.card.visitando   { border-left:6px solid orange; }
-.card.compro      { border-left:6px solid green; }
-.card.no-compro   { border-left:6px solid red; }
-
-.card button {
-  margin-top:8px;
-  width:100%;
-  padding:10px;
-  border:none;
-  background:var(--accent);
-  color:var(--accent-text);
-  border-radius:6px;
-}
+.visitar { background: #ccc; }
+.visitado { background: var(--accent); color: white; }
+.compro { background: #28a745; color: white; }
+.nocompro { background: #e63946; color: white; }
