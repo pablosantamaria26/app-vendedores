@@ -339,24 +339,27 @@ function actualizarProgreso() {
 async function activarNotificaciones() {
     if (!messaging) return;
     
-    // ** TU CLAVE PÚBLICA VAPID VA AQUÍ **
     const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
 
     try {
+        console.log("DEBUG: 1. Pidiendo permiso de Notificación..."); // LOG 1
         const permission = await Notification.requestPermission();
+
         if (permission === "granted") {
+            console.log("DEBUG: 2. Permiso concedido. Obteniendo token con VAPID..."); // LOG 2
             
-            // AGREGAMOS LA CLAVE VAPID EN EL MÉTODO getToken
             const token = await messaging.getToken({ vapidKey: VAPID_KEY }).catch((err) => {
-                console.error("Error al obtener token (VAPID):", err);
+                console.error("ERROR: Fallo getToken() con VAPID:", err); // LOG 3
                 return null;
             });
 
             if (token) {
+                console.log("DEBUG: 3. Token generado. Enviando a la API."); // LOG 4
+                
                 const tokenGuardado = localStorage.getItem("fcm_token_enviado");
                 
                 if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
-                    console.log("🔄 Enviando nuevo token al servidor...");
+                    console.log("DEBUG: 4. Token NO duplicado. Iniciando fetch a API."); // LOG 5
                     await fetch(API, {
                         method: "POST",
                         body: JSON.stringify({ 
@@ -371,9 +374,13 @@ async function activarNotificaciones() {
                     localStorage.setItem("vendedor_actual", estado.vendedor);
                     toast("🔔 Notificaciones activadas");
                 } else {
-                    console.log("✅ Token ya registrado previamente.");
+                    console.log("DEBUG: 4. Token SÍ duplicado, no se envía."); // LOG 6
                 }
+            } else {
+                 console.log("DEBUG: 3. Token es NULL, no se envía."); // LOG 7
             }
+        } else {
+             console.log("DEBUG: Permiso denegado por el usuario."); // LOG 8
         }
     } catch (e) {
         console.warn("Error general en activación de notificaciones:", e);
