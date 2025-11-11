@@ -192,6 +192,7 @@ body[data-theme='dark'] .progreso-value { stroke: #ffffff; }
 /* --- FAB & MAPA --- */
 .fab {
     position: fixed;
+    display: none;
     bottom: calc(20px + var(--safe-bottom)); right: 20px;
     width: 56px; height: 56px; border-radius: 20px;
     background: var(--accent); border: none; font-size: 24px;
