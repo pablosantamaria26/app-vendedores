@@ -1,5 +1,5 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.1 - LÓGICA (CON TEMAS Y ARREGLOS)
+   APP VENDEDORES PRO v2.3 - (CON CLIMA EN VIVO)
    ====================================================== */
 
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
@@ -10,43 +10,43 @@ let estado = {
     ruta: [],
     motivoSeleccionado: "",
     ubicacionActual: null,
-    viewMode: "list" // "list" o "focus"
+    viewMode: "list"
 };
 let map, markers;
 let gpsWatcher = null;
 let clientesAvisados = new Set();
 let _reporteEnviado = false;
 
+const MENSAJES_MOTIVACIONALES = [
+    "¡Vamos por un gran día de ventas!",
+    "Tu actitud determina tu dirección. ¡A ganar!",
+    "Cada 'no' te acerca a un 'sí'. ¡Adelante!",
+    "El éxito es la suma de pequeños esfuerzos. ¡Vamos!",
+    "Hoy es un buen día para superar tus metas."
+];
+
 /* === INICIO & EVENTOS GLOBALES === */
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🚀 App iniciada (v2.1 PRO)");
-    
+    console.log("🚀 App iniciada (v2.3 PRO)");
     try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
-    
     checkSesion();
-    initTheme(); // <-- Vuelve a inicializar el tema
+    initTheme();
 
-    // Event Listeners
+    const claveInput = document.getElementById("claveInput");
     document.getElementById("btnIngresar").addEventListener("click", login);
-    document.getElementById("claveInput").addEventListener("keyup", (e) => e.key === "Enter" && login());
+    claveInput.addEventListener("keyup", (e) => e.key === "Enter" && login());
+    claveInput.addEventListener("input", handleClaveInput);
+    document.getElementById("toggleClave").addEventListener("click", toggleClave);
     document.getElementById("fabMapa").addEventListener("click", toggleMapa);
     document.getElementById("btnCerrarMapa").addEventListener("click", toggleMapa);
     document.getElementById("listaClientes").addEventListener("click", manejarClicksLista);
-    
-    // Eventos Modales
     document.getElementById("btnCancelarModal").addEventListener("click", cerrarModalCliente);
     document.getElementById("btnIrCliente").addEventListener("click", irACliente);
-    
-    // Eventos Motivos
     document.getElementById("overlay-motivo").addEventListener("click", cerrarMotivo);
     document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
     document.getElementById("motivoOptions").addEventListener("click", manejarMotivoChips);
-
-    // Listeners de Modo de Vista
     document.getElementById("btnViewList").addEventListener("click", () => setViewMode("list"));
     document.getElementById("btnViewFocus").addEventListener("click", () => setViewMode("focus"));
-
-    // Listeners de Temas (Nuevo)
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener("click", () => setTheme(btn.dataset.theme));
     });
@@ -67,24 +67,74 @@ function initFirebase() {
     messaging = firebase.messaging();
 }
 
-/* === LÓGICA DE SESIÓN Y LOGIN (CON MEMORIA) === */
+/* === LÓGICA DE LOGIN (CON CLIMA) === */
+
+function mostrarLoadingToast() {
+    const msg = MENSAJES_MOTIVACIONALES[Math.floor(Math.random() * MENSAJES_MOTIVACIONALES.length)];
+    document.getElementById("loading-toast-msg").innerText = msg;
+    document.getElementById("loading-toast-weather").innerText = "Consultando GPS y Clima... 🛰️";
+    document.getElementById("loading-toast").classList.remove("hidden");
+}
+function ocultarLoadingToast() {
+    document.getElementById("loading-toast").classList.add("hidden");
+}
+
+function handleClaveInput(e) {
+    if (e.target.value.length === 4) {
+        login();
+    }
+}
+
+function toggleClave() {
+    const claveInput = document.getElementById("claveInput");
+    const btn = document.getElementById("toggleClave");
+    if (claveInput.type === "password") {
+        claveInput.type = "text";
+        btn.innerText = "🙈";
+    } else {
+        claveInput.type = "password";
+        btn.innerText = "👁️";
+    }
+}
+
 async function login() {
     const clave = document.getElementById("claveInput").value.trim();
-    if (!clave) return toast("⚠️ Ingresa tu clave");
+    if (clave.length < 4) return toast("⚠️ Clave debe tener 4 dígitos");
 
+    mostrarLoadingToast();
     btnLoading(true);
+    
     try {
+        // 1. Obtener ubicación PRIMERO
         await obtenerUbicacion();
         
-        const res = await fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
-        const data = await res.json();
+        // 2. Cargar Clima (en paralelo)
+        let climaPromise;
+        if (estado.ubicacionActual) {
+            climaPromise = fetchClimaString(estado.ubicacionActual.lat, estado.ubicacionActual.lng)
+                .then(climaStr => {
+                    document.getElementById("loading-toast-weather").innerText = climaStr;
+                });
+        } else {
+             document.getElementById("loading-toast-weather").innerText = "Ubicación no detectada";
+             climaPromise = Promise.resolve(); // Resuelve inmediatamente
+        }
 
-        if (!data.ok) throw new Error(data.error || "Clave incorrecta o error de servidor");
+        // 3. Cargar Ruta (en paralelo)
+        const rutaPromise = fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
 
+        // 4. Esperar que AMBAS terminen
+        const [rutaResponse] = await Promise.all([rutaPromise, climaPromise]);
+
+        // 5. Procesar Ruta
+        const data = await rutaResponse.json();
+        if (!rutaResponse.ok || !data.ok) {
+            throw new Error(data.error || "Clave incorrecta o error de servidor");
+        }
+
+        // 6. Configurar Estado
         estado.vendedor = clave.padStart(4, "0");
-        // IMPORTANTE: Si data.vendedor no viene, usa "Vendedor".
-        // Revisa tu Google Sheet "ConfigVendedores" para poner el nombre.
-        estado.nombre = data.vendedor || "Vendedor"; 
+        estado.nombre = data.vendedor || "Vendedor";
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
         
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
@@ -97,7 +147,10 @@ async function login() {
     } catch (e) {
         console.error(e);
         toast("❌ Error: " + e.message);
+        ocultarLoadingToast(); // Ocultar si hay error
     } finally {
+        // Ocultar toast (darle tiempo a la anim. de check)
+        setTimeout(ocultarLoadingToast, 1500); // 1.5 seg
         btnLoading(false);
     }
 }
@@ -108,7 +161,6 @@ function checkSesion() {
         if (sesion && sesion.clave) {
             const rutaGuardada = JSON.parse(localStorage.getItem(`ruta_${sesion.clave}`));
             if (rutaGuardada) {
-                console.log("Restaurando sesión y ruta para " + sesion.clave);
                 estado.vendedor = sesion.clave;
                 estado.nombre = sesion.nombre;
                 estado.ruta = rutaGuardada;
@@ -117,33 +169,25 @@ function checkSesion() {
                 return;
             }
         }
-        console.log("Mostrando login.");
         document.getElementById("view-login").classList.add("active");
-        
     } catch (e) {
         localStorage.clear();
         document.getElementById("view-login").classList.add("active");
     }
 }
 
-/* === INICIO DE APP Y VISTAS === */
+/* === INICIO DE APP Y VISTAS (Sin cambios) === */
 function iniciarApp() {
     document.getElementById("view-login").classList.remove("active");
     void document.getElementById("view-app").offsetWidth;
     document.getElementById("view-app").classList.add("active");
-    
-    // Saludo personalizado
     const primerNombre = estado.nombre.split(' ')[0];
     document.getElementById("vendedorNombre").innerText = estado.nombre;
     document.getElementById("mensajeCoach").innerHTML = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! Vamos por la ruta de hoy.`;
-    
     document.getElementById("fabMapa").style.display = 'block';
-    
-    // Configurar modo de vista
     document.body.setAttribute("data-view-mode", estado.viewMode);
     document.getElementById("btnViewList").classList.toggle("active", estado.viewMode === "list");
     document.getElementById("btnViewFocus").classList.toggle("active", estado.viewMode === "focus");
-
     renderRuta();
     actualizarProgreso();
     iniciarSeguimientoGPS();
@@ -158,34 +202,26 @@ function setViewMode(mode) {
     renderRuta();
 }
 
-/* === LÓGICA DE RENDERIZADO (v2.1) === */
+/* === LÓGICA DE RENDERIZADO (v2.2 - Sin cambios) === */
 function renderRuta() {
     const container = document.getElementById("listaClientes");
     container.innerHTML = "";
-
     const pendientes = estado.ruta.filter(c => !c.visitado);
-
     if (pendientes.length === 0) {
         container.innerHTML = `<div class="ruta-completa">🎉<br>¡Ruta finalizada por hoy!<br>🎉</div>`;
         return;
     }
-
     if (estado.viewMode === "focus") {
-        // MODO FOCO: Renderizar solo el primero
         const clienteSiguiente = pendientes[0];
         const indexOriginal = estado.ruta.findIndex(c => c.numeroCliente === clienteSiguiente.numeroCliente);
-        renderClienteCard(clienteSiguiente, indexOriginal, true); // true = es "next"
-    
+        renderClienteCard(clienteSiguiente, indexOriginal, true);
     } else {
-        // MODO LISTA: Renderizar todos los pendientes
         const indexSiguienteOriginal = estado.ruta.findIndex(c => !c.visitado);
-        
         let colorIndex = 0;
         estado.ruta.forEach((c, i) => {
-            if (c.visitado) return; // Ocultar visitados
-            
+            if (c.visitado) return;
             const esSiguiente = (i === indexSiguienteOriginal);
-            renderClienteCard(c, i, esSiguiente, colorIndex % 4); // Pasa el índice de color
+            renderClienteCard(c, i, esSiguiente, colorIndex % 4);
             colorIndex++;
         });
     }
@@ -193,67 +229,51 @@ function renderRuta() {
 
 function renderClienteCard(c, i, isNext, colorIndex = 0) {
     const container = document.getElementById("listaClientes");
-
     let distanciaHTML = "";
     if (estado.ubicacionActual && c.lat && c.lng) {
         const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
         distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
     }
-
     const frecuenciaTexto = c.frecuencia || "Sin historial previo";
-
     const card = document.createElement('div');
     card.dataset.i = i;
-    card.dataset.colorIndex = colorIndex; // Para el color del borde en modo lista
-    
+    card.dataset.colorIndex = colorIndex;
     let classes = ['card'];
     if (isNext) classes.push('next');
-    if (c.expanded) classes.push('expanded');
+    if (c.expanded || estado.viewMode === 'focus') classes.push('expanded');
     card.className = classes.join(' ');
-
+    const detalleTexto = (estado.viewMode === 'focus') ? 'VER ÚLTIMO PEDIDO' : 'ℹ️ DETALLE';
     card.innerHTML = `
         ${distanciaHTML}
-        <div class="card-header">
-            <h3>${c.nombre}</h3>
-            <span class="badge pendiente">PENDIENTE</span>
-        </div>
-        <div class="card-body">
-            <p>📍 ${c.domicilio}</p>
-            <p>📊 Frecuencia: ${frecuenciaTexto}</p>
-        </div>
+        <div class="card-header"><h3>${c.nombre}</h3><span class="badge pendiente">PENDIENTE</span></div>
+        <div class="card-body"><p>📍 ${c.domicilio}</p><p>📊 Frecuencia: ${frecuenciaTexto}</p></div>
         <div class="card-actions">
             <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
             <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
-            <button class="btn-action btn-detalle" data-i="${i}">ℹ️ DETALLE</button>
-        </div>
-    `;
+            <button class="btn-action btn-detalle" data-i="${i}">${detalleTexto}</button>
+        </div>`;
     container.appendChild(card);
 }
 
-/* === MANEJO DE CLICKS E INTERACCIONES === */
+/* === MANEJO DE CLICKS E INTERACCIONES (Sin cambios) === */
 function manejarClicksLista(e) {
     const card = e.target.closest('.card');
     if (!card) return;
     const index = parseInt(card.dataset.i);
     if (isNaN(index)) return;
-
-    const btnVenta   = e.target.closest('.btn-venta');
+    const btnVenta = e.target.closest('.btn-venta');
     const btnNoVenta = e.target.closest('.btn-noventa');
     const btnDetalle = e.target.closest('.btn-detalle');
-
     if (btnVenta) { registrarVenta(index, true); return; }
     if (btnNoVenta) { abrirMotivo(index); return; }
     if (btnDetalle) { abrirModalCliente(index); return; }
-
-    const cliente = estado.ruta[index];
-    if (cliente) {
-        cliente.expanded = !cliente.expanded;
-        if (estado.viewMode === 'list') {
-            estado.ruta.forEach((c, i) => {
-                if (i !== index) c.expanded = false;
-            });
+    if (estado.viewMode === 'list') {
+        const cliente = estado.ruta[index];
+        if (cliente) {
+            cliente.expanded = !cliente.expanded;
+            estado.ruta.forEach((c, i) => { if (i !== index) c.expanded = false; });
+            renderRuta();
         }
-        renderRuta();
     }
 }
 
@@ -261,40 +281,28 @@ async function registrarVenta(index, compro, motivo = "") {
     const cliente = estado.ruta[index];
     if (!cliente || cliente._enviando) return;
     cliente._enviando = true;
-
-    // 1. Marcas locales
     const ahora = new Date();
     cliente.visitado = true;
     cliente.compro = !!compro;
     cliente.motivo = compro ? "" : (motivo || "");
     cliente.hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-
-    // 2. Guardar estado en localStorage
     localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
-    
-    // 3. Animación y UI
     const card = document.querySelector(`.card[data-i="${index}"]`);
     let animDuration = 0;
-    
     if (card && estado.viewMode === 'focus') {
         card.classList.add('slide-out');
         animDuration = 400;
     }
-
     setTimeout(() => {
         renderRuta();
         actualizarProgreso();
     }, animDuration);
-
-    // 4. Envío a la API (segundo plano)
     try {
         const payload = {
-            accion: "registrarVisita",
-            vendedor: estado.vendedor, vendedorNombre: estado.nombre,
-            cliente: cliente.numeroCliente, compro: !!compro,
-            motivo: cliente.motivo || "", notas: cliente.notas || "",
+            accion: "registrarVisita", vendedor: estado.vendedor, vendedorNombre: estado.nombre,
+            cliente: cliente.numeroCliente, compro: !!compro, motivo: cliente.motivo || "",
             lat: estado.ubicacionActual?.lat ?? "", lng: estado.ubicacionActual?.lng ?? "",
-            ts: ahora.toISOString(), app: "App Vendedores Pro v2.1"
+            ts: ahora.toISOString(), app: "App Vendedores Pro v2.3"
         };
         await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
@@ -304,20 +312,19 @@ async function registrarVenta(index, compro, motivo = "") {
     } finally {
         cliente._enviando = false;
     }
-
     if (estado.viewMode === 'list') {
         irAlSiguienteCliente();
     }
 }
 
-/* === LÓGICA DE GPS (CON ARREGLO DE PARPADEO) === */
+/* === LÓGICA DE GPS (Sin cambios v2.2) === */
 function obtenerUbicacion() {
     return new Promise((resolve) => {
         if (!navigator.geolocation) return resolve();
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                ordenarRutaPorDistancia();
+                // Ya no ordena aquí, solo guarda la ubicación
                 resolve();
             },
             () => resolve(), { enableHighAccuracy: false, timeout: 5000 }
@@ -330,7 +337,7 @@ function iniciarSeguimientoGPS() {
     gpsWatcher = navigator.geolocation.watchPosition(
         (pos) => {
             estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            ordenarRutaPorDistancia(); // Esto ahora es seguro
+            ordenarRutaPorDistancia();
             verificarProximidadClientes();
         },
         (err) => console.warn("GPS error:", err),
@@ -339,13 +346,11 @@ function iniciarSeguimientoGPS() {
 }
 
 function ordenarRutaPorDistancia() {
-    // --- ARREGLO DE PARPADEO ---
-    // Si estamos en Modo Foco, no reordenamos la lista para no causar saltos.
-    if (estado.viewMode === 'focus') return;
-
-    if (!estado.ubicacionActual) return;
+    if (estado.viewMode === 'focus' || !estado.ubicacionActual) {
+        return;
+    }
+    const oldOrder = estado.ruta.filter(c => !c.visitado).map(c => c.numeroCliente).join(',');
     const { lat, lng } = estado.ubicacionActual;
-    
     estado.ruta.sort((a, b) => {
         if (a.visitado && !b.visitado) return 1;
         if (!a.visitado && b.visitado) return -1;
@@ -355,7 +360,11 @@ function ordenarRutaPorDistancia() {
         const dB = calcularDistancia(lat, lng, b.lat, b.lng);
         return dA - dB;
     });
-    renderRuta();
+    const newOrder = estado.ruta.filter(c => !c.visitado).map(c => c.numeroCliente).join(',');
+    if (oldOrder !== newOrder) {
+        console.log("GPS: Reordenando lista de clientes.");
+        renderRuta();
+    }
 }
 
 function verificarProximidadClientes() {
@@ -374,14 +383,13 @@ function verificarProximidadClientes() {
     });
 }
 
-/* === LÓGICA DE MAPA (MEJORADA) === */
+/* === LÓGICA DE MAPA (Sin cambios v2.2) === */
 function toggleMapa() {
     const modal = document.getElementById("modal-mapa");
     if (modal.classList.contains("hidden")) {
         modal.classList.remove("hidden");
         if (!map && typeof L !== 'undefined') {
             map = L.map('map').setView([-34.6, -58.4], 10);
-            // Nuevo estilo de mapa "Voyager"
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { 
                 attribution: '©OpenStreetMap, ©CartoDB' 
             }).addTo(map);
@@ -397,27 +405,17 @@ function cargarMarcadores() {
     if (!map || !markers) return;
     markers.clearLayers();
     const grupo = [];
-    
-    // Filtrar solo pendientes para el mapa
     const pendientes = estado.ruta.filter(c => !c.visitado);
-
     pendientes.forEach((c, i) => {
         if (c.lat && c.lng) {
-            // El color del marcador ahora usa la variable CSS
             const color = 'var(--accent-solid)';
             const marker = L.circleMarker([c.lat, c.lng], { 
                 radius: 10, fillColor: color, color: '#fff', weight: 3, fillOpacity: 1 
             }).addTo(markers);
-
-            // NUEVO: Añadir nombre del cliente en el mapa
             marker.bindTooltip(c.nombre, {
-                permanent: true, // Para que se vea siempre
-                direction: 'top',
-                className: 'map-tooltip', // Estilo CSS personalizado
-                offset: [0, -10]
+                permanent: true, direction: 'top',
+                className: 'map-tooltip', offset: [0, -10]
             });
-
-            // Al hacer clic, se busca el índice original
             const indexOriginal = estado.ruta.findIndex(r => r.numeroCliente === c.numeroCliente);
             marker.on('click', () => {
                 document.getElementById("modal-mapa").classList.add("hidden");
@@ -429,7 +427,8 @@ function cargarMarcadores() {
     if (grupo.length) map.fitBounds(grupo, { padding: [50, 50] });
 }
 
-/* === MODALES, MOTIVOS, ETC. (Lógica sin cambios) === */
+
+/* === MODALES, MOTIVOS, ETC. (Sin cambios v2.2) === */
 let clienteModalIndex = null;
 async function abrirModalCliente(index) {
     clienteModalIndex = index;
@@ -460,7 +459,7 @@ function cerrarModalCliente() {
 }
 function irACliente() {
     const c = estado.ruta[clienteModalIndex];
-    if (c.lat && c.lng) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`, '_blank'); } 
+    if (c.lat && c.lng) { window.open(`http://googleusercontent.com/maps/google.com/0{c.lat},${c.lng}&travelmode=driving`, '_blank'); } 
     else { toast("⚠️ Cliente sin coordenadas"); }
 }
 let clienteMotivoIndex = null;
@@ -498,7 +497,7 @@ function irAlSiguienteCliente() {
     if (card) { card.classList.add("next"); card.scrollIntoView({ behavior: "smooth", block: "center" }); }
 }
 
-/* === NOTIFICACIONES (Sin cambios) === */
+/* === NOTIFICACIONES (Sin cambios v2.2) === */
 async function activarNotificaciones() {
     console.log("TOKEN DEBUG: === INICIO activarNotificaciones() ===");
     if (typeof firebase === 'undefined' || !messaging) { console.error("TOKEN DEBUG: 0. ❌ Firebase o messaging NO cargaron."); return; }
@@ -524,24 +523,75 @@ async function activarNotificaciones() {
 }
 
 /* === UTILIDADES Y HELPERS === */
+
+// --- NUEVAS FUNCIONES DE CLIMA ---
+function getWMOWeatherDescription(code) {
+    const codes = {
+        0: "☀️ Despejado", 1: "🌤️ Mayormente despejado",
+        2: "🌥️ Parcialmente nublado", 3: "☁️ Nublado",
+        45: "🌫️ Niebla", 48: "🌫️ Niebla (escarcha)",
+        51: "🌦️ Llovizna ligera", 53: "🌦️ Llovizna moderada",
+        55: "🌦️ Llovizna intensa", 61: "🌧️ Lluvia ligera",
+        63: "🌧️ Lluvia moderada", 65: "🌧️ Lluvia intensa",
+        80: "🌧️ Aguaceros ligeros", 81: "🌧️ Aguaceros moderados",
+        82: "🌧️ Aguaceros violentos", 95: "⛈️ Tormenta"
+    };
+    return codes[code] || "Clima";
+}
+
+async function fetchClimaString(lat, lng) {
+    if (!lat || !lng) return "Ubicación no disponible";
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Error de red de clima");
+        
+        const data = await res.json();
+        const clima = data.current_weather;
+        if (!clima) return "Datos de clima no disponibles";
+        
+        const temperatura = clima.temperature.toFixed(0); // Redondear
+        const descripcion = getWMOWeatherDescription(clima.weathercode);
+        
+        return `${descripcion}, ${temperatura}°C`;
+    } catch (err) {
+        console.warn("Error al cargar clima:", err);
+        return "No se pudo cargar el clima";
+    }
+}
+// --- FIN FUNCIONES DE CLIMA ---
+
 function calcularDistancia(lat1, lon1, lat2, lon2) {
     const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
+
 function actualizarProgreso() {
     const total = estado.ruta.length;
     const visitados = estado.ruta.filter(c => c.visitado).length;
+    const pendientes = total - visitados;
+    const ventas = estado.ruta.filter(c => c.compro).length;
     const porc = total === 0 ? 0 : (visitados / total) * 100;
     const circle = document.querySelector('.progreso-value');
-    if (circle) circle.style.strokeDashoffset = 100 - porc;
+    if (circle) {
+        const radius = circle.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        circle.style.strokeDasharray = circumference;
+        circle.style.strokeDashoffset = circumference - (porc / 100) * circumference;
+    }
     document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
-    if (porc === 100) { document.getElementById("mensajeCoach").innerText = "🎉 ¡Ruta finalizada! ¡Excelente trabajo!"; }
+    document.getElementById("ventas-texto").innerText = `${ventas} Ventas`;
+    document.getElementById("pendientes-texto").innerText = `${pendientes} Pend.`;
+    if (porc === 100) {
+        document.getElementById("mensajeCoach").innerText = "🎉 ¡Ruta finalizada! ¡Excelente trabajo!";
+    }
     if (porc === 100 && !_reporteEnviado) {
         _reporteEnviado = true;
         enviarReporteSupervisor().catch(err => { console.error("Error enviando reporte:", err); _reporteEnviado = false; });
     }
 }
+
 function toast(msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
     document.getElementById('toast-container').appendChild(t); setTimeout(() => t.remove(), 3000);
@@ -549,17 +599,15 @@ function toast(msg) {
 function btnLoading(isLoading) {
     const btn = document.getElementById("btnIngresar"); btn.disabled = isLoading; btn.innerHTML = isLoading ? "⌛..." : "INGRESAR";
 }
-// Nuevo: Funciones de Tema
 function setTheme(theme) {
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
-    // Actualizar el nombre del coach con el nuevo color
     const primerNombre = estado.nombre.split(' ')[0] || 'Vendedor';
     document.getElementById("mensajeCoach").innerHTML = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! Vamos por la ruta de hoy.`;
 }
 function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'blue'; // 'blue' es el nuevo default
+    const savedTheme = localStorage.getItem('theme') || 'blue';
     setTheme(savedTheme);
 }
 async function enviarReporteSupervisor() {
