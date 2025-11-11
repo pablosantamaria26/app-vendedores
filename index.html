@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#111319">
-    <title>App Vendedores Pro</title>
+    <meta name="theme-color" content="#111319"> <title>App Vendedores Pro</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +17,7 @@
     <link rel="apple-touch-icon" href="./ml-icon-192.png">
 </head>
 
-<body data-view-mode="list">
+<body data-view-mode="list" data-theme="blue">
 
     <div id="toast-container"></div>
 
@@ -52,9 +51,15 @@
                 <span id="mensajeCoach">Cargando ruta...</span>
             </div>
 
-            <div class="view-mode-switcher">
-                <button id="btnViewList" class="view-mode-btn active">📋 Lista</button>
-                <button id="btnViewFocus" class="view-mode-btn">🎯 Foco</button>
+            <div class="header-controls">
+                <div class="view-mode-switcher">
+                    <button id="btnViewList" class="view-mode-btn active">📋 Lista</button>
+                    <button id="btnViewFocus" class="view-mode-btn">🎯 Foco</button>
+                </div>
+                <div class="theme-switcher">
+                    <button class="theme-btn" data-theme="blue" style="--theme-color: #4CC9F0"></button>
+                    <button class="theme-btn" data-theme="violet" style="--theme-color: #7C5DFF"></button>
+                </div>
             </div>
         </header>
 
