@@ -107,23 +107,12 @@
 
 <script>
 if ("serviceWorker" in navigator) {
-  
-  // Registrar el Service Worker de Firebase con scope correcto
-  navigator.serviceWorker.register("/app-vendedores/firebase-messaging-sw.js", {
-    scope: "/app-vendedores/"
-  })
-  .then((reg) => {
-    console.log("📨 SW Firebase ACTIVO en:", reg.scope);
-  })
-  .catch((err) => {
-    console.error("❌ Error registrando SW Firebase:", err);
-  });
-
-  // (Opcional) Si más adelante agregamos caché offline, se activará el SW secundario:
-  // navigator.serviceWorker.register("/app-vendedores/service-worker.js", { scope: "/app-vendedores/" });
-
+  navigator.serviceWorker.register("./firebase-messaging-sw.js")
+    .then((reg) => console.log("✅ SW FCM registrado correctamente:", reg.scope))
+    .catch((err) => console.error("❌ Error registrando SW Firebase:", err));
 }
 </script>
+
 
 
 </body>
