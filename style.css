@@ -1,5 +1,5 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.2 - STYLE
+   APP VENDEDORES PRO v2.5 - STYLE (Modo Foco Rediseñado)
    ====================================================== */
 
 /* --- 1. Paleta de Colores y Temas --- */
@@ -69,7 +69,6 @@ body {
 @keyframes slideDownFade { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideOutCard { to { opacity: 0; transform: translateY(-50px) scale(0.9); } }
 @keyframes slideInCard { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-/* BounceIn (ahora se usa menos) */
 @keyframes bounceIn { 
     0% { transform: scale(0.9); opacity: 0; }
     70% { transform: scale(1.02); opacity: 1; }
@@ -79,7 +78,6 @@ body {
 /* --- 4. Login (DuoTono Verde/Azul) --- */
 #view-login {
     display: flex; align-items: center; justify-content: center;
-    /* Arreglo: Fondo DuoTono suave */
     background: linear-gradient(135deg, #1c3d3c, #111319);
 }
 .login-container { width: 100%; max-width: 340px; padding: 20px; animation: slideUpFade 0.6s ease-out; }
@@ -94,24 +92,17 @@ body {
     width: 100%; padding: 16px; font-size: 20px; text-align: center;
     background: var(--bg-input); border: 2px solid var(--bg-card); border-radius: var(--border-radius-sm);
     color: var(--text-primary); font-weight: 600; outline: none; transition: all 0.3s ease; letter-spacing: 4px;
-    padding-right: 50px; /* Espacio para el botón */
+    padding-right: 50px;
 }
 .input-group input:focus {
     border-color: var(--accent-solid);
     box-shadow: 0 0 0 3px var(--accent-shadow);
 }
 .btn-toggle-clave {
-    position: absolute;
-    right: 5px;
-    bottom: 5px;
-    height: 48px;
-    width: 48px;
-    font-size: 22px;
-    color: var(--text-secondary);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    z-index: 5;
+    position: absolute; right: 5px; bottom: 5px;
+    height: 48px; width: 48px; font-size: 22px;
+    color: var(--text-secondary); background: transparent;
+    border: none; cursor: pointer; z-index: 5;
 }
 
 /* --- 5. Botones --- */
@@ -132,7 +123,7 @@ body {
 }
 .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .header-top h2 { margin: 0; font-size: 22px; font-weight: 700; }
-.coach-banner { padding: 10px 0; font-size: 15px; color: var(--text-secondary); margin-bottom: 15px; }
+.coach-banner { padding: 10px 0; font-size: 15px; color: var(--text-secondary); margin-bottom: 15px; min-height: 24px; }
 #coach-nombre { font-weight: 600; color: var(--accent-solid); }
 
 .header-controls { display: flex; gap: 15px; align-items: center; }
@@ -176,13 +167,11 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .card.slide-out { animation: slideOutCard 0.4s ease-out forwards; }
-/* Corrección Bug Rebote: :active solo afecta la tarjeta tocada */
 .card:active { transform: scale(0.98); }
 
 /* ESTILO MODO LISTA */
 body[data-view-mode="list"] .card {
     padding: 16px; border-left: 6px solid var(--accent-solid);
-    /* Se quitó 'bounceIn' de aquí para arreglar el bug */
 }
 body[data-view-mode="list"] .card[data-color-index="0"] { border-color: var(--card-color-1); }
 body[data-view-mode="list"] .card[data-color-index="1"] { border-color: var(--card-color-2); }
@@ -191,17 +180,29 @@ body[data-view-mode="list"] .card[data-color-index="3"] { border-color: var(--ca
 body[data-view-mode="list"] .card-header h3 { font-size: 17px; }
 body[data-view-mode="list"] .card-body p { font-size: 13px; gap: 6px; }
 
-/* --- 8. Modo FOCO (Botones Automáticos) --- */
+/* --- 8. Modo FOCO (Rediseñado) --- */
 body[data-view-mode="focus"] .cliente-list {
     display: flex; flex-direction: column;
     justify-content: flex-start; align-items: center;
 }
 body[data-view-mode="focus"] .card {
-    padding: 20px; width: 100%; min-height: 300px;
+    padding: 24px; /* Más padding */
+    width: 100%;
+    min-height: 300px;
     animation: slideInCard 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    /* Nuevo fondo degradado más claro */
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-input));
+    border-top: 4px solid var(--accent-solid); /* Un toque de color */
+    border-left: none; /* Quitar borde de modo lista */
 }
-body[data-view-mode="focus"] .card-header h3 { font-size: 18px; }
-body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
+body[data-view-mode="focus"] .card-header h3 {
+    font-size: 22px; /* Más grande */
+    font-weight: 700;
+}
+body[data-view-mode="focus"] .card-body p {
+    font-size: 16px; /* Más grande */
+    gap: 8px;
+}
 /* Botones siempre visibles en modo foco */
 body[data-view-mode="focus"] .card-actions {
     max-height: 70px; opacity: 1;
@@ -226,6 +227,9 @@ body[data-view-mode="focus"] .card-actions {
 .card.expanded .card-actions { max-height: 70px; opacity: 1; }
 
 .card.next { border-color: var(--accent-solid); box-shadow: 0 0 0 3px var(--accent-shadow), 0 10px 30px rgba(0,0,0,0.3); }
+body[data-view-mode="focus"] .card.next {
+    border-top-color: var(--accent-solid); /* Mantener el borde superior */
+}
 .card.next::after {
     content: "SIGUIENTE"; position: absolute; top: -10px; left: 16px;
     font-size: 10px; font-weight: 900; letter-spacing: 1px;
@@ -236,8 +240,8 @@ body[data-view-mode="focus"] .card-actions {
 .ruta-completa { padding: 60px 20px; text-align: center; font-size: 18px; color: var(--text-secondary); line-height: 1.6; }
 
 .btn-action {
-    padding: 14px 10px; /* Menos padding para texto largo */
-    border: none; border-radius: var(--border-radius-sm); font-weight: 700; font-size: 13px; /* Letra más chica */
+    padding: 14px 10px;
+    border: none; border-radius: var(--border-radius-sm); font-weight: 700; font-size: 13px;
     cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
     transition: all 0.2s ease;
 }
@@ -324,12 +328,21 @@ textarea:focus { border-color: var(--accent-solid); outline: none; }
 .btn-confirm { flex: 1; background: var(--accent); color: #FFF; border: none; padding: 15px; border-radius: var(--border-radius-sm); font-weight: 700; }
 .btn-cancel { flex: 1; background: var(--bg-input); color: var(--text-primary); border: none; padding: 15px; border-radius: var(--border-radius-sm); font-weight: 700; }
 .btn-secondary { background: var(--bg-input); color: var(--text-primary); border: none; padding: 10px 14px; border-radius: var(--border-radius-sm); margin-top: 15px; width: 100%; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* Distancia (Agrandada en Modo Foco) */
 .distancia-badge {
     position: absolute; top: 16px; right: 16px;
     background: var(--bg-main); padding: 5px 10px; border-radius: 50px;
     font-size: 12px; font-weight: 600; color: var(--text-secondary);
     display: flex; align-items: center; gap: 4px;
     border: 1px solid var(--bg-input);
+    transition: all 0.3s ease;
+}
+body[data-view-mode="focus"] .distancia-badge {
+    font-size: 14px; /* Más grande */
+    padding: 8px 12px; /* Más padding */
+    top: 20px;
+    right: 20px;
 }
 
 /* --- 11. Toasts (Notificaciones) --- */
