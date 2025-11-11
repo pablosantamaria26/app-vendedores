@@ -1,27 +1,48 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.0 - STYLE
+   APP VENDEDORES PRO v2.1 - STYLE (CON TEMAS)
    ====================================================== */
 
-/* --- 1. Paleta de Colores PRO --- */
+/* --- 1. Paleta de Colores y Temas --- */
 :root {
-    --bg-main: #111319;      /* Fondo principal (azul muy oscuro) */
-    --bg-card: #1C1F26;      /* Fondo de tarjetas y header */
-    --bg-input: #2A2E39;     /* Fondo de inputs */
-    --bg-header: rgba(28, 31, 38, 0.85); /* Header con blur */
+    --bg-main: #111319;
+    --bg-card: #1C1F26;
+    --bg-input: #2A2E39;
+    --bg-header: rgba(28, 31, 38, 0.85);
     
-    --text-primary: #F0F2F5;   /* Texto principal (casi blanco) */
-    --text-secondary: #8A94A6; /* Texto gris (secundario) */
+    --text-primary: #F0F2F5;
+    --text-secondary: #8A94A6;
     
-    --accent: #7C5DFF;       /* Acento: Violeta PRO */
-    --accent-dark: #6449D6;  /* Acento (hover) */
-    --success: #33D69F;      /* Verde menta */
-    --danger: #FF5B5B;       /* Rojo suave */
-    
+    --success: #33D69F;
+    --danger: #FF5B5B;
+
+    /* Colores para tarjetas de lista */
+    --card-color-1: #4CC9F0; /* Azul */
+    --card-color-2: #70E000; /* Verde */
+    --card-color-3: #F72585; /* Rosa */
+    --card-color-4: #F59E0B; /* Naranja */
+
     --safe-bottom: env(safe-area-inset-bottom, 20px);
-    --border-radius-lg: 24px; /* Bordes de modales */
-    --border-radius-md: 16px; /* Bordes de tarjetas */
-    --border-radius-sm: 12px; /* Bordes de botones */
+    --border-radius-lg: 24px;
+    --border-radius-md: 16px;
+    --border-radius-sm: 12px;
 }
+
+/* Tema Default: Azul Duotono */
+body, body[data-theme="blue"] {
+    --accent: linear-gradient(135deg, #4CC9F0, #4895EF);
+    --accent-solid: #4CC9F0; /* Fallback sólido */
+    --accent-dark: #4895EF;
+    --accent-shadow: rgba(76, 201, 240, 0.3);
+}
+
+/* Tema Alternativo: Violeta PRO */
+body[data-theme="violet"] {
+    --accent: linear-gradient(135deg, #7C5DFF, #6449D6);
+    --accent-solid: #7C5DFF;
+    --accent-dark: #6449D6;
+    --accent-shadow: rgba(124, 93, 255, 0.3);
+}
+
 
 /* --- 2. Reset y Base --- */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -51,140 +72,90 @@ body {
     z-index: 2;
     transform: translateY(0) scale(1);
 }
-/* La vista de la app ahora es un contenedor de scroll */
-#view-app {
-    overflow-y: auto;
-}
+#view-app { overflow-y: auto; }
 
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideDownFade { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideOutCard { to { opacity: 0; transform: translateY(-50px) scale(0.9); } }
 @keyframes slideInCard { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes bounceIn { 
+    0% { transform: scale(0.9); opacity: 0; }
+    70% { transform: scale(1.02); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
 
 /* --- 4. Login (Rediseño "PRO") --- */
-#view-login {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.login-container {
-    width: 100%;
-    max-width: 340px;
-    padding: 20px;
-    animation: slideUpFade 0.6s ease-out;
-}
-.login-card {
-    background: var(--bg-card);
-    padding: 30px;
-    border-radius: var(--border-radius-lg);
-    text-align: center;
-    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3);
-}
-.login-card h2 {
-    margin: 0 0 10px 0;
-    font-size: 28px;
-    font-weight: 700;
-}
-.login-card p {
-    margin: 0 0 30px 0;
-    color: var(--text-secondary);
-    font-size: 16px;
-}
-
-.input-group {
-    text-align: left;
-    margin-bottom: 20px;
-}
-.input-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-    display: block;
-}
+#view-login { display: flex; align-items: center; justify-content: center; }
+.login-container { width: 100%; max-width: 340px; padding: 20px; animation: slideUpFade 0.6s ease-out; }
+.login-card { background: var(--bg-card); padding: 30px; border-radius: var(--border-radius-lg); text-align: center; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3); }
+.login-card h2 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; }
+.login-card p { margin: 0 0 30px 0; color: var(--text-secondary); font-size: 16px; }
+.input-group { text-align: left; margin-bottom: 20px; }
+.input-group label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block; }
 .input-group input {
-    width: 100%;
-    padding: 16px;
-    font-size: 20px;
-    text-align: center;
-    background: var(--bg-input);
-    border: 2px solid var(--bg-card);
-    border-radius: var(--border-radius-sm);
-    color: var(--text-primary);
-    font-weight: 600;
-    outline: none;
-    transition: all 0.3s ease;
-    letter-spacing: 4px;
+    width: 100%; padding: 16px; font-size: 20px; text-align: center;
+    background: var(--bg-input); border: 2px solid var(--bg-card); border-radius: var(--border-radius-sm);
+    color: var(--text-primary); font-weight: 600; outline: none; transition: all 0.3s ease; letter-spacing: 4px;
 }
 .input-group input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(124, 93, 255, 0.3);
+    border-color: var(--accent-solid);
+    box-shadow: 0 0 0 3px var(--accent-shadow);
 }
 
 /* --- 5. Botones (Rediseño "PRO") --- */
 .btn-primary {
     background: var(--accent);
-    color: #FFF;
-    border: none;
-    font-weight: 700;
-    font-size: 16px;
-    padding: 16px 24px;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    width: 100%;
-    transition: all 0.2s ease;
+    color: #FFF; border: none; font-weight: 700; font-size: 16px;
+    padding: 16px 24px; border-radius: var(--border-radius-sm);
+    cursor: pointer; width: 100%; transition: all 0.2s ease;
 }
-.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:hover { filter: brightness(1.1); }
 .btn-primary:active { transform: scale(0.97); filter: brightness(0.9); }
 .btn-primary:disabled { background: var(--bg-input); color: var(--text-secondary); cursor: not-allowed; }
 
 /* --- 6. App Header (Rediseño "PRO") --- */
 .app-header {
-    position: sticky;
-    top: 0;
-    background: var(--bg-header);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 15px 20px;
-    z-index: 10;
-    border-bottom: 1px solid var(--bg-card);
+    position: sticky; top: 0; background: var(--bg-header);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    padding: 15px 20px; z-index: 10; border-bottom: 1px solid var(--bg-card);
 }
 .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .header-top h2 { margin: 0; font-size: 22px; font-weight: 700; }
+.coach-banner { padding: 10px 0; font-size: 15px; color: var(--text-secondary); margin-bottom: 15px; }
+#coach-nombre { font-weight: 600; color: var(--accent-solid); }
 
-.coach-banner {
-    padding: 10px 0;
-    font-size: 15px;
-    color: var(--text-secondary);
-    margin-bottom: 15px;
-}
-#mensajeCoach {
-    font-weight: 500;
-    color: var(--text-primary); /* Nombre resaltado */
-}
-
-/* Nuevo: View Mode Switcher */
-.view-mode-switcher {
+/* Contenedor para los 2 switchers */
+.header-controls {
     display: flex;
-    background: var(--bg-input);
-    border-radius: 50px;
-    padding: 4px;
+    gap: 15px;
+    align-items: center;
+}
+.view-mode-switcher {
+    display: flex; background: var(--bg-input); border-radius: 50px;
+    padding: 4px; flex-grow: 1;
 }
 .view-mode-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 12px;
-    border-radius: 50px;
-    transition: all 0.3s ease;
+    flex: 1; background: transparent; border: none;
+    color: var(--text-secondary); font-size: 13px; font-weight: 600;
+    padding: 8px 12px; border-radius: 50px; transition: all 0.3s ease;
 }
 .view-mode-btn.active {
-    background: var(--bg-card);
-    color: var(--text-primary);
+    background: var(--bg-card); color: var(--text-primary);
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Theme Switcher (Nuevo) */
+.theme-switcher { display: flex; gap: 6px; }
+.theme-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--bg-input);
+    background: var(--theme-color); cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-btn.active {
+    transform: scale(1.1);
+    border-color: var(--accent-solid);
+    box-shadow: 0 0 0 2px var(--accent-solid);
 }
 
 /* Progress Ring */
@@ -192,12 +163,12 @@ body {
 .progress-ring svg { width: 40px; height: 40px; transform: rotate(-90deg); }
 .progress-ring circle { fill: none; stroke-width: 4; stroke: var(--bg-input); }
 .progress-ring .progreso-value {
-    stroke: var(--accent);
+    stroke: var(--accent-solid);
     stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 0.5s ease; stroke-linecap: round;
 }
 .progress-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
 
-/* --- 7. Lista de Clientes (Modo LISTA) --- */
+/* --- 7. Lista de Clientes (Modo LISTA - Nuevo Diseño) --- */
 .cliente-list { 
     padding: 15px; 
     padding-bottom: calc(80px + var(--safe-bottom)); 
@@ -205,7 +176,6 @@ body {
 .card {
     background: var(--bg-card);
     border-radius: var(--border-radius-md); 
-    padding: 20px; 
     margin-bottom: 12px; 
     position: relative; 
     overflow: visible;
@@ -213,69 +183,71 @@ body {
     border: 1px solid var(--bg-input);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-.card.slide-out {
-    animation: slideOutCard 0.4s ease-out forwards;
+.card.slide-out { animation: slideOutCard 0.4s ease-out forwards; }
+.card:active { /* Efecto táctil */
+    transform: scale(0.98);
 }
+
+/* --- ESTILO MODO LISTA (Inspirado en Imagen) --- */
+body[data-view-mode="list"] .card {
+    padding: 16px;
+    border-left: 6px solid var(--accent-solid); /* Borde de color */
+    animation: bounceIn 0.4s ease-out;
+}
+/* Colores rotativos para modo lista */
+body[data-view-mode="list"] .card[data-color-index="0"] { border-color: var(--card-color-1); }
+body[data-view-mode="list"] .card[data-color-index="1"] { border-color: var(--card-color-2); }
+body[data-view-mode="list"] .card[data-color-index="2"] { border-color: var(--card-color-3); }
+body[data-view-mode="list"] .card[data-color-index="3"] { border-color: var(--card-color-4); }
+
+body[data-view-mode="list"] .card-header h3 { font-size: 17px; }
+body[data-view-mode="list"] .card-body p { font-size: 13px; gap: 6px; }
 
 /* --- 8. Modo FOCO (Tarjeta Grande) --- */
 body[data-view-mode="focus"] .cliente-list {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    /* Dejamos que el card ocupe espacio, sin forzar altura de viewport */
+    display: flex; flex-direction: column;
+    justify-content: flex-start; align-items: center;
 }
 body[data-view-mode="focus"] .card {
+    padding: 20px;
     width: 100%;
-    min-height: 300px; /* Asegura un tamaño mínimo */
+    min-height: 300px;
     animation: slideInCard 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+body[data-view-mode="focus"] .card-header h3 { font-size: 18px; }
+body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 
 /* --- Estilos de Tarjeta (Compartidos) --- */
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.card-header h3 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.4; padding-right: 10px; }
+.card-header h3 { margin: 0; font-weight: 600; line-height: 1.4; padding-right: 10px; }
 .badge { font-size: 11px; padding: 5px 10px; border-radius: 50px; font-weight: 700; text-transform: uppercase; }
 .badge.pendiente { background: var(--bg-input); color: var(--text-secondary); }
 .badge.si { background: var(--success); color: #003d1c; }
 .badge.no { background: var(--danger); color: #FFF; }
 
-.card-body p { margin: 6px 0; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.card-body p { margin: 6px 0; color: var(--text-secondary); display: flex; align-items: center; }
 
 .card-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr; 
-    gap: 10px;
-    margin-top: 20px;
-    max-height: 0;
-    overflow: hidden;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; 
+    gap: 10px; margin-top: 20px; max-height: 0;
+    overflow: hidden; opacity: 0;
     transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
-    opacity: 0;
 }
-.card.expanded .card-actions {
-    max-height: 70px; 
-    opacity: 1;
-}
+.card.expanded .card-actions { max-height: 70px; opacity: 1; }
 
 /* Estilo "Siguiente" */
 .card.next {
-    border: 2px solid var(--accent);
-    box-shadow: 0 0 0 3px rgba(124, 93, 255, 0.3), 0 10px 30px rgba(0,0,0,0.3);
+    border-color: var(--accent-solid);
+    box-shadow: 0 0 0 3px var(--accent-shadow), 0 10px 30px rgba(0,0,0,0.3);
 }
 .card.next::after {
-    content: "SIGUIENTE";
-    position: absolute; top: -10px; left: 16px;
+    content: "SIGUIENTE"; position: absolute; top: -10px; left: 16px;
     font-size: 10px; font-weight: 900; letter-spacing: 1px;
-    background: var(--accent); color: #FFF;
+    background: var(--accent-solid); color: #FFF;
     padding: 4px 10px; border-radius: 999px;
 }
 
-.ruta-completa {
-    padding: 60px 20px;
-    text-align: center;
-    font-size: 18px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-}
+.ruta-completa { padding: 60px 20px; text-align: center; font-size: 18px; color: var(--text-secondary); line-height: 1.6; }
 
 /* Botones de Acción en Tarjeta */
 .btn-action {
@@ -288,17 +260,14 @@ body[data-view-mode="focus"] .card {
 .btn-noventa { background: var(--bg-input); color: var(--text-primary); }
 .btn-detalle { background: var(--bg-input); color: var(--text-primary); }
 
-
 /* --- 9. FAB (Botón Flotante) --- */
 .fab {
-    display: none; /* Oculto por JS al inicio */
-    position: fixed;
+    display: none; position: fixed;
     bottom: calc(20px + var(--safe-bottom)); right: 20px;
     width: 56px; height: 56px; border-radius: 20px;
     background: var(--accent);
-    color: white;
-    border: none; font-size: 24px;
-    box-shadow: 0 10px 25px -5px rgba(124, 93, 255, 0.3); 
+    color: white; border: none; font-size: 24px;
+    box-shadow: 0 10px 25px -5px var(--accent-shadow); 
     z-index: 999;
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -315,6 +284,18 @@ body[data-view-mode="focus"] .card {
 .modal-header h3 { margin: 0; }
 .btn-icon { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; }
 #map { flex: 1; z-index: 5; }
+
+/* Nombres en el Mapa (Nuevo) */
+.map-tooltip {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
 
 /* Bottom Sheet (Motivos) */
 .bottom-sheet-container { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; justify-content: center; }
@@ -338,13 +319,13 @@ body[data-view-mode="focus"] .card {
     padding: 10px 16px; border-radius: 50px; font-size: 14px; font-weight: 500; transition: all 0.2s;
 }
 .chip.selected { 
-    background: var(--accent); 
+    background: var(--accent-solid); 
     color: #FFF; 
     font-weight: 600; 
-    border-color: var(--accent); 
+    border-color: var(--accent-solid); 
 }
 textarea { width: 100%; background: var(--bg-input); border: 2px solid var(--bg-input); border-radius: var(--border-radius-sm); padding: 12px; color: white; font-family: inherit; resize: none; }
-textarea:focus { border-color: var(--accent); outline: none; }
+textarea:focus { border-color: var(--accent-solid); outline: none; }
 
 /* Modal (Detalle Cliente) */
 .modal-overlay {
@@ -370,7 +351,7 @@ textarea:focus { border-color: var(--accent); outline: none; }
     background: var(--bg-main); padding: 15px; border-radius: var(--border-radius-sm);
     margin: 20px 0; border: 1px solid var(--bg-input);
 }
-.ultimo-pedido-box h4 { margin: 0 0 10px 0; color: var(--accent); }
+.ultimo-pedido-box h4 { margin: 0 0 10px 0; color: var(--accent-solid); }
 .ultimo-pedido-box p { margin: 0; font-style: italic; color: var(--text-secondary); white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
 
 .modal-actions-row { display: flex; gap: 15px; margin-top: 25px; }
