@@ -67,16 +67,79 @@ function initFirebase() {
     messaging = firebase.messaging();
 }
 
-/* === LÓGICA DE LOGIN (CON CLIMA) === */
+
+
+/* === LÓGICA DE LOGIN (CON CLIMA v2.4) === */
 
 function mostrarLoadingToast() {
     const msg = MENSAJES_MOTIVACIONALES[Math.floor(Math.random() * MENSAJES_MOTIVACIONALES.length)];
     document.getElementById("loading-toast-msg").innerText = msg;
-    document.getElementById("loading-toast-weather").innerText = "Consultando GPS y Clima... 🛰️";
+    document.getElementById("loading-toast-weather").innerText = "Cargando ruta... 🛰️";
     document.getElementById("loading-toast").classList.remove("hidden");
 }
+
 function ocultarLoadingToast() {
+    // Se quita el setTimeout. Se oculta al instante cuando la app está lista.
     document.getElementById("loading-toast").classList.add("hidden");
+}
+
+async function login() {
+    const clave = document.getElementById("claveInput").value.trim();
+    if (clave.length < 4) return toast("⚠️ Clave debe tener 4 dígitos");
+
+    mostrarLoadingToast();
+    btnLoading(true);
+    
+    try {
+        // Iniciar AMBAS peticiones en paralelo
+        const rutaPromise = fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
+        const ubicacionPromise = obtenerUbicacion(); // Esto solo obtiene coords
+
+        // Esperar a que la ubicación termine (necesaria para el clima)
+        await ubicacionPromise;
+
+        // Si tenemos ubicación, pedir el clima (sin esperar a que termine)
+        if (estado.ubicacionActual) {
+            fetchClimaString(estado.ubicacionActual.lat, estado.ubicacionActual.lng)
+                .then(climaStr => {
+                    // Actualizar el toast en cuanto llegue el clima
+                    document.getElementById("loading-toast-weather").innerText = climaStr;
+                });
+        } else {
+            document.getElementById("loading-toast-weather").innerText = "Ubicación no detectada";
+        }
+
+        // Esperar a que la RUTA (lo crítico) termine
+        const rutaResponse = await rutaPromise;
+        const data = await rutaResponse.json();
+
+        if (!rutaResponse.ok || !data.ok) {
+            throw new Error(data.error || "Clave incorrecta o error de servidor");
+        }
+
+        // Configurar Estado (¡AHORA data.vendedor SÍ EXISTE!)
+        estado.vendedor = clave.padStart(4, "0");
+        estado.nombre = data.vendedor || "Vendedor"; // <-- Arreglado por el GAS
+        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
+        
+        localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
+        localStorage.setItem("vendedor_actual", estado.vendedor);
+        localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
+        
+        // Iniciar la app
+        iniciarApp();
+        // Ocultar el toast DESPUÉS de que la app esté lista
+        ocultarLoadingToast();
+        
+        activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e));
+
+    } catch (e) {
+        console.error(e);
+        toast("❌ Error: " + e.message);
+        ocultarLoadingToast(); // Ocultar si hay error
+    } finally {
+        btnLoading(false);
+    }
 }
 
 function handleClaveInput(e) {
@@ -97,63 +160,7 @@ function toggleClave() {
     }
 }
 
-async function login() {
-    const clave = document.getElementById("claveInput").value.trim();
-    if (clave.length < 4) return toast("⚠️ Clave debe tener 4 dígitos");
 
-    mostrarLoadingToast();
-    btnLoading(true);
-    
-    try {
-        // 1. Obtener ubicación PRIMERO
-        await obtenerUbicacion();
-        
-        // 2. Cargar Clima (en paralelo)
-        let climaPromise;
-        if (estado.ubicacionActual) {
-            climaPromise = fetchClimaString(estado.ubicacionActual.lat, estado.ubicacionActual.lng)
-                .then(climaStr => {
-                    document.getElementById("loading-toast-weather").innerText = climaStr;
-                });
-        } else {
-             document.getElementById("loading-toast-weather").innerText = "Ubicación no detectada";
-             climaPromise = Promise.resolve(); // Resuelve inmediatamente
-        }
-
-        // 3. Cargar Ruta (en paralelo)
-        const rutaPromise = fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
-
-        // 4. Esperar que AMBAS terminen
-        const [rutaResponse] = await Promise.all([rutaPromise, climaPromise]);
-
-        // 5. Procesar Ruta
-        const data = await rutaResponse.json();
-        if (!rutaResponse.ok || !data.ok) {
-            throw new Error(data.error || "Clave incorrecta o error de servidor");
-        }
-
-        // 6. Configurar Estado
-        estado.vendedor = clave.padStart(4, "0");
-        estado.nombre = data.vendedor || "Vendedor";
-        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
-        
-        localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
-        localStorage.setItem("vendedor_actual", estado.vendedor);
-        localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
-        
-        iniciarApp();
-        activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e));
-
-    } catch (e) {
-        console.error(e);
-        toast("❌ Error: " + e.message);
-        ocultarLoadingToast(); // Ocultar si hay error
-    } finally {
-        // Ocultar toast (darle tiempo a la anim. de check)
-        setTimeout(ocultarLoadingToast, 1500); // 1.5 seg
-        btnLoading(false);
-    }
-}
 
 function checkSesion() {
     try {
