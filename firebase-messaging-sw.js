@@ -1,24 +1,25 @@
 // =================================================
 // 🔔 Service Worker FCM - App Vendedores Inteligente
+// VERSIÓN v5.2 - "SW Inteligente"
 // =================================================
 
 self.addEventListener("install", () => {
-  console.log("⚡ Nueva versión del Service Worker instalada");
+  console.log("⚡ Nueva versión del Service Worker (v5.2) instalada");
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("♻️ Activando SW y reclamando clientes...");
+  console.log("♻️ Activando SW (v5.2) y reclamando clientes...");
   event.waitUntil(clients.claim());
 });
 
 // --------------------------------------------------
-// 📦 Librerías Firebase
+// 📦 Librerías Firebase (Sin cambios)
 // --------------------------------------------------
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-// ✅ Inicializar Firebase
+// ✅ Inicializar Firebase (Sin cambios)
 firebase.initializeApp({
   apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
   authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -31,18 +32,43 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // --------------------------------------------------
-// 📩 Notificaciones en segundo plano (app cerrada o minimizada)
+// 📩 LÓGICA DE MENSAJERÍA (v5.2)
 // --------------------------------------------------
-messaging.onBackgroundMessage((payload) => {
-  console.log("📨 Notificación en background:", payload);
+messaging.onBackgroundMessage(async (payload) => { // <-- Se añade "async"
+  console.log("📨 Notificación en background (v5.2):", payload);
 
-  // Soporte para mensajes personalizados hacia cada vendedor
+  // --- ¡INICIO DE LÓGICA INTELIGENTE v5.2! ---
+  // Revisa si la app ya está abierta y visible
+  const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+  
+  const isAppVisible = windowClients.some(client => 
+      client.visibilityState === 'visible' && client.focused
+  );
+
+  if (isAppVisible) {
+      // ----
+      // APP ESTÁ ABIERTA Y VISIBLE
+      // ----
+      console.log("SW v5.2: App está visible. Dejando que app.js (onMessage) lo maneje.");
+      // No hacemos NADA. Devolvemos null.
+      // Esto permite que el "oyente" en app.js (messaging.onMessage)
+      // reciba el mensaje y muestre el toast de colores.
+      return null; 
+  }
+  // --- FIN DE LÓGICA INTELIGENTE ---
+
+  // ----
+  // APP ESTÁ CERRADA O EN SEGUNDO PLANO
+  // ----
+  console.log("SW v5.2: App CERRADA. Mostrando notificación push (lógica original).");
+  
+  // Usamos tu lógica original para mostrar la notificación
   const vendedor = payload.data?.vendedor ? ` — ${payload.data.vendedor}` : "";
-
   const titulo = (payload.notification?.title || "Nueva alerta") + vendedor;
   const cuerpo = payload.notification?.body || "";
 
-  self.registration.showNotification(titulo, {
+  // Devolvemos la promesa para mostrar la notificación
+  return self.registration.showNotification(titulo, {
     body: cuerpo,
     icon: "/ml-icon-192.png",
     badge: "/ml-icon-192.png",
@@ -52,8 +78,9 @@ messaging.onBackgroundMessage((payload) => {
   });
 });
 
+
 // --------------------------------------------------
-// 🖱️ Click → Abrir / Enfocar App
+// 🖱️ Click → Abrir / Enfocar App (Tu código original, sin cambios)
 // --------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
