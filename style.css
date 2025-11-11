@@ -79,8 +79,8 @@ body {
 /* --- 4. Login (DuoTono Verde/Azul) --- */
 #view-login {
     display: flex; align-items: center; justify-content: center;
-    /* Nuevo Fondo DuoTono */
-    background: linear-gradient(45deg, #111319, #111319 50%, #1c3d3c 100%);
+    /* Arreglo: Fondo DuoTono suave */
+    background: linear-gradient(135deg, #1c3d3c, #111319);
 }
 .login-container { width: 100%; max-width: 340px; padding: 20px; animation: slideUpFade 0.6s ease-out; }
 .login-card { background: var(--bg-card); padding: 30px; border-radius: var(--border-radius-lg); text-align: center; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3); }
@@ -341,7 +341,7 @@ textarea:focus { border-color: var(--accent-solid); outline: none; }
     border: 1px solid var(--bg-input); font-weight: 500;
 }
 
-/* --- 12. Loading Toast (Nuevo) --- */
+/* --- 12. Loading Toast (Arreglado) --- */
 #loading-toast {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -372,46 +372,18 @@ textarea:focus { border-color: var(--accent-solid); outline: none; }
 .loading-toast-card span {
     font-size: 14px;
     color: var(--text-secondary);
+    transition: all 0.3s ease;
 }
 
-/* Animación Check (Tilde) */
-.check-icon {
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    background: var(--success);
+/* Animación Loader (Reemplaza el Tilde) */
+.loader-icon {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--accent-solid);
     margin: 0 auto;
-    position: relative;
-    transform: scale(0);
-    animation: check-pop-in 0.3s ease-out 0.1s forwards;
+    animation: pulse-loader 1.2s infinite ease-in-out;
 }
-@keyframes check-pop-in {
-    to { transform: scale(1); }
-}
-.check-stem {
-    position: absolute;
-    width: 5px; height: 30px;
-    background: #FFF;
-    left: 28px; top: 15px;
-    transform: rotate(45deg);
-    transform-origin: center;
-    animation: check-stem-grow 0.3s ease-out 0.4s forwards;
-    opacity: 0;
-}
-@keyframes check-stem-grow {
-    from { height: 0; opacity: 1; }
-    to { height: 30px; opacity: 1; }
-}
-.check-kick {
-    position: absolute;
-    width: 5px; height: 15px;
-    background: #FFF;
-    left: 20px; top: 30px;
-    transform: rotate(-45deg);
-    transform-origin: center;
-    animation: check-kick-grow 0.3s ease-out 0.3s forwards;
-    opacity: 0;
-}
-@keyframes check-kick-grow {
-    from { height: 0; opacity: 1; }
-    to { height: 15px; opacity: 1; }
+@keyframes pulse-loader {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    50% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.7; }
 }
