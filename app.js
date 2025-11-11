@@ -459,6 +459,28 @@ async function activarNotificaciones() {
     }
 }
 
+function irAlSiguienteCliente() {
+    const index = estado.ruta.findIndex(c => !c.visitado);
+    if (index === -1) return; // Ruta completa
+
+    const card = document.querySelector(`.card[data-i="${index}"]`);
+    if (!card) return;
+
+    // Scroll suave
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Abrir botones automáticamente
+    card.classList.add("expanded");
+
+    // Cerrar otros
+    document.querySelectorAll('.card.expanded').forEach(c => {
+        if (c !== card) c.classList.remove('expanded');
+    });
+
+    toast(`➡️ Próximo: ${estado.ruta[index].nombre}`);
+}
+
+
 
 /* === MAPA & UTILIDADES === */
 function toggleMapa() {
