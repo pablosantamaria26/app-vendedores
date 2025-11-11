@@ -96,14 +96,7 @@ function checkSesion() {
     } catch (e) { localStorage.removeItem("vendedor_sesion"); }
 }
 
-function iniciarApp() {
-    document.getElementById("view-login").classList.remove("active");
-    void document.getElementById("view-app").offsetWidth;
-    document.getElementById("view-app").classList.add("active");
-    document.getElementById("vendedorNombre").innerText = estado.nombre;
-    renderRuta();
-    actualizarProgreso();
-}
+
 
 function obtenerUbicacion() {
     return new Promise((resolve) => {
