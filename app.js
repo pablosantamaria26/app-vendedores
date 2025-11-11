@@ -183,18 +183,37 @@ function checkSesion() {
     }
 }
 
-/* === INICIO DE APP Y VISTAS (Sin cambios) === */
+/* === INICIO DE APP Y VISTAS (Coach Inteligente v2.5) === */
 function iniciarApp() {
     document.getElementById("view-login").classList.remove("active");
     void document.getElementById("view-app").offsetWidth;
     document.getElementById("view-app").classList.add("active");
+    
     const primerNombre = estado.nombre.split(' ')[0];
     document.getElementById("vendedorNombre").innerText = estado.nombre;
-    document.getElementById("mensajeCoach").innerHTML = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! Vamos por la ruta de hoy.`;
+
+    // --- NUEVO: Coach "Inteligente" (Fase 1) ---
+    const totalClientes = estado.ruta.length;
+    let coachMsg = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! `;
+    
+    if (totalClientes === 0) {
+        coachMsg += "Parece que no hay clientes para hoy. ¡Día libre!";
+    } else if (totalClientes <= 5) {
+        coachMsg += `Ruta corta de ${totalClientes} clientes. ¡Vamos a hacerla perfecta!`;
+    } else if (totalClientes <= 15) {
+        coachMsg += `Hoy tenemos ${totalClientes} clientes. ¡Una ruta sólida, a completarla!`;
+    } else {
+        coachMsg += `Día movido con ${totalClientes} clientes. ¡Mucha suerte, a organizarse bien!`;
+    }
+    document.getElementById("mensajeCoach").innerHTML = coachMsg;
+    // --- FIN Coach ---
+    
     document.getElementById("fabMapa").style.display = 'block';
+    
     document.body.setAttribute("data-view-mode", estado.viewMode);
     document.getElementById("btnViewList").classList.toggle("active", estado.viewMode === "list");
     document.getElementById("btnViewFocus").classList.toggle("active", estado.viewMode === "focus");
+
     renderRuta();
     actualizarProgreso();
     iniciarSeguimientoGPS();
