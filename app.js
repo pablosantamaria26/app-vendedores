@@ -309,44 +309,40 @@ function irACliente() {
 }
 
 
-// ✅ REGISTRAR VISITA (robusta y con todos los datos)
+// ✅ REGISTRAR VISITA (robusta, con hora y GPS, y siempre por vendedor CÓDIGO 0001)
 async function registrarVenta(index, compro, motivo = "") {
   const cliente = estado.ruta[index];
   if (!cliente) return;
 
-  // 🚫 Anti-doble click
+  // Anti-doble click
   if (cliente._enviando) return;
   cliente._enviando = true;
 
-  // ⏱️ Marcas locales
+  // Marcas locales
   const ahora = new Date();
   cliente.visitado = true;
   cliente.compro = !!compro;
   cliente.motivo = compro ? "" : (motivo || "");
   cliente.hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 
-  // 🌎 Ubicación (si está disponible)
+  // Ubicación (si está disponible)
   const lat = estado.ubicacionActual?.lat ?? "";
   const lng = estado.ubicacionActual?.lng ?? "";
 
-  // 🔄 Refrescar UI
+  // Refrescar UI
   renderRuta();
   actualizarProgreso();
 
   try {
-    // 🛰️ Enviar a la API
     const payload = {
       accion: "registrarVisita",
-      // 👇 IMPORTANTE: se envía el CÓDIGO del vendedor (0001, 0002…)
-      vendedor: estado.vendedor,
-      // 👇 Opcional: nombre visible (si luego querés usarlo en reportes)
-      vendedorNombre: estado.nombre,
+      vendedor: (estado.vendedor || "").toString().padStart(4, "0"), // 👈 código 0001
+      vendedorNombre: estado.nombre || "",                            // opcional, útil para reportes
       cliente: cliente.numeroCliente,
       compro: !!compro,
       motivo: cliente.motivo || "",
       notas: cliente.notas || "",
-      lat, 
-      lng,
+      lat, lng,
       ts: ahora.toISOString(),
       app: "App Vendedores Pro"
     };
@@ -361,13 +357,12 @@ async function registrarVenta(index, compro, motivo = "") {
   } catch (err) {
     console.warn("registrarVenta error:", err);
     toast("⚠️ Sin conexión: queda pendiente de enviar");
-    // Si querés: acá podés pushear `payload` a un array en localStorage para sync offline.
   } finally {
     cliente._enviando = false;
   }
 
-  // ➡️ Ir al siguiente pendiente
-  irAlSiguienteCliente();
+  // Avanzar al siguiente
+  irAlSiguienteCliente?.();
 }
 
 // 👉 Helper para enfocarse/scroll al próximo cliente pendiente
