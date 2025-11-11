@@ -288,73 +288,87 @@ function confirmarMotivo() {
 }
 
 async function activarNotificaciones() {
-    // 1. Check: ¿La librería Firebase/Messaging está lista?
+    console.log("TOKEN DEBUG: === INICIO activarNotificaciones() ===");
+
+    // 0) Validación base
     if (typeof firebase === 'undefined' || !messaging) {
-        console.error("TOKEN DEBUG: 0. ¡ERROR CRÍTICO! Las librerías de Firebase NO cargaron o 'messaging' es null. Revisa index.html.");
+        console.error("TOKEN DEBUG: 0. ❌ Firebase o messaging NO cargaron. Revisa index.html y el orden de scripts.");
         return;
     }
-    
+
     const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
 
     try {
-        console.log("TOKEN DEBUG: 1. Pidiendo permiso de Notificación al navegador...");
+        console.log("TOKEN DEBUG: 1. Solicitando permiso de notificaciones...");
         const permission = await Notification.requestPermission();
 
-        if (permission === "granted") {
-            console.log("TOKEN DEBUG: 2. Permiso concedido. Intentando obtener Token (VAPID)...");
-            
-            // 2. Intento de obtención del Token
-            const token = await messaging.getToken({ vapidKey: VAPID_KEY }).catch((err) => {
-                // Esto suele ser el punto de falla por Service Worker o VAPID.
-                console.error("TOKEN DEBUG: 3. ERROR en getToken() o SW: ", err); 
-                return null;
-            });
-
-            if (token) {
-                console.log("TOKEN DEBUG: 4. Token generado exitosamente. Valor: " + token.substring(0, 30) + "...");
-                
-                const tokenGuardado = localStorage.getItem("fcm_token_enviado");
-                
-                // 3. Check: ¿Necesitamos enviar a la API?
-                if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
-                    
-                    console.log("TOKEN DEBUG: 5. Token NUEVO. Iniciando fetch POST a la API...");
-                    
-                    // 4. Envío a la API (Google Sheets)
-                    const res = await fetch(API, {
-                        method: "POST",
-                        body: JSON.stringify({ 
-                            accion: "registrarToken", 
-                            vendedor: estado.vendedor, 
-                            token: token,
-                            dispositivo: navigator.userAgent
-                        })
-                    });
-                    
-                    if (res.ok) {
-                        localStorage.setItem("fcm_token_enviado", token);
-                        localStorage.setItem("vendedor_actual", estado.vendedor);
-                        toast("🔔 Token Registrado con Éxito");
-                        console.log("TOKEN DEBUG: 6. FETCH EXITOSO. Token guardado en localStorage y Sheet.");
-                    } else {
-                        console.error("TOKEN DEBUG: 6. ERROR FETCH: La API respondió con fallo. Revisa el Logger de Google Script.");
-                        const errorData = await res.json();
-                        console.error("Respuesta de API:", errorData);
-                    }
-                    
-                } else {
-                    console.log("TOKEN DEBUG: 5. Token SÍ duplicado, no se envía. (OK)");
-                }
-            } else {
-                 console.log("TOKEN DEBUG: 4. Token es NULL, no se continúa. (Fallo en la generación)");
-            }
-        } else {
-             console.log("TOKEN DEBUG: 2. Permiso denegado por el usuario. No se genera token.");
+        if (permission !== "granted") {
+            console.warn("TOKEN DEBUG: 2. ❌ Permiso DENEGADO. No se genera token.");
+            return;
         }
-    } catch (e) {
-        console.error("TOKEN DEBUG: ERROR GENERAL:", e);
+
+        console.log("TOKEN DEBUG: 2. ✅ Permiso concedido.");
+
+        // 🚨 Punto clave: aseguramos ServiceWorker listo antes de pedir token
+        console.log("TOKEN DEBUG: 3. Esperando a que ServiceWorker esté listo...");
+        const reg = await navigator.serviceWorker.ready;
+        console.log("TOKEN DEBUG: 3A. ✅ ServiceWorker listo:", reg.scope);
+
+        // ✅ getToken CORRECTO
+        console.log("TOKEN DEBUG: 4. Intentando generar token con VAPID + SW...");
+        const token = await messaging.getToken({
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: reg
+        }).catch(err => {
+            console.error("TOKEN DEBUG: 4A. ❌ ERROR EN getToken():", err);
+            return null;
+        });
+
+        if (!token) {
+            console.error("TOKEN DEBUG: 4B. ❌ Token NULL. No continúa.");
+            return;
+        }
+
+        console.log("TOKEN DEBUG: 5. ✅ Token generado:", token.substring(0, 35) + "...");
+
+        // Ver si ya estaba guardado
+        const tokenPrevio = localStorage.getItem("fcm_token_enviado");
+        const vendedorPrevio = localStorage.getItem("vendedor_actual");
+
+        if (token === tokenPrevio && estado.vendedor === vendedorPrevio) {
+            console.log("TOKEN DEBUG: 6. Token repetido → No se envía. (OK)");
+            return;
+        }
+
+        console.log("TOKEN DEBUG: 6. Token NUEVO → enviando a servidor...");
+
+        const res = await fetch(API, {
+            method: "POST",
+            body: JSON.stringify({
+                accion: "registrarToken",
+                vendedor: estado.vendedor,
+                token: token,
+                dispositivo: navigator.userAgent
+            })
+        });
+
+        if (!res.ok) {
+            console.error("TOKEN DEBUG: 7. ❌ Error guardando token en API:", await res.text());
+            return;
+        }
+
+        console.log("TOKEN DEBUG: 7. ✅ Token guardado en servidor.");
+        localStorage.setItem("fcm_token_enviado", token);
+        localStorage.setItem("vendedor_actual", estado.vendedor);
+
+        toast("🔔 Notificaciones activadas");
+        console.log("TOKEN DEBUG: === FIN activarNotificaciones() ===");
+
+    } catch (err) {
+        console.error("TOKEN DEBUG: ❌ ERROR GENERAL activarNotificaciones():", err);
     }
 }
+
 
 /* === MAPA & UTILIDADES === */
 function toggleMapa() {
