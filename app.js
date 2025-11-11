@@ -121,17 +121,16 @@ function iniciarSeguimientoGPS() {
     if (!navigator.geolocation) return;
 
     gpsWatcher = navigator.geolocation.watchPosition(
-         (pos) => {
-    estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    ordenarRutaPorDistancia();   // ← 🔥 Ordena automáticamente en tiempo real
-    verificarProximidadClientes();
-},
-
+        (pos) => {
+            estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            ordenarRutaPorDistancia();   // ← Ordena automáticamente en tiempo real
+            verificarProximidadClientes();
         },
         (err) => console.warn("GPS error:", err),
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 7000 }
     );
 }
+
 
 function verificarProximidadClientes() {
     if (!estado.ubicacionActual) return;
