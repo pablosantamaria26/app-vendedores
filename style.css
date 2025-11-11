@@ -276,3 +276,28 @@ body[data-theme='dark'] .ultimo-pedido-box h4 { color: #ffffff; }
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes slideDownFade { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* === RESALTADO DEL SIGUIENTE CLIENTE === */
+.card.next {
+    transform: scale(1.05);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 20px rgba(76, 201, 240, 0.45);
+}
+
+body[data-theme='campeon'] .card.next { box-shadow: 0 0 20px rgba(247, 37, 133, 0.45); }
+body[data-theme='actitud'] .card.next { box-shadow: 0 0 20px rgba(112, 224, 0, 0.45); }
+body[data-theme='dark'] .card.next { box-shadow: 0 0 20px rgba(255,255,255,0.45); }
+
+.next-label {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    background: var(--accent);
+    padding: 6px 14px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--bg-main);
+    transform: rotate(-4deg);
+}
+
