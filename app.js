@@ -313,18 +313,36 @@ function irACliente() {
 }
 
 
-/* === MOTIVO NO COMPRA Y ACCIONES === */
 async function registrarVenta(index, compro, motivo = "") {
     const cliente = estado.ruta[index];
-    cliente.visitado = true; cliente.compro = compro; cliente.motivo = motivo;
-    renderRuta(); actualizarProgreso();
-    if (compro) toast("🎉 ¡Venta registrada!");
+    cliente.visitado = true;
+    cliente.compro = compro;
+    cliente.motivo = motivo || "";
 
+    // Guardar en servidor
     fetch(API, {
         method: "POST",
-        body: JSON.stringify({ accion: "registrarVisita", vendedor: estado.nombre, cliente: cliente.numeroCliente, compro, motivo })
+        body: JSON.stringify({
+            accion: "registrarVisita",
+            vendedor: estado.nombre,
+            cliente: cliente.numeroCliente,
+            compro,
+            motivo
+        })
     }).catch(() => toast("⚠️ Guardado local"));
+
+    toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
+
+    // ✅ Re-render + calcular siguiente
+    renderRuta();
+    actualizarProgreso();
+
+    // ✅ Avanzar al siguiente cliente automáticamente
+    setTimeout(() => {
+        irAlSiguienteCliente();
+    }, 200);
 }
+
 
 let clienteMotivoIndex = null;
 function abrirMotivo(index) {
