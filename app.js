@@ -287,26 +287,41 @@ function confirmarMotivo() {
     cerrarMotivo();
 }
 
-/* === NOTIFICACIONES PUSH === */
 async function activarNotificaciones() {
-    if (!messaging) return;
+    // 1. Check: ¿La librería Firebase/Messaging está lista?
+    if (typeof firebase === 'undefined' || !messaging) {
+        console.error("TOKEN DEBUG: 0. ¡ERROR CRÍTICO! Las librerías de Firebase NO cargaron o 'messaging' es null. Revisa index.html.");
+        return;
+    }
     
     const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
 
     try {
+        console.log("TOKEN DEBUG: 1. Pidiendo permiso de Notificación al navegador...");
         const permission = await Notification.requestPermission();
 
         if (permission === "granted") {
+            console.log("TOKEN DEBUG: 2. Permiso concedido. Intentando obtener Token (VAPID)...");
+            
+            // 2. Intento de obtención del Token
             const token = await messaging.getToken({ vapidKey: VAPID_KEY }).catch((err) => {
-                console.error("ERROR: Fallo getToken() con VAPID:", err);
+                // Esto suele ser el punto de falla por Service Worker o VAPID.
+                console.error("TOKEN DEBUG: 3. ERROR en getToken() o SW: ", err); 
                 return null;
             });
 
             if (token) {
+                console.log("TOKEN DEBUG: 4. Token generado exitosamente. Valor: " + token.substring(0, 30) + "...");
+                
                 const tokenGuardado = localStorage.getItem("fcm_token_enviado");
                 
+                // 3. Check: ¿Necesitamos enviar a la API?
                 if (token !== tokenGuardado || estado.vendedor !== localStorage.getItem("vendedor_actual")) {
-                    await fetch(API, {
+                    
+                    console.log("TOKEN DEBUG: 5. Token NUEVO. Iniciando fetch POST a la API...");
+                    
+                    // 4. Envío a la API (Google Sheets)
+                    const res = await fetch(API, {
                         method: "POST",
                         body: JSON.stringify({ 
                             accion: "registrarToken", 
@@ -316,14 +331,28 @@ async function activarNotificaciones() {
                         })
                     });
                     
-                    localStorage.setItem("fcm_token_enviado", token);
-                    localStorage.setItem("vendedor_actual", estado.vendedor);
-                    toast("🔔 Notificaciones activadas");
+                    if (res.ok) {
+                        localStorage.setItem("fcm_token_enviado", token);
+                        localStorage.setItem("vendedor_actual", estado.vendedor);
+                        toast("🔔 Token Registrado con Éxito");
+                        console.log("TOKEN DEBUG: 6. FETCH EXITOSO. Token guardado en localStorage y Sheet.");
+                    } else {
+                        console.error("TOKEN DEBUG: 6. ERROR FETCH: La API respondió con fallo. Revisa el Logger de Google Script.");
+                        const errorData = await res.json();
+                        console.error("Respuesta de API:", errorData);
+                    }
+                    
+                } else {
+                    console.log("TOKEN DEBUG: 5. Token SÍ duplicado, no se envía. (OK)");
                 }
+            } else {
+                 console.log("TOKEN DEBUG: 4. Token es NULL, no se continúa. (Fallo en la generación)");
             }
+        } else {
+             console.log("TOKEN DEBUG: 2. Permiso denegado por el usuario. No se genera token.");
         }
     } catch (e) {
-        console.warn("Error general en activación de notificaciones:", e);
+        console.error("TOKEN DEBUG: ERROR GENERAL:", e);
     }
 }
 
