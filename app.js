@@ -92,8 +92,29 @@ async function login() {
 function checkSesion() {
     try {
         const sesion = JSON.parse(localStorage.getItem("vendedor_sesion"));
-        if (sesion && sesion.clave) document.getElementById("claveInput").value = sesion.clave;
-    } catch (e) { localStorage.removeItem("vendedor_sesion"); }
+        if (sesion && sesion.clave) {
+            // Restaurar datos guardados
+            const rutaGuardada = JSON.parse(localStorage.getItem(`ruta_${sesion.clave}`));
+            if (rutaGuardada) {
+                console.log("Restaurando sesión y ruta para " + sesion.clave);
+                estado.vendedor = sesion.clave;
+                estado.nombre = sesion.nombre;
+                estado.ruta = rutaGuardada;
+
+                // Saltar login e iniciar app
+                iniciarApp(); 
+                activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e));
+                return; // Importante: salir de la función
+            }
+        }
+        // Si no hay sesión o no hay ruta, mostrar login
+        console.log("Mostrando login.");
+        document.getElementById("view-login").classList.add("active");
+        
+    } catch (e) {
+        localStorage.clear(); // Limpiar todo si hay error
+        document.getElementById("view-login").classList.add("active");
+    }
 }
 
 
