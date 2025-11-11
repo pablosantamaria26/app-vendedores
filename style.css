@@ -312,4 +312,10 @@ body[data-theme='dark'] .ultimo-pedido-box h4 { color: #ffffff; }
 
 .next-label { display:none; } /* (por si ya lo tenías) */
 
-
+.ruta-completa {
+    padding: 60px 20px;
+    text-align: center;
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
