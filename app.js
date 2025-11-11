@@ -1,4 +1,7 @@
-/* === CONFIG === */
+/* ======================================================
+   APP VENDEDORES PRO v2.0 - LÓGICA
+   ====================================================== */
+
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
 let estado = {
@@ -6,18 +9,21 @@ let estado = {
     nombre: "",
     ruta: [],
     motivoSeleccionado: "",
-    ubicacionActual: null
+    ubicacionActual: null,
+    viewMode: "list" // Nuevo: "list" o "focus"
 };
 let map, markers;
+let gpsWatcher = null;
+let clientesAvisados = new Set();
+let _reporteEnviado = false;
 
-/* === INICIO SEGURO & EVENTOS GLOBALES === */
+/* === INICIO & EVENTOS GLOBALES === */
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🚀 App iniciada");
+    console.log("🚀 App iniciada (v2.0 PRO)");
     
-    // Intentamos iniciar Firebase (si los scripts cargaron)
     try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
     
-    checkSesion();
+    checkSesion(); // <-- Ahora maneja el auto-login
     initTheme();
 
     // Event Listeners
@@ -36,12 +42,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
     document.getElementById("motivoOptions").addEventListener("click", manejarMotivoChips);
 
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.addEventListener("click", () => setTheme(btn.dataset.theme));
-    });
+    // Nuevo: Listeners de Modo de Vista
+    document.getElementById("btnViewList").addEventListener("click", () => setViewMode("list"));
+    document.getElementById("btnViewFocus").addEventListener("click", () => setViewMode("focus"));
 });
 
-/* === FIREBASE === */
+/* === FIREBASE (Sin cambios) === */
 let messaging;
 function initFirebase() {
     if (typeof firebase === 'undefined') return;
@@ -56,31 +62,32 @@ function initFirebase() {
     messaging = firebase.messaging();
 }
 
-/* === FUNCIONES PRINCIPALES === */
+/* === LÓGICA DE SESIÓN Y LOGIN (CON MEMORIA) === */
 async function login() {
     const clave = document.getElementById("claveInput").value.trim();
     if (!clave) return toast("⚠️ Ingresa tu clave");
 
     btnLoading(true);
     try {
-        await obtenerUbicacion(); // Obtener ubicación para cálculo de distancia
+        await obtenerUbicacion();
         
         const res = await fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
         const data = await res.json();
 
         if (!data.ok) throw new Error(data.error || "Clave incorrecta o error de servidor");
 
-        estado.vendedor = clave.padStart(4, "0");   // Siempre 4 dígitos: 0001, 0002...
+        estado.vendedor = clave.padStart(4, "0");
         estado.nombre = data.vendedor || "Vendedor";
+        // Añadimos "expanded" para controlar el acordeón
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
         
+        // Guardar sesión y ruta en localStorage
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
         localStorage.setItem("vendedor_actual", estado.vendedor);
         localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
-
         
         iniciarApp();
-        activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e)); // Activación de Notificaciones
+        activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e));
 
     } catch (e) {
         console.error(e);
@@ -102,23 +109,242 @@ function checkSesion() {
                 estado.nombre = sesion.nombre;
                 estado.ruta = rutaGuardada;
 
-                // Saltar login e iniciar app
                 iniciarApp(); 
                 activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e));
-                return; // Importante: salir de la función
+                return;
             }
         }
-        // Si no hay sesión o no hay ruta, mostrar login
         console.log("Mostrando login.");
         document.getElementById("view-login").classList.add("active");
         
     } catch (e) {
-        localStorage.clear(); // Limpiar todo si hay error
+        localStorage.clear();
         document.getElementById("view-login").classList.add("active");
     }
 }
 
+/* === INICIO DE APP Y VISTAS === */
+function iniciarApp() {
+    document.getElementById("view-login").classList.remove("active");
+    void document.getElementById("view-app").offsetWidth;
+    document.getElementById("view-app").classList.add("active");
+    
+    // Saludo personalizado
+    const primerNombre = estado.nombre.split(' ')[0];
+    document.getElementById("mensajeCoach").innerHTML = `¡Hola, <span style="color:var(--accent);">${primerNombre}</span>! Vamos por la ruta de hoy.`;
+    
+    // Mostrar FAB
+    document.getElementById("fabMapa").style.display = 'block';
+    
+    // Configurar modo de vista inicial
+    document.body.setAttribute("data-view-mode", estado.viewMode);
+    document.getElementById("btnViewList").classList.toggle("active", estado.viewMode === "list");
+    document.getElementById("btnViewFocus").classList.toggle("active", estado.viewMode === "focus");
 
+    renderRuta();
+    actualizarProgreso();
+    
+    iniciarSeguimientoGPS();
+}
+
+// Nuevo: Setea el modo de vista
+function setViewMode(mode) {
+    if (estado.viewMode === mode) return; // No hacer nada si ya está activo
+    
+    estado.viewMode = mode;
+    
+    // Actualizar atributos y clases
+    document.body.setAttribute("data-view-mode", mode);
+    document.getElementById("btnViewList").classList.toggle("active", mode === "list");
+    document.getElementById("btnViewFocus").classList.toggle("active", mode === "focus");
+    
+    // Re-renderizar la lista con el nuevo modo
+    renderRuta();
+}
+
+
+/* === LÓGICA DE RENDERIZADO (NUEVO) === */
+
+function renderRuta() {
+    const container = document.getElementById("listaClientes");
+    container.innerHTML = "";
+
+    const pendientes = estado.ruta.filter(c => !c.visitado);
+
+    if (pendientes.length === 0) {
+        container.innerHTML = `<div class="ruta-completa">🎉<br>¡Ruta finalizada por hoy!<br>🎉</div>`;
+        return;
+    }
+
+    if (estado.viewMode === "focus") {
+        // --- MODO FOCO: Renderizar solo el primero ---
+        const clienteSiguiente = pendientes[0];
+        // Encontrar el índice original para el dataset.i
+        const indexOriginal = estado.ruta.findIndex(c => c.numeroCliente === clienteSiguiente.numeroCliente);
+        renderClienteCard(clienteSiguiente, indexOriginal, true); // true = es "next"
+    
+    } else {
+        // --- MODO LISTA: Renderizar todos los pendientes ---
+        const indexSiguienteOriginal = estado.ruta.findIndex(c => !c.visitado);
+        
+        estado.ruta.forEach((c, i) => {
+            if (c.visitado) return; // Ocultar visitados
+            
+            const esSiguiente = (i === indexSiguienteOriginal);
+            renderClienteCard(c, i, esSiguiente);
+        });
+    }
+}
+
+// Nuevo: Helper centralizado para crear tarjetas
+function renderClienteCard(c, i, isNext) {
+    const container = document.getElementById("listaClientes");
+
+    let distanciaHTML = "";
+    if (estado.ubicacionActual && c.lat && c.lng) {
+        const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
+        distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
+    }
+
+    const frecuenciaTexto = c.frecuencia || "Sin historial previo";
+
+    const card = document.createElement('div');
+    card.dataset.i = i; // Usamos el índice ORIGINAL
+    
+    // Clases dinámicas
+    let classes = ['card'];
+    if (c.visitado) classes.push('visitado');
+    if (isNext) classes.push('next');
+    if (c.expanded) classes.push('expanded');
+    card.className = classes.join(' ');
+
+    card.innerHTML = `
+        ${distanciaHTML}
+        <div class="card-header">
+            <h3>${c.nombre}</h3>
+            <span class="badge pendiente">PENDIENTE</span>
+        </div>
+        <div class="card-body">
+            <p>📍 ${c.domicilio}</p>
+            <p>📊 Frecuencia: ${frecuenciaTexto}</p>
+        </div>
+        <div class="card-actions">
+            <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
+            <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
+            <button class="btn-action btn-detalle" data-i="${i}">ℹ️ DETALLE</button>
+        </div>
+    `;
+    container.appendChild(card);
+}
+
+/* === MANEJO DE CLICKS E INTERACCIONES === */
+
+function manejarClicksLista(e) {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    // IMPORTANTE: Obtenemos el índice original del estado.ruta
+    const index = parseInt(card.dataset.i);
+    if (isNaN(index)) return;
+
+    const btnVenta   = e.target.closest('.btn-venta');
+    const btnNoVenta = e.target.closest('.btn-noventa');
+    const btnDetalle = e.target.closest('.btn-detalle');
+
+    if (btnVenta) {
+        registrarVenta(index, true);
+        return;
+    }
+    if (btnNoVenta) {
+        abrirMotivo(index);
+        return;
+    }
+    if (btnDetalle) {
+        abrirModalCliente(index);
+        return;
+    }
+
+    // --- LÓGICA DE EXPANSIÓN (Acordeón) ---
+    const cliente = estado.ruta[index];
+    if (cliente) {
+        cliente.expanded = !cliente.expanded;
+        // Cerrar otros (solo en modo lista)
+        if (estado.viewMode === 'list') {
+            estado.ruta.forEach((c, i) => {
+                if (i !== index) c.expanded = false;
+            });
+        }
+        // Redibujar la lista para reflejar el estado
+        renderRuta();
+    }
+}
+
+// REGISTRO DE VENTA (con animación en Modo Foco)
+async function registrarVenta(index, compro, motivo = "") {
+    const cliente = estado.ruta[index];
+    if (!cliente || cliente._enviando) return;
+    cliente._enviando = true;
+
+    // 1. Marcas locales (el estado se actualiza)
+    const ahora = new Date();
+    cliente.visitado = true;
+    cliente.compro = !!compro;
+    cliente.motivo = compro ? "" : (motivo || "");
+    cliente.hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+
+    // 2. Guardar estado en localStorage (¡clave!)
+    localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
+    
+    // 3. Animación y Actualización de UI
+    const card = document.querySelector(`.card[data-i="${index}"]`);
+    let animDuration = 0;
+    
+    if (card && estado.viewMode === 'focus') {
+        card.classList.add('slide-out');
+        animDuration = 400; // ms de la animación
+    }
+
+    // Esperar que termine la animación (si hay) para redibujar
+    setTimeout(() => {
+        renderRuta();
+        actualizarProgreso();
+    }, animDuration);
+
+    // 4. Envío a la API (en segundo plano)
+    try {
+        const payload = {
+            accion: "registrarVisita",
+            vendedor: estado.vendedor,
+            vendedorNombre: estado.nombre,
+            cliente: cliente.numeroCliente,
+            compro: !!compro,
+            motivo: cliente.motivo || "",
+            notas: cliente.notas || "",
+            lat: estado.ubicacionActual?.lat ?? "", 
+            lng: estado.ubicacionActual?.lng ?? "",
+            ts: ahora.toISOString(),
+            app: "App Vendedores Pro v2"
+        };
+
+        await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
+    } catch (err) {
+        console.warn("registrarVenta error:", err);
+        toast("⚠️ Sin conexión: queda pendiente de enviar");
+    } finally {
+        cliente._enviando = false;
+    }
+
+    // Avanzar al siguiente (en modo lista)
+    if (estado.viewMode === 'list') {
+        irAlSiguienteCliente();
+    }
+}
+
+/* === MODALES, MOTIVOS, GPS, ETC. (Lógica sin cambios) === */
 
 function obtenerUbicacion() {
     return new Promise((resolve) => {
@@ -129,23 +355,18 @@ function obtenerUbicacion() {
                 ordenarRutaPorDistancia();
                 resolve();
             },
-            () => resolve(), // Resuelve aunque falle
+            () => resolve(),
             { enableHighAccuracy: false, timeout: 5000 }
         );
     });
 }
 
-/* === SEGUIMIENTO GPS EN TIEMPO REAL (ACTIVO DURANTE LA RUTA) === */
-let gpsWatcher = null;
-let clientesAvisados = new Set(); // Para no mandar notificación repetida
-
 function iniciarSeguimientoGPS() {
-    if (!navigator.geolocation) return;
-
+    if (!navigator.geolocation || gpsWatcher) return;
     gpsWatcher = navigator.geolocation.watchPosition(
         (pos) => {
             estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            ordenarRutaPorDistancia();   // ← Ordena automáticamente en tiempo real
+            ordenarRutaPorDistancia();
             verificarProximidadClientes();
         },
         (err) => console.warn("GPS error:", err),
@@ -153,26 +374,14 @@ function iniciarSeguimientoGPS() {
     );
 }
 
-
 function verificarProximidadClientes() {
+    // (Esta función no necesita cambios)
     if (!estado.ubicacionActual) return;
-
     estado.ruta.forEach((c) => {
-        if (!c.lat || !c.lng) return; // Sin coordenadas → se ignora
-        if (c.visitado) return; // Ya visitado → no avisar
-        if (clientesAvisados.has(c.numeroCliente)) return; // Ya avisado → no repetir
-
-        const dist = calcularDistancia(
-            estado.ubicacionActual.lat,
-            estado.ubicacionActual.lng,
-            c.lat,
-            c.lng
-        ) * 1000; // Km → metros
-
-        if (dist <= 120) { // 120 metros
+        if (!c.lat || !c.lng || c.visitado || clientesAvisados.has(c.numeroCliente)) return;
+        const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng) * 1000;
+        if (dist <= 120) {
             clientesAvisados.add(c.numeroCliente);
-
-            // 📣 ENVÍA NOTIFICACIÓN PUSH DESDE EL SERVER
             fetch(API, {
                 method: "POST",
                 body: JSON.stringify({
@@ -182,139 +391,16 @@ function verificarProximidadClientes() {
                     mensaje: `Prepárate para ${c.nombre}`
                 })
             }).catch(() => console.warn("No se pudo enviar push"));
-            
             toast(`📍 Estás cerca de: ${c.nombre}`);
         }
     });
 }
 
-/* Llamar seguimiento al iniciar la app */
-function iniciarApp() {
-    document.getElementById("view-login").classList.remove("active");
-    void document.getElementById("view-app").offsetWidth;
-    document.getElementById("view-app").classList.add("active");
-    document.getElementById("vendedorNombre").innerText = estado.nombre;
-    document.getElementById("fabMapa").style.display = 'block';
-    renderRuta();
-    actualizarProgreso();
-    
-    iniciarSeguimientoGPS(); // ← 🔥 ACTIVAMOS SEGUIMIENTO CONTINUO
-}
-
-
-function manejarClicksLista(e) {
-    const card = e.target.closest('.card');
-    if (!card) return;
-    const index = parseInt(card.dataset.i);
-    if (isNaN(index)) return; // Salir si no hay índice
-
-    const btnVenta   = e.target.closest('.btn-venta');
-    const btnNoVenta = e.target.closest('.btn-noventa');
-    const btnDetalle = e.target.closest('.btn-detalle');
-
-    if (btnVenta) {
-        registrarVenta(index, true);
-        return; // registrarVenta ya llama a renderRuta
-    }
-
-    if (btnNoVenta) {
-        abrirMotivo(index);
-        return; // abrirMotivo no necesita redibujar
-    }
-
-    if (btnDetalle) {
-        abrirModalCliente(index);
-        return; // modal no necesita redibujar
-    }
-
-    // --- LÓGICA DE EXPANSIÓN CORREGIDA ---
-    // Tap en la tarjeta: expandir/colapsar acciones
-    const cliente = estado.ruta[index];
-    if (cliente) {
-        // Alternar el estado guardado
-        cliente.expanded = !cliente.expanded;
-        
-        // Opcional: cerrar otras tarjetas
-        estado.ruta.forEach((c, i) => {
-            if (i !== index) c.expanded = false;
-        });
-        
-        // Redibujar la lista para reflejar el estado
-        renderRuta();
-    }
-}
-
-
-
-function renderRuta() {
-    const container = document.getElementById("listaClientes");
-    container.innerHTML = "";
-
-    // Filtrar solo los NO visitados
-    const pendientes = estado.ruta.filter(c => !c.visitado);
-    // índice del próximo cliente pendiente (sobre la lista filtrada)
-    const indexSiguiente = 0; // El primero de la lista filtrada es siempre el siguiente
-
-    if (pendientes.length === 0) {
-        container.innerHTML = `<div class="ruta-completa">🎉<br>¡Ruta finalizada por hoy!<br>🎉</div>`;
-    }
-
-    estado.ruta.forEach((c, i) => {
-        // --- INICIO DE CAMBIO ---
-        // Si está visitado, no lo renderices en la lista
-        if (c.visitado) {
-            return; // Saltar este cliente
-        }
-        // --- FIN DE CAMBIO ---
-
-        let distanciaHTML = "";
-        if (estado.ubicacionActual && c.lat && c.lng) {
-        
-      const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
-      distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
-    }
-
-    const frecuenciaTexto = c.frecuencia || "Sin historial previo";
-
-    const card = document.createElement('div');
-    card.dataset.i = i;
-    card.className = `card 
-        ${c.visitado ? 'visitado' : ''} 
-        ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}
-        ${i === indexSiguiente ? 'next' : ''}
-        ${c.expanded ? 'expanded' : ''}`; // <-- AÑADIDO
-
-    card.innerHTML = `
-      ${distanciaHTML}
-      <div class="card-header">
-        <h3>${c.nombre}</h3>
-        <span class="badge ${c.visitado ? (c.compro ? 'si' : 'no') : 'pendiente'}">
-          ${c.visitado ? (c.compro ? 'VENTA' : 'NO') : 'PENDIENTE'}
-        </span>
-      </div>
-      <div class="card-body">
-        <p>📍 ${c.domicilio}</p>
-        <p>📊 Frecuencia: ${frecuenciaTexto}</p>
-      </div>
-      ${!c.visitado ? `
-      <div class="card-actions">
-        <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
-        <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
-        <button class="btn-action btn-detalle" data-i="${i}">ℹ️ DETALLE</button>
-      </div>
-      ` : ''}
-    `;
-    container.appendChild(card);
-  });
-}
-
-
-/* === MODAL CLIENTE & ÚLTIMO PEDIDO === */
 let clienteModalIndex = null;
-
 async function abrirModalCliente(index) {
     clienteModalIndex = index;
     const c = estado.ruta[index];
+    if (!c) return;
     
     document.getElementById("modal-cliente-nombre").innerText = c.nombre;
     document.getElementById("modal-cliente-direccion").innerText = c.domicilio;
@@ -359,79 +445,6 @@ function irACliente() {
     }
 }
 
-
-// ✅ REGISTRAR VISITA (robusta, con hora y GPS, y siempre por vendedor CÓDIGO 0001)
-async function registrarVenta(index, compro, motivo = "") {
-  const cliente = estado.ruta[index];
-  if (!cliente) return;
-
-  // Anti-doble click
-  if (cliente._enviando) return;
-  cliente._enviando = true;
-
-  // Marcas locales
-  const ahora = new Date();
-  cliente.visitado = true;
-  cliente.compro = !!compro;
-  cliente.motivo = compro ? "" : (motivo || "");
-  cliente.hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-
-  // Ubicación (si está disponible)
-  const lat = estado.ubicacionActual?.lat ?? "";
-  const lng = estado.ubicacionActual?.lng ?? "";
-
-  // Refrescar UI
-  renderRuta();
-  actualizarProgreso();
-  localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta)); // <-- AÑADE ESTA LÍNEA
-
-  try {
-    const payload = {
-      accion: "registrarVisita",
-      vendedor: (estado.vendedor || "").toString().padStart(4, "0"), // 👈 código 0001
-      vendedorNombre: estado.nombre || "",                            // opcional, útil para reportes
-      cliente: cliente.numeroCliente,
-      compro: !!compro,
-      motivo: cliente.motivo || "",
-      notas: cliente.notas || "",
-      lat, lng,
-      ts: ahora.toISOString(),
-      app: "App Vendedores Pro"
-    };
-
-    await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
-  } catch (err) {
-    console.warn("registrarVenta error:", err);
-    toast("⚠️ Sin conexión: queda pendiente de enviar");
-  } finally {
-    cliente._enviando = false;
-  }
-
-  // Avanzar al siguiente
-  irAlSiguienteCliente?.();
-}
-
-// 👉 Helper para enfocarse/scroll al próximo cliente pendiente
-function irAlSiguienteCliente() {
-  const idx = estado.ruta.findIndex(c => !c.visitado);
-  if (idx === -1) {
-    toast("✅ ¡Ruta finalizada!");
-    return;
-  }
-  const card = document.querySelector(`.card[data-i="${idx}"]`);
-  if (card) {
-    card.classList.add("next");
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-}
-
-
 let clienteMotivoIndex = null;
 function abrirMotivo(index) {
     clienteMotivoIndex = index;
@@ -465,61 +478,50 @@ function confirmarMotivo() {
     cerrarMotivo();
 }
 
-async function activarNotificaciones() {
-    console.log("TOKEN DEBUG: === INICIO activarNotificaciones() ===");
-
-    // 0) Validación base
-    if (typeof firebase === 'undefined' || !messaging) {
-        console.error("TOKEN DEBUG: 0. ❌ Firebase o messaging NO cargaron. Revisa index.html y el orden de scripts.");
+function irAlSiguienteCliente() {
+    const idx = estado.ruta.findIndex(c => !c.visitado);
+    if (idx === -1) {
+        toast("✅ ¡Ruta finalizada!");
         return;
     }
+    const card = document.querySelector(`.card[data-i="${idx}"]`);
+    if (card) {
+        card.classList.add("next");
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
 
+async function activarNotificaciones() {
+    // (Esta función no necesita cambios, está perfecta)
+    console.log("TOKEN DEBUG: === INICIO activarNotificaciones() ===");
+    if (typeof firebase === 'undefined' || !messaging) {
+        console.error("TOKEN DEBUG: 0. ❌ Firebase o messaging NO cargaron.");
+        return;
+    }
     const VAPID_KEY = "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o";
-
     try {
-        console.log("TOKEN DEBUG: 1. Solicitando permiso de notificaciones...");
+        console.log("TOKEN DEBUG: 1. Solicitando permiso...");
         const permission = await Notification.requestPermission();
-
         if (permission !== "granted") {
-            console.warn("TOKEN DEBUG: 2. ❌ Permiso DENEGADO. No se genera token.");
+            console.warn("TOKEN DEBUG: 2. ❌ Permiso DENEGADO.");
             return;
         }
-
         console.log("TOKEN DEBUG: 2. ✅ Permiso concedido.");
-
-        // 🚨 Punto clave: aseguramos ServiceWorker listo antes de pedir token
-        console.log("TOKEN DEBUG: 3. Esperando a que ServiceWorker esté listo...");
+        console.log("TOKEN DEBUG: 3. Esperando a que SW esté listo...");
         const reg = await navigator.serviceWorker.ready;
-        console.log("TOKEN DEBUG: 3A. ✅ ServiceWorker listo:", reg.scope);
-
-        // ✅ getToken CORRECTO
-        console.log("TOKEN DEBUG: 4. Intentando generar token con VAPID + SW...");
-        const token = await messaging.getToken({
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: reg
-        }).catch(err => {
-            console.error("TOKEN DEBUG: 4A. ❌ ERROR EN getToken():", err);
-            return null;
-        });
-
-        if (!token) {
-            console.error("TOKEN DEBUG: 4B. ❌ Token NULL. No continúa.");
-            return;
-        }
-
+        console.log("TOKEN DEBUG: 3A. ✅ SW listo:", reg.scope);
+        console.log("TOKEN DEBUG: 4. Generando token...");
+        const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg })
+            .catch(err => { console.error("TOKEN DEBUG: 4A. ❌ ERROR getToken():", err); return null; });
+        if (!token) { console.error("TOKEN DEBUG: 4B. ❌ Token NULL."); return; }
         console.log("TOKEN DEBUG: 5. ✅ Token generado:", token.substring(0, 35) + "...");
-
-        // Ver si ya estaba guardado
         const tokenPrevio = localStorage.getItem("fcm_token_enviado");
         const vendedorPrevio = localStorage.getItem("vendedor_actual");
-
         if (token === tokenPrevio && estado.vendedor === vendedorPrevio) {
             console.log("TOKEN DEBUG: 6. Token repetido → No se envía. (OK)");
             return;
         }
-
         console.log("TOKEN DEBUG: 6. Token NUEVO → enviando a servidor...");
-
         const res = await fetch(API, {
             method: "POST",
             body: JSON.stringify({
@@ -529,48 +531,17 @@ async function activarNotificaciones() {
                 dispositivo: navigator.userAgent
             })
         });
-
-        if (!res.ok) {
-            console.error("TOKEN DEBUG: 7. ❌ Error guardando token en API:", await res.text());
-            return;
-        }
-
+        if (!res.ok) { console.error("TOKEN DEBUG: 7. ❌ Error guardando token en API:", await res.text()); return; }
         console.log("TOKEN DEBUG: 7. ✅ Token guardado en servidor.");
         localStorage.setItem("fcm_token_enviado", token);
         localStorage.setItem("vendedor_actual", estado.vendedor);
-
         toast("🔔 Notificaciones activadas");
         console.log("TOKEN DEBUG: === FIN activarNotificaciones() ===");
-
     } catch (err) {
         console.error("TOKEN DEBUG: ❌ ERROR GENERAL activarNotificaciones():", err);
     }
 }
 
-function irAlSiguienteCliente() {
-    const index = estado.ruta.findIndex(c => !c.visitado);
-    if (index === -1) return; // Ruta completa
-
-    const card = document.querySelector(`.card[data-i="${index}"]`);
-    if (!card) return;
-
-    // Scroll suave
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    // Abrir botones automáticamente
-    card.classList.add("expanded");
-
-    // Cerrar otros
-    document.querySelectorAll('.card.expanded').forEach(c => {
-        if (c !== card) c.classList.remove('expanded');
-    });
-
-    toast(`➡️ Próximo: ${estado.ruta[index].nombre}`);
-}
-
-
-
-/* === MAPA & UTILIDADES === */
 function toggleMapa() {
     const modal = document.getElementById("modal-mapa");
     if (modal.classList.contains("hidden")) {
@@ -592,15 +563,12 @@ function cargarMarcadores() {
     const grupo = [];
     estado.ruta.forEach((c, i) => {
         if (c.lat && c.lng) {
-            const color = c.visitado ? (c.compro ? '#2ED573' : '#FF4757') : '#4CC9F0';
+            const color = c.visitado ? (c.compro ? 'var(--success)' : 'var(--danger)') : 'var(--accent)';
             const marker = L.circleMarker([c.lat, c.lng], { radius: 10, fillColor: color, color: '#fff', weight: 3, fillOpacity: 1 }).addTo(markers);
-
-            // Alerta: Conecta el mapa con el modal del cliente
             marker.on('click', () => {
                 document.getElementById("modal-mapa").classList.add("hidden");
                 abrirModalCliente(i);
             });
-
             grupo.push([c.lat, c.lng]);
         }
     });
@@ -617,50 +585,43 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 
 function ordenarRutaPorDistancia() {
     if (!estado.ubicacionActual) return;
-
     const { lat, lng } = estado.ubicacionActual;
-
-    // Ordena: primero pendientes por proximidad, luego visitados
     estado.ruta.sort((a, b) => {
         if (a.visitado && !b.visitado) return 1;
         if (!a.visitado && b.visitado) return -1;
-
         if (!a.lat || !a.lng) return 1;
         if (!b.lat || !b.lng) return -1;
-
         const dA = calcularDistancia(lat, lng, a.lat, a.lng);
         const dB = calcularDistancia(lat, lng, b.lat, b.lng);
         return dA - dB;
     });
-
     renderRuta();
 }
 
-
-let _reporteEnviado = false;
-
 function actualizarProgreso() {
-  const total = estado.ruta.length;
-  const visitados = estado.ruta.filter(c => c.visitado).length;
-  const porc = total === 0 ? 0 : (visitados / total) * 100;
+    const total = estado.ruta.length;
+    const visitados = estado.ruta.filter(c => c.visitado).length;
+    const porc = total === 0 ? 0 : (visitados / total) * 100;
 
-  const circle = document.querySelector('.progreso-value');
-  if (circle) circle.style.strokeDashoffset = 100 - porc;
+    const circle = document.querySelector('.progreso-value');
+    if (circle) circle.style.strokeDashoffset = 100 - porc;
 
-  document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
-  document.getElementById("mensajeCoach").innerText = 
-    porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
-
-  // 📧 Enviar reporte automático al completar 100%
-  if (porc === 100 && !_reporteEnviado) {
-    _reporteEnviado = true;
-    enviarReporteSupervisor().catch(err => {
-      console.error("Error enviando reporte:", err);
-      _reporteEnviado = false; // reintento manual si querés
-    });
-  }
+    document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
+    
+    if (porc === 100) {
+        document.getElementById("mensajeCoach").innerText = "🎉 ¡Ruta finalizada! ¡Excelente trabajo!";
+    }
+    
+    if (porc === 100 && !_reporteEnviado) {
+        _reporteEnviado = true;
+        enviarReporteSupervisor().catch(err => {
+            console.error("Error enviando reporte:", err);
+            _reporteEnviado = false;
+        });
+    }
 }
 
+/* === UTILIDADES (Sin cambios) === */
 
 function toast(msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
@@ -670,40 +631,24 @@ function btnLoading(isLoading) {
     const btn = document.getElementById("btnIngresar"); btn.disabled = isLoading; btn.innerHTML = isLoading ? "⌛..." : "INGRESAR";
 }
 function setTheme(theme) {
-    document.body.setAttribute('data-theme', theme); localStorage.setItem('theme', theme);
-    document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+    // Deprecado. Dejamos uno solo PRO.
 }
-function initTheme() { setTheme(localStorage.getItem('theme') || 'foco'); }
+function initTheme() {
+    // Deprecado.
+}
 
 async function enviarReporteSupervisor() {
-  const visitas = estado.ruta
-    .filter(c => c.visitado)
-    .map(c => ({
-      numeroCliente: c.numeroCliente || "",
-      nombre: c.nombre || "",
-      domicilio: c.domicilio || "",
-      compro: !!c.compro,
-      motivo: c.motivo || "",
-      hora: c.hora || ""
+    // (Esta función no necesita cambios)
+    const visitas = estado.ruta.filter(c => c.visitado).map(c => ({
+        numeroCliente: c.numeroCliente || "", nombre: c.nombre || "", domicilio: c.domicilio || "",
+        compro: !!c.compro, motivo: c.motivo || "", hora: c.hora || ""
     }));
-
-  const payload = {
-    accion: "reporteSupervisor",
-    vendedor: estado.vendedor,
-    vendedorNombre: estado.nombre,
-    fechaISO: new Date().toISOString(),
-    visitas
-  };
-
-  const res = await fetch(API, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    throw new Error(await res.text());
-  }
-
-  toast("📧 Reporte enviado al supervisor");
+    const payload = {
+        accion: "reporteSupervisor",
+        vendedor: estado.vendedor, vendedorNombre: estado.nombre,
+        fechaISO: new Date().toISOString(), visitas
+    };
+    const res = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error(await res.text());
+    toast("📧 Reporte enviado al supervisor");
 }
-
