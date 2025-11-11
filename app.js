@@ -160,6 +160,41 @@ function toggleClave() {
     }
 }
 
+/* === TOAST DINÁMICO (v5.1) === */
+/**
+ * Muestra un toast "inteligente" de la IA en la parte superior.
+ * @param {string} tipo 'URGENTE', 'EXITO', 'INFO'
+ * @param {string} titulo El título del mensaje
+ * @param {string} mensaje El cuerpo del mensaje
+ */
+function showDynamicToast(tipo, titulo, mensaje) {
+    const container = document.getElementById("dynamic-toast-container");
+    
+    const toast = document.createElement('div');
+    toast.className = `dynamic-toast ${tipo}`; // Ej: "dynamic-toast URGENTE"
+    
+    // Usamos el título base (🧠 Coach IA Metis) y el mensaje
+    toast.innerHTML = `
+        <p>${titulo}</p>
+        <span>${mensaje}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Mostrar
+    setTimeout(() => {
+        toast.classList.add("show");
+    }, 100); // Pequeño delay para que la animación funcione
+
+    // Ocultar después de 8 segundos (son mensajes importantes)
+    setTimeout(() => {
+        toast.classList.remove("show");
+        // Quitar del DOM después de que la animación de salida termine
+        setTimeout(() => {
+            toast.remove();
+        }, 500);
+    }, 8000);
+}
 
 
 function checkSesion() {
