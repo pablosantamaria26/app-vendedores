@@ -70,11 +70,13 @@ async function login() {
 
         if (!data.ok) throw new Error(data.error || "Clave incorrecta o error de servidor");
 
-        estado.vendedor = clave;
+        estado.vendedor = clave.padStart(4, "0");   // Siempre 4 dígitos: 0001, 0002...
         estado.nombre = data.vendedor || "Vendedor";
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false }));
         
-        localStorage.setItem("vendedor_sesion", JSON.stringify({ clave, nombre: estado.nombre }));
+        localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
+        localStorage.setItem("vendedor_actual", estado.vendedor);
+
         
         iniciarApp();
         activarNotificaciones().catch(e => console.warn("Notificaciones fallaron:", e)); // Activación de Notificaciones
