@@ -1,5 +1,5 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.1 - STYLE (CON TEMAS)
+   APP VENDEDORES PRO v2.2 - STYLE
    ====================================================== */
 
 /* --- 1. Paleta de Colores y Temas --- */
@@ -15,11 +15,10 @@
     --success: #33D69F;
     --danger: #FF5B5B;
 
-    /* Colores para tarjetas de lista */
-    --card-color-1: #4CC9F0; /* Azul */
-    --card-color-2: #70E000; /* Verde */
-    --card-color-3: #F72585; /* Rosa */
-    --card-color-4: #F59E0B; /* Naranja */
+    --card-color-1: #4CC9F0;
+    --card-color-2: #70E000;
+    --card-color-3: #F72585;
+    --card-color-4: #F59E0B;
 
     --safe-bottom: env(safe-area-inset-bottom, 20px);
     --border-radius-lg: 24px;
@@ -30,7 +29,7 @@
 /* Tema Default: Azul Duotono */
 body, body[data-theme="blue"] {
     --accent: linear-gradient(135deg, #4CC9F0, #4895EF);
-    --accent-solid: #4CC9F0; /* Fallback sólido */
+    --accent-solid: #4CC9F0;
     --accent-dark: #4895EF;
     --accent-shadow: rgba(76, 201, 240, 0.3);
 }
@@ -59,53 +58,65 @@ body {
 .hidden { display: none !important; }
 
 .view {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     transition: opacity 0.5s ease, transform 0.5s ease;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
+    opacity: 0; pointer-events: none; z-index: 1;
 }
-.view.active {
-    opacity: 1;
-    pointer-events: all;
-    z-index: 2;
-    transform: translateY(0) scale(1);
-}
+.view.active { opacity: 1; pointer-events: all; z-index: 2; transform: translateY(0) scale(1); }
 #view-app { overflow-y: auto; }
 
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideDownFade { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideOutCard { to { opacity: 0; transform: translateY(-50px) scale(0.9); } }
 @keyframes slideInCard { from { opacity: 0; transform: translateY(50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+/* BounceIn (ahora se usa menos) */
 @keyframes bounceIn { 
     0% { transform: scale(0.9); opacity: 0; }
     70% { transform: scale(1.02); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* --- 4. Login (Rediseño "PRO") --- */
-#view-login { display: flex; align-items: center; justify-content: center; }
+/* --- 4. Login (DuoTono Verde/Azul) --- */
+#view-login {
+    display: flex; align-items: center; justify-content: center;
+    /* Nuevo Fondo DuoTono */
+    background: linear-gradient(45deg, #111319, #111319 50%, #1c3d3c 100%);
+}
 .login-container { width: 100%; max-width: 340px; padding: 20px; animation: slideUpFade 0.6s ease-out; }
 .login-card { background: var(--bg-card); padding: 30px; border-radius: var(--border-radius-lg); text-align: center; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3); }
 .login-card h2 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; }
 .login-card p { margin: 0 0 30px 0; color: var(--text-secondary); font-size: 16px; }
-.input-group { text-align: left; margin-bottom: 20px; }
+
+/* Input con "Ojito" */
+.input-group { position: relative; text-align: left; margin-bottom: 20px; }
 .input-group label { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block; }
 .input-group input {
     width: 100%; padding: 16px; font-size: 20px; text-align: center;
     background: var(--bg-input); border: 2px solid var(--bg-card); border-radius: var(--border-radius-sm);
     color: var(--text-primary); font-weight: 600; outline: none; transition: all 0.3s ease; letter-spacing: 4px;
+    padding-right: 50px; /* Espacio para el botón */
 }
 .input-group input:focus {
     border-color: var(--accent-solid);
     box-shadow: 0 0 0 3px var(--accent-shadow);
 }
+.btn-toggle-clave {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    height: 48px;
+    width: 48px;
+    font-size: 22px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 5;
+}
 
-/* --- 5. Botones (Rediseño "PRO") --- */
+/* --- 5. Botones --- */
 .btn-primary {
-    background: var(--accent);
-    color: #FFF; border: none; font-weight: 700; font-size: 16px;
+    background: var(--accent); color: #FFF; border: none; font-weight: 700; font-size: 16px;
     padding: 16px 24px; border-radius: var(--border-radius-sm);
     cursor: pointer; width: 100%; transition: all 0.2s ease;
 }
@@ -113,7 +124,7 @@ body {
 .btn-primary:active { transform: scale(0.97); filter: brightness(0.9); }
 .btn-primary:disabled { background: var(--bg-input); color: var(--text-secondary); cursor: not-allowed; }
 
-/* --- 6. App Header (Rediseño "PRO") --- */
+/* --- 6. App Header (Stats Mejoradas) --- */
 .app-header {
     position: sticky; top: 0; background: var(--bg-header);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -124,98 +135,77 @@ body {
 .coach-banner { padding: 10px 0; font-size: 15px; color: var(--text-secondary); margin-bottom: 15px; }
 #coach-nombre { font-weight: 600; color: var(--accent-solid); }
 
-/* Contenedor para los 2 switchers */
-.header-controls {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-.view-mode-switcher {
-    display: flex; background: var(--bg-input); border-radius: 50px;
-    padding: 4px; flex-grow: 1;
-}
+.header-controls { display: flex; gap: 15px; align-items: center; }
+.view-mode-switcher { display: flex; background: var(--bg-input); border-radius: 50px; padding: 4px; flex-grow: 1; }
 .view-mode-btn {
-    flex: 1; background: transparent; border: none;
-    color: var(--text-secondary); font-size: 13px; font-weight: 600;
-    padding: 8px 12px; border-radius: 50px; transition: all 0.3s ease;
+    flex: 1; background: transparent; border: none; color: var(--text-secondary);
+    font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 50px; transition: all 0.3s ease;
 }
-.view-mode-btn.active {
-    background: var(--bg-card); color: var(--text-primary);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-/* Theme Switcher (Nuevo) */
+.view-mode-btn.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 .theme-switcher { display: flex; gap: 6px; }
 .theme-btn {
-    width: 28px; height: 28px; border-radius: 50%;
-    border: 2px solid var(--bg-input);
-    background: var(--theme-color); cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--bg-input);
+    background: var(--theme-color); cursor: pointer; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.theme-btn.active {
-    transform: scale(1.1);
-    border-color: var(--accent-solid);
-    box-shadow: 0 0 0 2px var(--accent-solid);
-}
+.theme-btn.active { transform: scale(1.1); border-color: var(--accent-solid); box-shadow: 0 0 0 2px var(--accent-solid); }
 
-/* Progress Ring */
-.progress-ring { position: relative; width: 40px; height: 40px; }
-.progress-ring svg { width: 40px; height: 40px; transform: rotate(-90deg); }
-.progress-ring circle { fill: none; stroke-width: 4; stroke: var(--bg-input); }
+/* Stats (Nuevo) */
+.header-stats-container { display: flex; align-items: center; gap: 12px; }
+.header-stats-text { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+#ventas-texto { font-size: 14px; font-weight: 600; color: var(--success); }
+#pendientes-texto { font-size: 12px; color: var(--text-secondary); }
+
+/* Progress Ring (Agrandado) */
+.progress-ring { position: relative; width: 60px; height: 60px; }
+.progress-ring svg { width: 60px; height: 60px; transform: rotate(-90deg); }
+.progress-ring circle { fill: none; stroke-width: 5; stroke: var(--bg-input); }
 .progress-ring .progreso-value {
     stroke: var(--accent-solid);
-    stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset 0.5s ease; stroke-linecap: round;
+    stroke-dasharray: 163.3; /* (2 * PI * 26) */
+    stroke-dashoffset: 163.3;
+    transition: stroke-dashoffset 0.5s ease; stroke-linecap: round;
 }
-.progress-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
+.progress-ring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
 
-/* --- 7. Lista de Clientes (Modo LISTA - Nuevo Diseño) --- */
-.cliente-list { 
-    padding: 15px; 
-    padding-bottom: calc(80px + var(--safe-bottom)); 
-}
+/* --- 7. Lista de Clientes --- */
+.cliente-list { padding: 15px; padding-bottom: calc(80px + var(--safe-bottom)); }
 .card {
-    background: var(--bg-card);
-    border-radius: var(--border-radius-md); 
-    margin-bottom: 12px; 
-    position: relative; 
-    overflow: visible;
-    transition: all 0.3s ease; 
-    border: 1px solid var(--bg-input);
+    background: var(--bg-card); border-radius: var(--border-radius-md); 
+    margin-bottom: 12px; position: relative; overflow: visible;
+    transition: all 0.3s ease; border: 1px solid var(--bg-input);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .card.slide-out { animation: slideOutCard 0.4s ease-out forwards; }
-.card:active { /* Efecto táctil */
-    transform: scale(0.98);
-}
+/* Corrección Bug Rebote: :active solo afecta la tarjeta tocada */
+.card:active { transform: scale(0.98); }
 
-/* --- ESTILO MODO LISTA (Inspirado en Imagen) --- */
+/* ESTILO MODO LISTA */
 body[data-view-mode="list"] .card {
-    padding: 16px;
-    border-left: 6px solid var(--accent-solid); /* Borde de color */
-    animation: bounceIn 0.4s ease-out;
+    padding: 16px; border-left: 6px solid var(--accent-solid);
+    /* Se quitó 'bounceIn' de aquí para arreglar el bug */
 }
-/* Colores rotativos para modo lista */
 body[data-view-mode="list"] .card[data-color-index="0"] { border-color: var(--card-color-1); }
 body[data-view-mode="list"] .card[data-color-index="1"] { border-color: var(--card-color-2); }
 body[data-view-mode="list"] .card[data-color-index="2"] { border-color: var(--card-color-3); }
 body[data-view-mode="list"] .card[data-color-index="3"] { border-color: var(--card-color-4); }
-
 body[data-view-mode="list"] .card-header h3 { font-size: 17px; }
 body[data-view-mode="list"] .card-body p { font-size: 13px; gap: 6px; }
 
-/* --- 8. Modo FOCO (Tarjeta Grande) --- */
+/* --- 8. Modo FOCO (Botones Automáticos) --- */
 body[data-view-mode="focus"] .cliente-list {
     display: flex; flex-direction: column;
     justify-content: flex-start; align-items: center;
 }
 body[data-view-mode="focus"] .card {
-    padding: 20px;
-    width: 100%;
-    min-height: 300px;
+    padding: 20px; width: 100%; min-height: 300px;
     animation: slideInCard 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 body[data-view-mode="focus"] .card-header h3 { font-size: 18px; }
 body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
+/* Botones siempre visibles en modo foco */
+body[data-view-mode="focus"] .card-actions {
+    max-height: 70px; opacity: 1;
+}
 
 /* --- Estilos de Tarjeta (Compartidos) --- */
 .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
@@ -235,11 +225,7 @@ body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 }
 .card.expanded .card-actions { max-height: 70px; opacity: 1; }
 
-/* Estilo "Siguiente" */
-.card.next {
-    border-color: var(--accent-solid);
-    box-shadow: 0 0 0 3px var(--accent-shadow), 0 10px 30px rgba(0,0,0,0.3);
-}
+.card.next { border-color: var(--accent-solid); box-shadow: 0 0 0 3px var(--accent-shadow), 0 10px 30px rgba(0,0,0,0.3); }
 .card.next::after {
     content: "SIGUIENTE"; position: absolute; top: -10px; left: 16px;
     font-size: 10px; font-weight: 900; letter-spacing: 1px;
@@ -249,10 +235,10 @@ body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 
 .ruta-completa { padding: 60px 20px; text-align: center; font-size: 18px; color: var(--text-secondary); line-height: 1.6; }
 
-/* Botones de Acción en Tarjeta */
 .btn-action {
-    padding: 14px; border: none; border-radius: var(--border-radius-sm); font-weight: 700; font-size: 14px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 10px; /* Menos padding para texto largo */
+    border: none; border-radius: var(--border-radius-sm); font-weight: 700; font-size: 13px; /* Letra más chica */
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
     transition: all 0.2s ease;
 }
 .btn-action:active { transform: scale(0.96); }
@@ -260,13 +246,13 @@ body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 .btn-noventa { background: var(--bg-input); color: var(--text-primary); }
 .btn-detalle { background: var(--bg-input); color: var(--text-primary); }
 
+
 /* --- 9. FAB (Botón Flotante) --- */
 .fab {
     display: none; position: fixed;
     bottom: calc(20px + var(--safe-bottom)); right: 20px;
     width: 56px; height: 56px; border-radius: 20px;
-    background: var(--accent);
-    color: white; border: none; font-size: 24px;
+    background: var(--accent); color: white; border: none; font-size: 24px;
     box-shadow: 0 10px 25px -5px var(--accent-shadow); 
     z-index: 999;
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -274,8 +260,6 @@ body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 .fab:active { transform: scale(0.9); }
 
 /* --- 10. Modales y Overlays --- */
-
-/* Mapa (Full Modal) */
 .full-modal {
     position: fixed; inset: 0; background: var(--bg-main); z-index: 200;
     display: flex; flex-direction: column; animation: slideInRight 0.3s ease-out;
@@ -284,20 +268,12 @@ body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 .modal-header h3 { margin: 0; }
 .btn-icon { background: none; border: none; color: var(--text-secondary); font-size: 20px; cursor: pointer; }
 #map { flex: 1; z-index: 5; }
-
-/* Nombres en el Mapa (Nuevo) */
 .map-tooltip {
-    background: var(--bg-card);
-    color: var(--text-primary);
-    border: none;
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    background: var(--bg-card); color: var(--text-primary); border: none;
+    border-radius: 6px; padding: 5px 10px; font-size: 12px;
+    font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
-/* Bottom Sheet (Motivos) */
 .bottom-sheet-container { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; justify-content: center; }
 .sheet-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.3s; }
 .bottom-sheet-container.active .sheet-overlay { opacity: 1; }
@@ -312,22 +288,15 @@ body[data-view-mode="focus"] .card-body p { font-size: 14px; gap: 8px; }
 .sheet-header { padding: 20px 20px 10px 20px; }
 .sheet-header h3 { margin: 0; text-align: center; }
 .sheet-body { padding: 0 20px 20px 20px; }
-
 .chip-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
 .chip {
     background: var(--bg-input); border: 2px solid var(--bg-input); color: var(--text-primary);
     padding: 10px 16px; border-radius: 50px; font-size: 14px; font-weight: 500; transition: all 0.2s;
 }
-.chip.selected { 
-    background: var(--accent-solid); 
-    color: #FFF; 
-    font-weight: 600; 
-    border-color: var(--accent-solid); 
-}
+.chip.selected { background: var(--accent-solid); color: #FFF; font-weight: 600; border-color: var(--accent-solid); }
 textarea { width: 100%; background: var(--bg-input); border: 2px solid var(--bg-input); border-radius: var(--border-radius-sm); padding: 12px; color: white; font-family: inherit; resize: none; }
 textarea:focus { border-color: var(--accent-solid); outline: none; }
 
-/* Modal (Detalle Cliente) */
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     display: flex; align-items: center; justify-content: center;
@@ -336,7 +305,6 @@ textarea:focus { border-color: var(--accent-solid); outline: none; }
     padding: 20px;
 }
 .modal-overlay.active { opacity: 1; pointer-events: all; }
-
 .modal-card {
     background: var(--bg-card); width: 100%; max-width: 400px;
     max-height: 85vh; overflow-y: auto;
@@ -346,20 +314,16 @@ textarea:focus { border-color: var(--accent-solid); outline: none; }
 .modal-overlay.active .modal-card { transform: translateY(0) scale(1); }
 .modal-card h3 { margin: 0 0 8px 0; }
 .modal-card p { margin: 0; color: var(--text-secondary); }
-
 .ultimo-pedido-box {
     background: var(--bg-main); padding: 15px; border-radius: var(--border-radius-sm);
     margin: 20px 0; border: 1px solid var(--bg-input);
 }
 .ultimo-pedido-box h4 { margin: 0 0 10px 0; color: var(--accent-solid); }
 .ultimo-pedido-box p { margin: 0; font-style: italic; color: var(--text-secondary); white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
-
 .modal-actions-row { display: flex; gap: 15px; margin-top: 25px; }
 .btn-confirm { flex: 1; background: var(--accent); color: #FFF; border: none; padding: 15px; border-radius: var(--border-radius-sm); font-weight: 700; }
 .btn-cancel { flex: 1; background: var(--bg-input); color: var(--text-primary); border: none; padding: 15px; border-radius: var(--border-radius-sm); font-weight: 700; }
 .btn-secondary { background: var(--bg-input); color: var(--text-primary); border: none; padding: 10px 14px; border-radius: var(--border-radius-sm); margin-top: 15px; width: 100%; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-/* Distancia */
 .distancia-badge {
     position: absolute; top: 16px; right: 16px;
     background: var(--bg-main); padding: 5px 10px; border-radius: 50px;
@@ -371,9 +335,83 @@ textarea:focus { border-color: var(--accent-solid); outline: none; }
 /* --- 11. Toasts (Notificaciones) --- */
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 350px; }
 .toast {
+    background: var(--bg-card); color: var(--text-primary); padding: 14px 20px; border-radius: 50px;
+    font-size: 14px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    animation: slideDownFade 0.4s ease-out forwards;
+    border: 1px solid var(--bg-input); font-weight: 500;
+}
+
+/* --- 12. Loading Toast (Nuevo) --- */
+#loading-toast {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(17, 19, 25, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 9998;
+    opacity: 0; transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+#loading-toast:not(.hidden) {
+    opacity: 1;
+    pointer-events: all;
+}
+.loading-toast-card {
     background: var(--bg-card);
-    color: var(--text-primary); padding: 14px 20px; border-radius: 50px; font-size: 14px; text-align: center;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.4); animation: slideDownFade 0.4s ease-out forwards;
-    border: 1px solid var(--bg-input);
-    font-weight: 500;
+    padding: 30px 40px;
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3);
+    animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.loading-toast-card p {
+    margin: 20px 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.loading-toast-card span {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Animación Check (Tilde) */
+.check-icon {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: var(--success);
+    margin: 0 auto;
+    position: relative;
+    transform: scale(0);
+    animation: check-pop-in 0.3s ease-out 0.1s forwards;
+}
+@keyframes check-pop-in {
+    to { transform: scale(1); }
+}
+.check-stem {
+    position: absolute;
+    width: 5px; height: 30px;
+    background: #FFF;
+    left: 28px; top: 15px;
+    transform: rotate(45deg);
+    transform-origin: center;
+    animation: check-stem-grow 0.3s ease-out 0.4s forwards;
+    opacity: 0;
+}
+@keyframes check-stem-grow {
+    from { height: 0; opacity: 1; }
+    to { height: 30px; opacity: 1; }
+}
+.check-kick {
+    position: absolute;
+    width: 5px; height: 15px;
+    background: #FFF;
+    left: 20px; top: 30px;
+    transform: rotate(-45deg);
+    transform-origin: center;
+    animation: check-kick-grow 0.3s ease-out 0.3s forwards;
+    opacity: 0;
+}
+@keyframes check-kick-grow {
+    from { height: 0; opacity: 1; }
+    to { height: 15px; opacity: 1; }
 }
