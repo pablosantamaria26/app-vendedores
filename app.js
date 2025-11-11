@@ -172,6 +172,7 @@ function iniciarApp() {
     void document.getElementById("view-app").offsetWidth;
     document.getElementById("view-app").classList.add("active");
     document.getElementById("vendedorNombre").innerText = estado.nombre;
+    document.getElementById("fabMapa").style.display = 'block';
     renderRuta();
     actualizarProgreso();
     
