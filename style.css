@@ -400,3 +400,82 @@ body[data-view-mode="focus"] .distancia-badge {
     50% { transform: scale(1); opacity: 1; }
     100% { transform: scale(0.8); opacity: 0.7; }
 }
+
+/* --- 13. TOASTS DINÁMICOS (IA) --- */
+
+/* Contenedor (arriba de todo) */
+#dynamic-toast-container {
+    position: fixed;
+    top: 0; /* Arriba, sobre el header */
+    left: 0;
+    right: 0;
+    z-index: 9999; /* El más alto */
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none; /* Permite clics a través de él */
+}
+
+/* Estructura base del toast */
+.dynamic-toast {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-md);
+    padding: 16px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-left: 6px solid var(--accent-solid);
+    opacity: 0;
+    transform: translateY(-30px);
+    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: all; /* Se puede hacer clic en el toast */
+}
+.dynamic-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.dynamic-toast p {
+    margin: 0;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+.dynamic-toast span {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Animación SHAKE (para urgentes) */
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* --- Variantes de Color/Estilo --- */
+
+/* 🔵 INFO (Azul/Tema) */
+.dynamic-toast.INFO {
+    border-color: var(--accent-solid);
+}
+.dynamic-toast.INFO p {
+    color: var(--accent-solid);
+}
+
+/* 🏆 EXITO (Verde) */
+.dynamic-toast.EXITO {
+    border-color: var(--success);
+}
+.dynamic-toast.EXITO p {
+    color: var(--success);
+}
+
+/* ⏱️ URGENTE (Rojo) */
+.dynamic-toast.URGENTE {
+    border-color: var(--danger);
+    animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both;
+}
+.dynamic-toast.URGENTE p {
+    color: var(--danger);
+}
