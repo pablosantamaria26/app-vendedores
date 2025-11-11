@@ -105,17 +105,26 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="./app.js"></script>
 
-    <script>
-    if ("serviceWorker" in navigator) {
-        // SW Push Notifications (Firebase) - Prioritario para alertas
-        navigator.serviceWorker.register("./firebase-messaging-sw.js")
-            .then(reg => console.log("📨 SW Firebase activo", reg.scope))
-            .catch(err => console.warn("❌ Error SW Firebase:", err));
-            
-        // Opcional: SW para caché offline (si lo necesitas más adelante)
-        // navigator.serviceWorker.register("./service-worker.js");
-    }
-    </script>
+<script>
+if ("serviceWorker" in navigator) {
+  
+  // Registrar el Service Worker de Firebase con scope correcto
+  navigator.serviceWorker.register("/app-vendedores/firebase-messaging-sw.js", {
+    scope: "/app-vendedores/"
+  })
+  .then((reg) => {
+    console.log("📨 SW Firebase ACTIVO en:", reg.scope);
+  })
+  .catch((err) => {
+    console.error("❌ Error registrando SW Firebase:", err);
+  });
+
+  // (Opcional) Si más adelante agregamos caché offline, se activará el SW secundario:
+  // navigator.serviceWorker.register("/app-vendedores/service-worker.js", { scope: "/app-vendedores/" });
+
+}
+</script>
+
 
 </body>
 </html>
