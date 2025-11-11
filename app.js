@@ -182,32 +182,33 @@ function iniciarApp() {
 // --- FUNCIÓN DE ACCIÓN Y UX ---
 function manejarClicksLista(e) {
     const card = e.target.closest('.card');
+    if (!card) return;
+
+    const index = parseInt(card.dataset.i);
     const btnVenta = e.target.closest('.btn-venta');
     const btnNoVenta = e.target.closest('.btn-noventa');
 
-    if (!card) return;
-    const index = parseInt(card.dataset.i);
+    // ✅ Si tocó un botón → acción directa
+    if (btnVenta) return registrarVenta(index, true);
+    if (btnNoVenta) return abrirMotivo(index);
 
-    if (btnVenta) {
-        // VENTA (si toca el botón)
-        registrarVenta(index, true);
-    } else if (btnNoVenta) {
-        // MOTIVO (si toca el botón)
-        abrirMotivo(index);
-    } else {
-        // CLICK EN TARJETA (abrir modal cliente o expandir acciones)
-        if (estado.ruta[index].visitado) {
-            // Si ya está visitado, solo expandir para ver notas
-            card.classList.toggle('expanded');
-        } else if(card.classList.contains('expanded')) {
-            // Si está expandido y toca, lo cerramos
-            card.classList.remove('expanded');
-        } else {
-            // Si no está visitado y no está expandido, abrir modal de detalle/navegación
-            abrirModalCliente(index);
-        }
+    const cliente = estado.ruta[index];
+
+    // ✅ Si el cliente está visitado → solo expandir visual
+    if (cliente.visitado) {
+        card.classList.toggle('expanded');
+        return;
     }
+
+    // ✅ Si NO está visitado → mostrar acciones (NO abrir modal)
+    card.classList.add('expanded');
+
+    // ❤️ Truco UX: cerrar los demás
+    document.querySelectorAll('.card.expanded').forEach(c => {
+        if (c !== card) c.classList.remove('expanded');
+    });
 }
+
 
 
 function renderRuta() {
