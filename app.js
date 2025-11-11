@@ -104,7 +104,7 @@ function obtenerUbicacion() {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                renderRuta(); // Refresca las distancias si se obtiene después del login
+                ordenarRutaPorDistancia();
                 resolve();
             },
             () => resolve(), // Resuelve aunque falle
@@ -121,9 +121,12 @@ function iniciarSeguimientoGPS() {
     if (!navigator.geolocation) return;
 
     gpsWatcher = navigator.geolocation.watchPosition(
-        (pos) => {
-            estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            verificarProximidadClientes();
+         (pos) => {
+    estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    ordenarRutaPorDistancia();   // ← 🔥 Ordena automáticamente en tiempo real
+    verificarProximidadClientes();
+},
+
         },
         (err) => console.warn("GPS error:", err),
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 7000 }
@@ -473,6 +476,28 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
+
+function ordenarRutaPorDistancia() {
+    if (!estado.ubicacionActual) return;
+
+    const { lat, lng } = estado.ubicacionActual;
+
+    // Ordena: primero pendientes por proximidad, luego visitados
+    estado.ruta.sort((a, b) => {
+        if (a.visitado && !b.visitado) return 1;
+        if (!a.visitado && b.visitado) return -1;
+
+        if (!a.lat || !a.lng) return 1;
+        if (!b.lat || !b.lng) return -1;
+
+        const dA = calcularDistancia(lat, lng, a.lat, a.lng);
+        const dB = calcularDistancia(lat, lng, b.lat, b.lng);
+        return dA - dB;
+    });
+
+    renderRuta();
+}
+
 
 function actualizarProgreso() {
     const total = estado.ruta.length;
