@@ -179,86 +179,82 @@ function iniciarApp() {
 }
 
 
-// --- FUNCIÓN DE ACCIÓN Y UX ---
 function manejarClicksLista(e) {
-    const card = e.target.closest('.card');
-    if (!card) return;
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const index = parseInt(card.dataset.i);
 
-    const index = parseInt(card.dataset.i);
-    const btnVenta = e.target.closest('.btn-venta');
-    const btnNoVenta = e.target.closest('.btn-noventa');
+  const btnVenta   = e.target.closest('.btn-venta');
+  const btnNoVenta = e.target.closest('.btn-noventa');
+  const btnDetalle = e.target.closest('.btn-detalle');
 
-    // ✅ Si tocó un botón → acción directa
-    if (btnVenta) return registrarVenta(index, true);
-    if (btnNoVenta) return abrirMotivo(index);
+  if (btnVenta) {
+    registrarVenta(index, true);
+    return;
+  }
 
-    const cliente = estado.ruta[index];
+  if (btnNoVenta) {
+    abrirMotivo(index);
+    return;
+  }
 
-    // ✅ Si el cliente está visitado → solo expandir visual
-    if (cliente.visitado) {
-        card.classList.toggle('expanded');
-        return;
-    }
+  if (btnDetalle) {
+    abrirModalCliente(index);
+    return;
+  }
 
-    // ✅ Si NO está visitado → mostrar acciones (NO abrir modal)
-    card.classList.add('expanded');
-
-    // ❤️ Truco UX: cerrar los demás
-    document.querySelectorAll('.card.expanded').forEach(c => {
-        if (c !== card) c.classList.remove('expanded');
-    });
+  // Tap en la tarjeta: expandir/colapsar acciones
+  card.classList.toggle('expanded');
 }
 
 
 
+
 function renderRuta() {
-    const container = document.getElementById("listaClientes");
-    container.innerHTML = "";
+  const container = document.getElementById("listaClientes");
+  container.innerHTML = "";
 
-    // 🔥 Detectar el primer cliente pendiente
-    const indexSiguiente = estado.ruta.findIndex(c => !c.visitado);
+  // índice del próximo cliente pendiente
+  const indexSiguiente = estado.ruta.findIndex(c => !c.visitado);
 
-    estado.ruta.forEach((c, i) => {
-        let distanciaHTML = "";
-        if (estado.ubicacionActual && c.lat && c.lng) {
-            const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
-            distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
-        }
+  estado.ruta.forEach((c, i) => {
+    let distanciaHTML = "";
+    if (estado.ubicacionActual && c.lat && c.lng) {
+      const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
+      distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
+    }
 
-        const frecuenciaTexto = c.frecuencia || "Sin historial previo";
+    const frecuenciaTexto = c.frecuencia || "Sin historial previo";
 
-        const card = document.createElement('div');
-        card.dataset.i = i;
+    const card = document.createElement('div');
+    card.dataset.i = i;
+    card.className = `card 
+      ${c.visitado ? 'visitado' : ''} 
+      ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}
+      ${i === indexSiguiente ? 'next' : ''}`;
 
-        // 🟢 CLASES DINÁMICAS
-        card.className = `card 
-            ${c.visitado ? 'visitado' : ''} 
-            ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}
-            ${i === indexSiguiente ? 'next' : ''}   /* <--- 🔥 NUEVO */
-        `;
-
-        card.innerHTML = `
-            ${i === indexSiguiente ? `<div class="next-label">➡️ SIGUIENTE</div>` : ""}
-            ${distanciaHTML}
-            <div class="card-header">
-                <h3>${c.nombre}</h3>
-                <span class="badge ${c.visitado ? (c.compro ? 'si' : 'no') : 'pendiente'}">
-                    ${c.visitado ? (c.compro ? 'VENTA' : 'NO') : 'PENDIENTE'}
-                </span>
-            </div>
-            <div class="card-body">
-                <p>📍 ${c.domicilio}</p>
-                <p>📊 Frecuencia: ${frecuenciaTexto}</p>
-            </div>
-            ${!c.visitado ? `
-            <div class="card-actions">
-                <button class="btn-action btn-venta">✅ VENTA</button>
-                <button class="btn-action btn-noventa">❌ MOTIVO</button>
-            </div>` : ""}
-        `;
-
-        container.appendChild(card);
-    });
+    card.innerHTML = `
+      ${distanciaHTML}
+      <div class="card-header">
+        <h3>${c.nombre}</h3>
+        <span class="badge ${c.visitado ? (c.compro ? 'si' : 'no') : 'pendiente'}">
+          ${c.visitado ? (c.compro ? 'VENTA' : 'NO') : 'PENDIENTE'}
+        </span>
+      </div>
+      <div class="card-body">
+        <p>📍 ${c.domicilio}</p>
+        <p>📊 Frecuencia: ${frecuenciaTexto}</p>
+      </div>
+      ${!c.visitado ? `
+      <div class="card-actions">
+        <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
+        <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
+        <button class="btn-action btn-detalle" data-i="${i}">ℹ️ DETALLE</button>
+      </div>
+      ` : ''}
+    `;
+    container.appendChild(card);
+  });
 }
 
 
@@ -318,6 +314,8 @@ async function registrarVenta(index, compro, motivo = "") {
     cliente.visitado = true;
     cliente.compro = compro;
     cliente.motivo = motivo || "";
+    cliente.hora = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+
 
     // Guardar en servidor
     fetch(API, {
@@ -549,15 +547,30 @@ function ordenarRutaPorDistancia() {
 }
 
 
+let _reporteEnviado = false;
+
 function actualizarProgreso() {
-    const total = estado.ruta.length;
-    const visitados = estado.ruta.filter(c => c.visitado).length;
-    const porc = total === 0 ? 0 : (visitados / total) * 100;
-    const circle = document.querySelector('.progreso-value');
-    if (circle) circle.style.strokeDashoffset = 100 - porc;
-    document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
-    document.getElementById("mensajeCoach").innerText = porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
+  const total = estado.ruta.length;
+  const visitados = estado.ruta.filter(c => c.visitado).length;
+  const porc = total === 0 ? 0 : (visitados / total) * 100;
+
+  const circle = document.querySelector('.progreso-value');
+  if (circle) circle.style.strokeDashoffset = 100 - porc;
+
+  document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
+  document.getElementById("mensajeCoach").innerText = 
+    porc === 100 ? "🎉 ¡Ruta finalizada!" : `${estado.nombre.split(' ')[0]}, ¡vamos por más!`;
+
+  // 📧 Enviar reporte automático al completar 100%
+  if (porc === 100 && !_reporteEnviado) {
+    _reporteEnviado = true;
+    enviarReporteSupervisor().catch(err => {
+      console.error("Error enviando reporte:", err);
+      _reporteEnviado = false; // reintento manual si querés
+    });
+  }
 }
+
 
 function toast(msg) {
     const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
@@ -571,3 +584,36 @@ function setTheme(theme) {
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
 }
 function initTheme() { setTheme(localStorage.getItem('theme') || 'foco'); }
+
+async function enviarReporteSupervisor() {
+  const visitas = estado.ruta
+    .filter(c => c.visitado)
+    .map(c => ({
+      numeroCliente: c.numeroCliente || "",
+      nombre: c.nombre || "",
+      domicilio: c.domicilio || "",
+      compro: !!c.compro,
+      motivo: c.motivo || "",
+      hora: c.hora || ""
+    }));
+
+  const payload = {
+    accion: "reporteSupervisor",
+    vendedor: estado.vendedor,
+    vendedorNombre: estado.nombre,
+    fechaISO: new Date().toISOString(),
+    visitas
+  };
+
+  const res = await fetch(API, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+
+  toast("📧 Reporte enviado al supervisor");
+}
+
