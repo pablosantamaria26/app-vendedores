@@ -53,9 +53,14 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* === FIREBASE (Sin cambios) === */
+/* === FIREBASE (v5.1 con Oyente) === */
 let messaging;
 function initFirebase() {
-    if (typeof firebase === 'undefined') return;
+    if (typeof firebase === 'undefined') {
+        console.warn("Firebase no está cargado.");
+        return; 
+    }
+    
     firebase.initializeApp({
         apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
         authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -64,7 +69,21 @@ function initFirebase() {
         messagingSenderId: "583313989429",
         appId: "1:583313989429:web:c4f78617ad957c3b11367c"
     });
+    
     messaging = firebase.messaging();
+
+    // --- ¡NUEVO OYENTE DE MENSAJES! ---
+    // Esto se activa SOLO si la app está abierta y en primer plano.
+    messaging.onMessage((payload) => {
+        console.log("Mensaje de IA (foreground) recibido: ", payload);
+
+        const { tipo, titulo, mensaje } = payload.data;
+
+        if (tipo && mensaje) {
+            // ¡Llamamos a nuestra nueva función para dibujar el toast!
+            showDynamicToast(tipo, titulo, mensaje);
+        }
+    });
 }
 
 
