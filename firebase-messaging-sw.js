@@ -1,15 +1,15 @@
 // =================================================
 // 🔔 Service Worker FCM - App Vendedores Inteligente
-// VERSIÓN v5.2 - "SW Inteligente"
+// VERSIÓN v5.3 - Optimizada para iOS Push
 // =================================================
 
 self.addEventListener("install", () => {
-  console.log("⚡ Nueva versión del Service Worker (v5.2) instalada");
+  console.log("⚡ Nueva versión del Service Worker (v5.3) instalada");
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("♻️ Activando SW (v5.2) y reclamando clientes...");
+  console.log("♻️ Activando SW (v5.3) y reclamando clientes...");
   event.waitUntil(clients.claim());
 });
 
@@ -32,44 +32,33 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // --------------------------------------------------
-// 📩 LÓGICA DE MENSAJERÍA (v5.2)
+// 📩 LÓGICA DE NOTIFICACIONES (v5.3) - Siempre muestra Push en iOS
 // --------------------------------------------------
-messaging.onBackgroundMessage(async (payload) => { // <-- Se añade "async"
-  console.log("📨 Notificación en background (v5.2):", payload);
+messaging.onBackgroundMessage(async (payload) => {
+  console.log("📨 Notificación en background (v5.3):", payload);
 
-  // --- ¡INICIO DE LÓGICA INTELIGENTE v5.2! ---
-  // Revisa si la app ya está abierta y visible
-  const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
-  
-  const isAppVisible = windowClients.some(client => 
-      client.visibilityState === 'visible' && client.focused
-  );
+  // En iOS, el Service Worker casi siempre intercepta.
+  // Así que siempre mostraremos una notificación push del sistema,
+  // pero usando los datos enriquecidos que enviamos desde el GAS.
 
-  if (isAppVisible) {
-      // ----
-      // APP ESTÁ ABIERTA Y VISIBLE
-      // ----
-      console.log("SW v5.2: App está visible. Dejando que app.js (onMessage) lo maneje.");
-      // No hacemos NADA. Devolvemos null.
-      // Esto permite que el "oyente" en app.js (messaging.onMessage)
-      // reciba el mensaje y muestre el toast de colores.
-      return null; 
+  // Tomamos los datos limpios que preparamos en el GAS.
+  const tituloNotificacion = payload.data?.titulo || "Maestro de Ventas";
+  const mensajeCuerpo = payload.data?.mensaje || "Tienes un nuevo mensaje.";
+  const tipoMensaje = payload.data?.tipo || "INFO"; // Para posibles usos futuros
+
+  // Puedes añadir un emoji al cuerpo o título según el tipo aquí si quieres
+  let iconoEmoji = "";
+  if (tipoMensaje === "URGENTE") {
+      // Ya lo ponemos en el título desde GAS
+  } else if (tipoMensaje === "EXITO") {
+      // Ya lo ponemos en el título desde GAS
+  } else {
+      // iconoEmoji = "🔵 ";
   }
-  // --- FIN DE LÓGICA INTELIGENTE ---
-
-  // ----
-  // APP ESTÁ CERRADA O EN SEGUNDO PLANO
-  // ----
-  console.log("SW v5.2: App CERRADA. Mostrando notificación push (lógica original).");
-  
-  // Usamos tu lógica original para mostrar la notificación
-  const vendedor = payload.data?.vendedor ? ` — ${payload.data.vendedor}` : "";
-  const titulo = (payload.notification?.title || "Nueva alerta") + vendedor;
-  const cuerpo = payload.notification?.body || "";
 
   // Devolvemos la promesa para mostrar la notificación
-  return self.registration.showNotification(titulo, {
-    body: cuerpo,
+  return self.registration.showNotification(tituloNotificacion, {
+    body: iconoEmoji + mensajeCuerpo, // El emoji ya está en el cuerpo
     icon: "/ml-icon-192.png",
     badge: "/ml-icon-192.png",
     data: {
@@ -80,7 +69,7 @@ messaging.onBackgroundMessage(async (payload) => { // <-- Se añade "async"
 
 
 // --------------------------------------------------
-// 🖱️ Click → Abrir / Enfocar App (Tu código original, sin cambios)
+// 🖱️ Click → Abrir / Enfocar App (Tu código original, preservado)
 // --------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
