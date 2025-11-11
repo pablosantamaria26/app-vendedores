@@ -120,6 +120,70 @@ function obtenerUbicacion() {
     });
 }
 
+/* === SEGUIMIENTO GPS EN TIEMPO REAL (ACTIVO DURANTE LA RUTA) === */
+let gpsWatcher = null;
+let clientesAvisados = new Set(); // Para no mandar notificación repetida
+
+function iniciarSeguimientoGPS() {
+    if (!navigator.geolocation) return;
+
+    gpsWatcher = navigator.geolocation.watchPosition(
+        (pos) => {
+            estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            verificarProximidadClientes();
+        },
+        (err) => console.warn("GPS error:", err),
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 7000 }
+    );
+}
+
+function verificarProximidadClientes() {
+    if (!estado.ubicacionActual) return;
+
+    estado.ruta.forEach((c) => {
+        if (!c.lat || !c.lng) return; // Sin coordenadas → se ignora
+        if (c.visitado) return; // Ya visitado → no avisar
+        if (clientesAvisados.has(c.numeroCliente)) return; // Ya avisado → no repetir
+
+        const dist = calcularDistancia(
+            estado.ubicacionActual.lat,
+            estado.ubicacionActual.lng,
+            c.lat,
+            c.lng
+        ) * 1000; // Km → metros
+
+        if (dist <= 120) { // 120 metros
+            clientesAvisados.add(c.numeroCliente);
+
+            // 📣 ENVÍA NOTIFICACIÓN PUSH DESDE EL SERVER
+            fetch(API, {
+                method: "POST",
+                body: JSON.stringify({
+                    accion: "enviarPush",
+                    vendedor: estado.vendedor,
+                    titulo: "🛎️ Estás llegando",
+                    mensaje: `Prepárate para ${c.nombre}`
+                })
+            }).catch(() => console.warn("No se pudo enviar push"));
+            
+            toast(`📍 Estás cerca de: ${c.nombre}`);
+        }
+    });
+}
+
+/* Llamar seguimiento al iniciar la app */
+function iniciarApp() {
+    document.getElementById("view-login").classList.remove("active");
+    void document.getElementById("view-app").offsetWidth;
+    document.getElementById("view-app").classList.add("active");
+    document.getElementById("vendedorNombre").innerText = estado.nombre;
+    renderRuta();
+    actualizarProgreso();
+    
+    iniciarSeguimientoGPS(); // ← 🔥 ACTIVAMOS SEGUIMIENTO CONTINUO
+}
+
+
 // --- FUNCIÓN DE ACCIÓN Y UX ---
 function manejarClicksLista(e) {
     const card = e.target.closest('.card');
