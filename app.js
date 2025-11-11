@@ -72,7 +72,7 @@ async function login() {
 
         estado.vendedor = clave.padStart(4, "0");   // Siempre 4 dígitos: 0001, 0002...
         estado.nombre = data.vendedor || "Vendedor";
-        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false }));
+        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
         
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
         localStorage.setItem("vendedor_actual", estado.vendedor);
@@ -180,33 +180,46 @@ function iniciarApp() {
 
 
 function manejarClicksLista(e) {
-  const card = e.target.closest('.card');
-  if (!card) return;
-  const index = parseInt(card.dataset.i);
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const index = parseInt(card.dataset.i);
+    if (isNaN(index)) return; // Salir si no hay índice
 
-  const btnVenta   = e.target.closest('.btn-venta');
-  const btnNoVenta = e.target.closest('.btn-noventa');
-  const btnDetalle = e.target.closest('.btn-detalle');
+    const btnVenta   = e.target.closest('.btn-venta');
+    const btnNoVenta = e.target.closest('.btn-noventa');
+    const btnDetalle = e.target.closest('.btn-detalle');
 
-  if (btnVenta) {
-    registrarVenta(index, true);
-    return;
-  }
+    if (btnVenta) {
+        registrarVenta(index, true);
+        return; // registrarVenta ya llama a renderRuta
+    }
 
-  if (btnNoVenta) {
-    abrirMotivo(index);
-    return;
-  }
+    if (btnNoVenta) {
+        abrirMotivo(index);
+        return; // abrirMotivo no necesita redibujar
+    }
 
-  if (btnDetalle) {
-    abrirModalCliente(index);
-    return;
-  }
+    if (btnDetalle) {
+        abrirModalCliente(index);
+        return; // modal no necesita redibujar
+    }
 
-  // Tap en la tarjeta: expandir/colapsar acciones
-  card.classList.toggle('expanded');
+    // --- LÓGICA DE EXPANSIÓN CORREGIDA ---
+    // Tap en la tarjeta: expandir/colapsar acciones
+    const cliente = estado.ruta[index];
+    if (cliente) {
+        // Alternar el estado guardado
+        cliente.expanded = !cliente.expanded;
+        
+        // Opcional: cerrar otras tarjetas
+        estado.ruta.forEach((c, i) => {
+            if (i !== index) c.expanded = false;
+        });
+        
+        // Redibujar la lista para reflejar el estado
+        renderRuta();
+    }
 }
-
 
 
 
@@ -229,9 +242,10 @@ function renderRuta() {
     const card = document.createElement('div');
     card.dataset.i = i;
     card.className = `card 
-      ${c.visitado ? 'visitado' : ''} 
-      ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}
-      ${i === indexSiguiente ? 'next' : ''}`;
+        ${c.visitado ? 'visitado' : ''} 
+        ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}
+        ${i === indexSiguiente ? 'next' : ''}
+        ${c.expanded ? 'expanded' : ''}`; // <-- AÑADIDO
 
     card.innerHTML = `
       ${distanciaHTML}
