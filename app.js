@@ -76,6 +76,7 @@ async function login() {
         
         localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
         localStorage.setItem("vendedor_actual", estado.vendedor);
+        localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
 
         
         iniciarApp();
@@ -246,15 +247,29 @@ function manejarClicksLista(e) {
 
 
 function renderRuta() {
-  const container = document.getElementById("listaClientes");
-  container.innerHTML = "";
+    const container = document.getElementById("listaClientes");
+    container.innerHTML = "";
 
-  // índice del próximo cliente pendiente
-  const indexSiguiente = estado.ruta.findIndex(c => !c.visitado);
+    // Filtrar solo los NO visitados
+    const pendientes = estado.ruta.filter(c => !c.visitado);
+    // índice del próximo cliente pendiente (sobre la lista filtrada)
+    const indexSiguiente = 0; // El primero de la lista filtrada es siempre el siguiente
 
-  estado.ruta.forEach((c, i) => {
-    let distanciaHTML = "";
-    if (estado.ubicacionActual && c.lat && c.lng) {
+    if (pendientes.length === 0) {
+        container.innerHTML = `<div class="ruta-completa">🎉<br>¡Ruta finalizada por hoy!<br>🎉</div>`;
+    }
+
+    estado.ruta.forEach((c, i) => {
+        // --- INICIO DE CAMBIO ---
+        // Si está visitado, no lo renderices en la lista
+        if (c.visitado) {
+            return; // Saltar este cliente
+        }
+        // --- FIN DE CAMBIO ---
+
+        let distanciaHTML = "";
+        if (estado.ubicacionActual && c.lat && c.lng) {
+        
       const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
       distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
     }
@@ -368,6 +383,7 @@ async function registrarVenta(index, compro, motivo = "") {
   // Refrescar UI
   renderRuta();
   actualizarProgreso();
+  localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta)); // <-- AÑADE ESTA LÍNEA
 
   try {
     const payload = {
