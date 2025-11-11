@@ -210,10 +210,12 @@ function manejarClicksLista(e) {
 }
 
 
-/* === RENDER UI (CON DISTANCIA Y FRECUENCIA) === */
 function renderRuta() {
     const container = document.getElementById("listaClientes");
-    container.innerHTML = ""; 
+    container.innerHTML = "";
+
+    // 🔥 Detectar el primer cliente pendiente
+    const indexSiguiente = estado.ruta.findIndex(c => !c.visitado);
 
     estado.ruta.forEach((c, i) => {
         let distanciaHTML = "";
@@ -221,14 +223,21 @@ function renderRuta() {
             const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
             distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
         }
-        
+
         const frecuenciaTexto = c.frecuencia || "Sin historial previo";
 
         const card = document.createElement('div');
-        card.className = `card ${c.visitado ? 'visitado' : ''} ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}`;
-        card.dataset.i = i; 
+        card.dataset.i = i;
+
+        // 🟢 CLASES DINÁMICAS
+        card.className = `card 
+            ${c.visitado ? 'visitado' : ''} 
+            ${c.visitado ? (c.compro ? 'compro-si' : 'compro-no') : ''}
+            ${i === indexSiguiente ? 'next' : ''}   /* <--- 🔥 NUEVO */
+        `;
 
         card.innerHTML = `
+            ${i === indexSiguiente ? `<div class="next-label">➡️ SIGUIENTE</div>` : ""}
             ${distanciaHTML}
             <div class="card-header">
                 <h3>${c.nombre}</h3>
@@ -242,14 +251,15 @@ function renderRuta() {
             </div>
             ${!c.visitado ? `
             <div class="card-actions">
-                <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
-                <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
-            </div>
-            ` : ''}
+                <button class="btn-action btn-venta">✅ VENTA</button>
+                <button class="btn-action btn-noventa">❌ MOTIVO</button>
+            </div>` : ""}
         `;
+
         container.appendChild(card);
     });
 }
+
 
 /* === MODAL CLIENTE & ÚLTIMO PEDIDO === */
 let clienteModalIndex = null;
