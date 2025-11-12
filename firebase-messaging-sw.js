@@ -32,35 +32,30 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // --------------------------------------------------
-// 📩 LÓGICA DE NOTIFICACIONES (v5.3) - Siempre muestra Push en iOS
+// 📩 LÓGICA DE NOTIFICACIONES (v5.5) - FIX Título "From Vendedores"
 // --------------------------------------------------
 messaging.onBackgroundMessage(async (payload) => {
-  console.log("📨 Notificación en background (v5.3):", payload);
-
-  // En iOS, el Service Worker casi siempre intercepta.
-  // Así que siempre mostraremos una notificación push del sistema,
-  // pero usando los datos enriquecidos que enviamos desde el GAS.
+  console.log("📨 Notificación en background (v5.5):", payload);
 
   // Tomamos los datos limpios que preparamos en el GAS.
   const tituloNotificacion = payload.data?.titulo || "Maestro de Ventas";
   const mensajeCuerpo = payload.data?.mensaje || "Tienes un nuevo mensaje.";
-  const tipoMensaje = payload.data?.tipo || "INFO"; // Para posibles usos futuros
+  const tipoMensaje = payload.data?.tipo || "INFO"; 
 
-  // Puedes añadir un emoji al cuerpo o título según el tipo aquí si quieres
+  // NO USAMOS iconoEmoji ya que lo estás manejando en GAS (🔴, 🏆, 🧠)
   let iconoEmoji = "";
-  if (tipoMensaje === "URGENTE") {
-      // Ya lo ponemos en el título desde GAS
-  } else if (tipoMensaje === "EXITO") {
-      // Ya lo ponemos en el título desde GAS
-  } else {
-      // iconoEmoji = "🔵 ";
-  }
 
   // Devolvemos la promesa para mostrar la notificación
   return self.registration.showNotification(tituloNotificacion, {
-    body: iconoEmoji + mensajeCuerpo, // El emoji ya está en el cuerpo
+    // Es CRÍTICO que el body tenga valor.
+    body: iconoEmoji + mensajeCuerpo, 
     icon: "/ml-icon-192.png",
     badge: "/ml-icon-192.png",
+    
+    // 🔥 FIX CLAVE: Añadir el tag (etiqueta) para ayudar a iOS/navegadores a identificar
+    // la notificación como propia de la aplicación y suprimir el texto de origen.
+    tag: 'fcm-push-v5', 
+    
     data: {
       url: payload.data?.url || "https://pablosantamaria26.github.io/app-vendedores/"
     }
