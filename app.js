@@ -1,9 +1,10 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.6 - LOGIC (Clean & Updated)
+   APP VENDEDORES PRO v2.7 - FINAL MERGE
    ====================================================== */
 
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
+// --- ESTADO GLOBAL ACTUALIZADO ---
 let estado = {
     vendedor: "",
     nombre: "",
@@ -11,12 +12,14 @@ let estado = {
     motivoSeleccionado: "",
     ubicacionActual: null,
     viewMode: "list",
-    diaRutaActual: "LUN"
+    diaRutaActual: "LUN" // Antes era zonaActual. Ahora guarda: LUN, MAR, MIE...
 };
+
 let map, markers;
 let gpsWatcher = null;
 let clientesAvisados = new Set();
 let _reporteEnviado = false;
+let diaSeleccionadoTemp = ""; // Para guardar la selección antes de confirmar
 
 const MENSAJES_MOTIVACIONALES = [
     "¡Vamos por un gran día de ventas!",
@@ -28,7 +31,7 @@ const MENSAJES_MOTIVACIONALES = [
 
 /* === INICIO & EVENTOS GLOBALES === */
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🚀 App iniciada (v2.6 PRO)");
+    console.log("🚀 App iniciada (v2.7 PRO)");
     try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
     
     // Verificar si es un nuevo día antes de cargar sesión
@@ -38,10 +41,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Eventos de Login
     const claveInput = document.getElementById("claveInput");
-    document.getElementById("btnIngresar").addEventListener("click", login);
-    claveInput.addEventListener("keyup", (e) => e.key === "Enter" && login());
-    claveInput.addEventListener("input", handleClaveInput);
-    document.getElementById("toggleClave").addEventListener("click", toggleClave);
+    if(document.getElementById("btnIngresar")) document.getElementById("btnIngresar").addEventListener("click", login);
+    if(claveInput) {
+        claveInput.addEventListener("keyup", (e) => e.key === "Enter" && login());
+        claveInput.addEventListener("input", handleClaveInput);
+    }
+    if(document.getElementById("toggleClave")) document.getElementById("toggleClave").addEventListener("click", toggleClave);
 
     // Eventos de Navegación (Footer)
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -52,46 +57,74 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     // Botón Mapa Footer (Acción directa)
-    document.getElementById("btnFooterMapa").addEventListener("click", toggleMapa);
-    document.getElementById("btnCerrarMapa").addEventListener("click", toggleMapa);
+    const btnMap = document.getElementById("btnFooterMapa");
+    if(btnMap) btnMap.addEventListener("click", toggleMapa);
+    const btnCloseMap = document.getElementById("btnCerrarMapa");
+    if(btnCloseMap) btnCloseMap.addEventListener("click", toggleMapa);
 
     // Eventos Lista Clientes
-    document.getElementById("listaClientes").addEventListener("click", manejarClicksLista);
-    document.getElementById("btnCancelarModal").addEventListener("click", cerrarModalCliente);
-    document.getElementById("btnIrCliente").addEventListener("click", irACliente);
+    const lista = document.getElementById("listaClientes");
+    if(lista) lista.addEventListener("click", manejarClicksLista);
+    
+    // Modals
+    document.getElementById("btnCancelarModal")?.addEventListener("click", cerrarModalCliente);
+    document.getElementById("btnIrCliente")?.addEventListener("click", irACliente);
 
     // Eventos Motivos
-    document.getElementById("overlay-motivo").addEventListener("click", cerrarMotivo);
-    document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
-    document.getElementById("motivoOptions").addEventListener("click", manejarMotivoChips);
+    document.getElementById("overlay-motivo")?.addEventListener("click", cerrarMotivo);
+    document.getElementById("btnConfirmarMotivo")?.addEventListener("click", confirmarMotivo);
+    document.getElementById("motivoOptions")?.addEventListener("click", manejarMotivoChips);
 
     // Eventos Header
-    document.getElementById("btnViewList").addEventListener("click", () => setViewMode("list"));
-    document.getElementById("btnViewFocus").addEventListener("click", () => setViewMode("focus"));
+    document.getElementById("btnViewList")?.addEventListener("click", () => setViewMode("list"));
+    document.getElementById("btnViewFocus")?.addEventListener("click", () => setViewMode("focus"));
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener("click", () => setTheme(btn.dataset.theme));
     });
 
-    // Eventos Cambio de Zona
-    document.getElementById("zone-selector").addEventListener("click", manejarChipsZona);
-    document.getElementById("btnSolicitarCambioZona").addEventListener("click", abrirConfirmacionZona);
-    document.getElementById("btnCancelZona").addEventListener("click", () => document.getElementById("modal-confirm-zona").classList.remove("active"));
-    document.getElementById("btnOkZona").addEventListener("click", confirmarCambioZonaAPI);
+    // --- NUEVOS EVENTOS: AGENDA (DÍAS) ---
+    // Nota: Los botones se generan dinámicamente en initDiaRutaControls
+    
+    // Modal Confirmación Cambio de Día
+    const btnSolicitarZona = document.getElementById("btnSolicitarCambioZona"); // (Si existe en tu HTML viejo)
+    if(btnSolicitarZona) btnSolicitarZona.addEventListener("click", abrirConfirmacionDia);
 
-    // Eventos Ajustes
-    document.getElementById("btnLogout").addEventListener("click", logout);
+    // Botones del Modal de Confirmación de Zona (Ahora Día)
+    // Asegúrate que en tu HTML los botones del modal tengan estos IDs o ajusta aquí
+    const btnCancelZone = document.getElementById("btnCancelZone") || document.getElementById("btnCancelZona");
+    if(btnCancelZone) btnCancelZone.addEventListener("click", () => document.getElementById("modal-confirm-zona").classList.remove("active"));
+    
+    const btnOkZone = document.getElementById("btnOkZone") || document.getElementById("btnOkZona");
+    if(btnOkZone) btnOkZone.addEventListener("click", confirmarCambioDiaAPI);
+
+    // --- NUEVOS EVENTOS: AJUSTES (PIN & SYNC) ---
+    document.getElementById("btnLogout")?.addEventListener("click", logout);
+    
+    // Botón Sincronizar
+    document.getElementById("btnSync")?.addEventListener("click", forzarSincronizacion);
+
+    // Cambio de PIN
+    document.getElementById("btnCambiarPin")?.addEventListener("click", () => {
+        document.getElementById("password-change-modal").classList.add("active");
+    });
+    document.getElementById("btnCancelPinChange")?.addEventListener("click", () => {
+        document.getElementById("password-change-modal").classList.remove("active");
+    });
+    document.getElementById("btnSavePinChange")?.addEventListener("click", guardarNuevoPin);
 });
 
 /* === LÓGICA DE NAVEGACIÓN === */
 function showView(viewId) {
-    // Ocultar todas las vistas
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    // Mostrar la target
     document.getElementById(viewId).classList.add('active');
-    // Actualizar footer
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.querySelector(`.nav-btn[data-target="${viewId}"]`);
     if(activeBtn) activeBtn.classList.add('active');
+    
+    // Si entra a agenda, asegurarse que los controles estén bien
+    if(viewId === 'view-agenda') {
+        initDiaRutaControls();
+    }
 }
 
 /* === LÓGICA DE REINICIO DIARIO (00:00hs) === */
@@ -101,10 +134,10 @@ function checkDailyReset() {
 
     if (fechaGuardada && fechaGuardada !== hoy) {
         console.log("📅 Nuevo día detectado. Limpiando ruta anterior...");
-        localStorage.removeItem("ruta_" + localStorage.getItem("vendedor_actual"));
+        const vend = localStorage.getItem("vendedor_actual");
+        if(vend) localStorage.removeItem("ruta_" + vend);
         localStorage.removeItem("fecha_ruta");
         localStorage.removeItem("vendedor_sesion");
-        // No borramos el token FCM para que sigan llegando notificaciones
         window.location.reload();
     }
 }
@@ -138,8 +171,12 @@ function initFirebase() {
 /* === LOGIN & API === */
 function mostrarLoadingToast(msgOverride) {
     const msg = msgOverride || MENSAJES_MOTIVACIONALES[Math.floor(Math.random() * MENSAJES_MOTIVACIONALES.length)];
-    document.getElementById("loading-toast-msg").innerText = msg;
-    document.getElementById("loading-toast-weather").innerText = "Conectando...";
+    const elMsg = document.getElementById("loading-toast-msg");
+    if(elMsg) elMsg.innerText = msg;
+    
+    const elWeather = document.getElementById("loading-toast-weather");
+    if(elWeather) elWeather.innerText = "Conectando...";
+    
     document.getElementById("loading-toast").classList.remove("hidden");
 }
 
@@ -165,7 +202,8 @@ async function login() {
         if (estado.ubicacionActual) {
             fetchClimaString(estado.ubicacionActual.lat, estado.ubicacionActual.lng)
                 .then(climaStr => {
-                    document.getElementById("loading-toast-weather").innerText = climaStr;
+                    const elW = document.getElementById("loading-toast-weather");
+                    if(elW) elW.innerText = climaStr;
                 });
         }
 
@@ -179,12 +217,21 @@ async function login() {
         // Guardar Estado
         estado.vendedor = clave.padStart(4, "0");
         estado.nombre = data.vendedor || "Vendedor";
+        // Capturamos el día asignado desde el Backend
+        estado.diaRutaActual = (data.diaAsignado || "LUN").toUpperCase();
+        
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
         
-        localStorage.setItem("vendedor_sesion", JSON.stringify({ clave: estado.vendedor, nombre: estado.nombre }));
+        // Persistencia
+        localStorage.setItem("vendedor_sesion", JSON.stringify({ 
+            clave: estado.vendedor, 
+            nombre: estado.nombre,
+            diaDefault: estado.diaRutaActual // Guardamos el día también
+        }));
         localStorage.setItem("vendedor_actual", estado.vendedor);
         localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
-        localStorage.setItem("fecha_ruta", new Date().toLocaleDateString()); // Guardamos la fecha de hoy
+        localStorage.setItem("fecha_ruta", new Date().toLocaleDateString()); 
+        localStorage.setItem("dia_ruta_actual", estado.diaRutaActual);
 
         iniciarApp();
         ocultarLoadingToast();
@@ -216,63 +263,185 @@ function logout() {
     location.reload();
 }
 
-/* === CAMBIO DE ZONA === */
-let zonaSeleccionadaTemp = "AM";
+/* === NUEVA LÓGICA DE AGENDA (DÍAS) === */
 
-function manejarChipsZona(e) {
-    if (!e.target.classList.contains('chip')) return;
-    document.querySelectorAll('#zone-selector .chip').forEach(c => c.classList.remove('selected'));
-    e.target.classList.add('selected');
-    zonaSeleccionadaTemp = e.target.dataset.zone;
+// Dibuja los botones LUN, MAR, MIE...
+function initDiaRutaControls() {
+    const selector = document.getElementById('zone-selector'); 
+    if (!selector) return;
+    
+    selector.innerHTML = ''; // Limpiar
+    
+    const dias = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE']; 
+    
+    dias.forEach(dia => {
+        const btn = document.createElement('button');
+        // Si coincide con el día actual de la ruta, lo marcamos
+        const isSelected = (estado.diaRutaActual === dia);
+        btn.className = `chip ${isSelected ? 'selected' : ''}`;
+        btn.innerText = dia;
+        
+        btn.onclick = () => {
+            document.querySelectorAll('#zone-selector .chip').forEach(c => c.classList.remove('selected'));
+            btn.classList.add('selected');
+            
+            // Guardamos intención y pedimos confirmación
+            diaSeleccionadoTemp = dia;
+            
+            if (dia !== estado.diaRutaActual) {
+                abrirConfirmacionDia();
+            }
+        };
+        selector.appendChild(btn);
+    });
+
+    // Actualizar texto visual
+    const display = document.getElementById("current-zone-display");
+    if(display) display.innerText = estado.diaRutaActual; // Ahora muestra el DÍA
+    
+    // Actualizar título del modal si existe (zonaTargetSpan) para reutilizarlo
+    const modalTitle = document.getElementById("zonaTargetSpan");
+    if(modalTitle) modalTitle.innerText = `RUTA DEL ${estado.diaRutaActual}`;
 }
 
-function abrirConfirmacionZona() {
-    document.getElementById("zonaTargetSpan").innerText = zonaSeleccionadaTemp === "AM" ? "MAÑANA (AM)" : "TARDE (PM)";
-    document.getElementById("modal-confirm-zona").classList.add("active");
+function abrirConfirmacionDia() {
+    const modal = document.getElementById("modal-confirm-zona");
+    // Actualizamos el texto del modal dinámicamente
+    const msg = modal.querySelector("p") || modal.querySelector("h3");
+    if(msg) msg.innerHTML = `¿Cambiar a ruta del <b>${diaSeleccionadoTemp}</b>?<br>Se recargarán los clientes.`;
+    
+    modal.classList.add("active");
 }
 
-async function confirmarCambioZonaAPI() {
-    document.getElementById("modal-confirm-zona").classList.remove("active");
-    mostrarLoadingToast("Cambiando zona y recargando ruta...");
+// Llama al backend para cambiar el día
+async function confirmarCambioDiaAPI() {
+    const modal = document.getElementById("modal-confirm-zona");
+    modal.classList.remove("active");
+    mostrarLoadingToast(`Cambiando ruta a ${diaSeleccionadoTemp}...`);
     
     try {
-        // Llamada a la API para cambiar zona (Asumiendo que agregaste accion=cambiarZona en GAS)
-        // Si no tienes el endpoint aun, esto fallará o no hará nada en backend, pero simula el flujo.
         const payload = {
-            accion: "cambiarZona", // <--- IMPORTANTE IMPLEMENTAR EN GAS
+            accion: "cambiarDiaRuta", // Nueva acción en GAS
             vendedor: estado.vendedor,
-            nuevaZona: zonaSeleccionadaTemp
+            nuevoDia: diaSeleccionadoTemp 
         };
 
-        // Simulamos delay de red o llamada real
-        await fetch(API, { method: "POST", body: JSON.stringify(payload) });
-
-        // IMPORTANTE: Forzamos recarga de ruta llamando a login() logicamente o re-fetch
-        // Aquí hacemos un "soft reload" de la ruta
-        const rutaRes = await fetch(`${API}?accion=getRutaDelDia&clave=${estado.vendedor}&t=${Date.now()}`);
-        const data = await rutaRes.json();
+        const response = await fetch(API, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload) 
+        });
         
+        const data = await response.json();
+
         if (data.ok) {
-            estado.ruta = data.cartera.map(c => ({ ...c, visitado: false }));
-            localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
-            renderRuta();
-            actualizarProgreso();
-            toast(`✅ Zona cambiada a ${zonaSeleccionadaTemp}`);
-            showView('view-app'); // Volver a home
+            // Actualizamos localmente
+            estado.diaRutaActual = diaSeleccionadoTemp;
+            localStorage.setItem('dia_ruta_actual', estado.diaRutaActual);
+            
+            // Forzamos recarga de datos (true)
+            await recargarDatos(true); 
+            
+            showDynamicToast("EXITO", "Ruta Actualizada", `Ahora ves los clientes del ${diaSeleccionadoTemp}.`);
+            showView('view-app'); 
         } else {
-            throw new Error("Error al recargar ruta");
+            throw new Error(data.error || "Error desconocido");
         }
 
     } catch (e) {
-        toast("⚠️ Error cambiando zona: " + e.message);
+        console.error(e);
+        toast("⚠️ Error al cambiar día: " + e.message);
+        initDiaRutaControls(); // Reset visual
     } finally {
         ocultarLoadingToast();
+    }
+}
+
+/* === NUEVA LÓGICA DE AJUSTES (PIN & SYNC) === */
+
+// Guardar Nuevo PIN
+async function guardarNuevoPin() {
+    const input = document.getElementById("newPinInput");
+    const nuevoPin = input.value.trim();
+    
+    if (nuevoPin.length !== 4 || isNaN(nuevoPin)) {
+        toast("⚠️ El PIN debe ser de 4 números.");
+        return;
+    }
+
+    const btnGuardar = document.getElementById("btnSavePinChange");
+    const txtOriginal = btnGuardar.innerText;
+    btnGuardar.innerText = "Guardando...";
+    btnGuardar.disabled = true;
+
+    try {
+        const payload = {
+            accion: "cambiarPIN",
+            vendedor: estado.vendedor,
+            nuevoPin: nuevoPin
+        };
+        
+        const response = await fetch(API, { 
+            method: "POST", 
+            headers: {"Content-Type": "application/json"}, // Importante para POST
+            body: JSON.stringify(payload) 
+        });
+        const data = await response.json();
+        
+        if (data.ok) {
+            document.getElementById("password-change-modal").classList.remove("active");
+            showDynamicToast("EXITO", "PIN Cambiado", "Tu clave se actualizó correctamente.");
+            input.value = ""; 
+            // Forzamos logout para que pruebe el nuevo PIN
+            setTimeout(logout, 2000);
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (e) {
+        toast("❌ Error al cambiar PIN: " + e.message);
+    } finally {
+        btnGuardar.innerText = txtOriginal;
+        btnGuardar.disabled = false;
+    }
+}
+
+// Sincronización Forzada
+function forzarSincronizacion() {
+    mostrarLoadingToast("Sincronizando datos con la nube...");
+    recargarDatos(true)
+        .then(() => {
+            ocultarLoadingToast();
+            showDynamicToast("EXITO", "Sincronizado", "Datos actualizados correctamente.");
+        })
+        .catch((e) => {
+            ocultarLoadingToast();
+            toast("❌ Fallo la sincronización.");
+        });
+}
+
+// Función auxiliar para recargar datos sin pasar por login de UI
+async function recargarDatos(forzar = false) {
+    const t = forzar ? Date.now() : 0;
+    const res = await fetch(`${API}?accion=getRutaDelDia&clave=${estado.vendedor}&t=${t}`);
+    const data = await res.json();
+    
+    if (data.ok) {
+        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
+        estado.diaRutaActual = (data.diaAsignado || "LUN").toUpperCase();
+        
+        localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
+        localStorage.setItem("dia_ruta_actual", estado.diaRutaActual);
+        
+        iniciarApp(); // Redibuja todo
+    } else {
+        throw new Error("No se pudo descargar la ruta");
     }
 }
 
 /* === TOAST DINÁMICO === */
 function showDynamicToast(tipo, titulo, mensaje) {
     const container = document.getElementById("dynamic-toast-container");
+    if(!container) return;
     const toast = document.createElement('div');
     toast.className = `dynamic-toast ${tipo}`;
     toast.innerHTML = `<p>${titulo}</p><span>${mensaje}</span>`;
@@ -292,7 +461,10 @@ function checkSesion() {
             if (rutaGuardada) {
                 estado.vendedor = sesion.clave;
                 estado.nombre = sesion.nombre;
+                // Recuperar el día guardado o usar el de la sesión
+                estado.diaRutaActual = localStorage.getItem("dia_ruta_actual") || sesion.diaDefault || "LUN";
                 estado.ruta = rutaGuardada;
+                
                 iniciarApp(); 
                 activarNotificaciones().catch(e => console.warn("Notificaciones:", e));
                 return;
@@ -305,69 +477,72 @@ function checkSesion() {
     }
 }
 
+// --- FUNCIÓN PRINCIPAL DE INICIO (ACTUALIZADA) ---
 function iniciarApp() {
-    // 1. Mostrar la interfaz principal de la app
+    // 1. Mostrar la interfaz principal
     document.getElementById("view-login").classList.remove("active");
     document.getElementById("view-app").classList.add("active");
     
-    // 2. Obtener datos clave del estado (cargados previamente por loadData)
+    // 2. Obtener datos clave
     const primerNombre = estado.nombre.split(' ')[0];
     const totalClientes = estado.ruta.length;
-    
-    // ¡NUEVO! Usamos el 'diaAsignado' que vino del API
-    // Si por alguna razón no viniera, usa el 'diaRutaActual' guardado, o LUN como fallback.
     const diaAsignado = (estado.diaRutaActual || "LUN").toUpperCase();
     
-    // 3. Actualizar el saludo principal (Mensaje Coach)
-    document.getElementById("vendedorNombre").innerText = estado.nombre;
+    // 3. Actualizar UI y Mensajes
+    const elNombre = document.getElementById("vendedorNombre");
+    if(elNombre) elNombre.innerText = estado.nombre;
 
     let coachMsg = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! `;
     
     if (totalClientes === 0) {
-        coachMsg += `Ruta del **${diaAsignado}** cargada, pero no hay clientes asignados.`;
+        coachMsg += `Ruta del **${diaAsignado}** cargada, pero no hay clientes.`;
     } else {
         coachMsg += `Tu ruta de **${diaAsignado}** tiene ${totalClientes} clientes. ¡A vender! 🚀`;
     }
     
-    document.getElementById("mensajeCoach").innerHTML = coachMsg;
+    const elCoach = document.getElementById("mensajeCoach");
+    if(elCoach) elCoach.innerHTML = coachMsg;
     
-    // 4. ¡NUEVO! Mostrar el Toast de Bienvenida
-    // Este es el saludo que pediste al ingresar.
-    showDynamicToast(
-        "INFO", // Tipo de toast (azul)
-        `¡Bienvenido, ${primerNombre}!`, // Título
-        `Hoy cargamos la ruta del día **${diaAsignado}**.` // Mensaje
-    );
+    // 4. Mostrar Toast de Bienvenida (Solo si acabamos de loguear o recargar)
+    // Usamos un flag simple para no spammear si solo cambia de vista
+    if (!sessionStorage.getItem("welcome_shown")) {
+        showDynamicToast(
+            "INFO", 
+            `¡Bienvenido, ${primerNombre}!`, 
+            `Hoy cargamos la ruta del día **${diaAsignado}**.`
+        );
+        sessionStorage.setItem("welcome_shown", "true");
+    }
     
-    // 5. Renderizar la ruta y activar el GPS
+    // 5. Renderizar
     document.body.setAttribute("data-view-mode", estado.viewMode);
     
     renderRuta();
     actualizarProgreso();
     iniciarSeguimientoGPS();
     
-    // 6. ¡NUEVO! Inicializar los botones de la Agenda
-    // Esto dibujará los botones (LUN, MAR...) en la pestaña Agenda
-    // y marcará el 'diaAsignado' actual como seleccionado.
+    // 6. Inicializar botones de Agenda
     initDiaRutaControls(); 
 }
+
 function setViewMode(mode) {
     if (estado.viewMode === mode) return;
     estado.viewMode = mode;
     document.body.setAttribute("data-view-mode", mode);
-    document.getElementById("btnViewList").classList.toggle("active", mode === "list");
-    document.getElementById("btnViewFocus").classList.toggle("active", mode === "focus");
+    document.getElementById("btnViewList")?.classList.toggle("active", mode === "list");
+    document.getElementById("btnViewFocus")?.classList.toggle("active", mode === "focus");
     renderRuta();
 }
 
 /* === RENDERIZADO === */
 function renderRuta() {
     const container = document.getElementById("listaClientes");
+    if(!container) return;
     container.innerHTML = "";
     const pendientes = estado.ruta.filter(c => !c.visitado);
     
     if (pendientes.length === 0) {
-        container.innerHTML = `<div class="ruta-completa">🎉<br>¡Ruta finalizada por hoy!<br>🎉</div>`;
+        container.innerHTML = `<div class="ruta-completa">🎉<br>¡Ruta del ${estado.diaRutaActual} finalizada!<br>🎉</div>`;
         return;
     }
     
@@ -470,7 +645,7 @@ async function registrarVenta(index, compro, motivo = "") {
             accion: "registrarVisita", vendedor: estado.vendedor, vendedorNombre: estado.nombre,
             cliente: cliente.numeroCliente, compro: !!compro, motivo: cliente.motivo || "",
             lat: estado.ubicacionActual?.lat ?? "", lng: estado.ubicacionActual?.lng ?? "",
-            ts: ahora.toISOString(), app: "App Vendedores Pro v2.6"
+            ts: ahora.toISOString(), app: "App Vendedores Pro v2.7"
         };
         await fetch(API, { method: "POST", body: JSON.stringify(payload) });
         toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
@@ -638,6 +813,7 @@ async function activarNotificaciones() {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") return;
         const reg = await navigator.serviceWorker.ready;
+        // NOTA: Reemplaza esta VAPID key si tienes una nueva
         const token = await messaging.getToken({ vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o", serviceWorkerRegistration: reg });
         if (!token) return;
         
@@ -691,7 +867,11 @@ function toast(msg) {
     document.getElementById('toast-container').appendChild(t); setTimeout(() => t.remove(), 3000);
 }
 function btnLoading(isLoading) {
-    const btn = document.getElementById("btnIngresar"); btn.disabled = isLoading; btn.innerHTML = isLoading ? "⌛..." : "INGRESAR";
+    const btn = document.getElementById("btnIngresar"); 
+    if(btn) {
+        btn.disabled = isLoading; 
+        btn.innerHTML = isLoading ? "⌛..." : "INGRESAR";
+    }
 }
 function setTheme(theme) {
     document.body.setAttribute('data-theme', theme); localStorage.setItem('theme', theme);
