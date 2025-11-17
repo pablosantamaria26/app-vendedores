@@ -37,7 +37,7 @@ messaging.onBackgroundMessage(async (payload) => {
   console.log("📨 [SW] Push recibido:", payload);
 
   // 1. Extraer datos
-  const titulo = payload.data?.titulo || "Vendedores";
+  const titulo = payload.data?.titulo || "Pro";
   const mensaje = payload.data?.mensaje || "Nueva actualización";
   
   // 2. Configuración de la Notificación
