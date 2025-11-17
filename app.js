@@ -1,5 +1,5 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.7 - FINAL MERGE
+   APP VENDEDORES PRO v2.8 - FINAL (CON LOCALIDADES)
    ====================================================== */
 
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
@@ -12,14 +12,16 @@ let estado = {
     motivoSeleccionado: "",
     ubicacionActual: null,
     viewMode: "list",
-    diaRutaActual: "LUN" // Antes era zonaActual. Ahora guarda: LUN, MAR, MIE...
+    diaRutaActual: "LUN", // LUN, MAR, MIE...
+    planSemanal: {},      // { "LUN": "Longchamps", "MAR": "Guernica"... }
+    localidadesHoy: ""    // "Longchamps, Glew"
 };
 
 let map, markers;
 let gpsWatcher = null;
 let clientesAvisados = new Set();
 let _reporteEnviado = false;
-let diaSeleccionadoTemp = ""; // Para guardar la selección antes de confirmar
+let diaSeleccionadoTemp = ""; 
 
 const MENSAJES_MOTIVACIONALES = [
     "¡Vamos por un gran día de ventas!",
@@ -31,7 +33,7 @@ const MENSAJES_MOTIVACIONALES = [
 
 /* === INICIO & EVENTOS GLOBALES === */
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🚀 App iniciada (v2.7 PRO)");
+    console.log("🚀 App iniciada (v2.8 PRO)");
     try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
     
     // Verificar si es un nuevo día antes de cargar sesión
@@ -82,22 +84,18 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.addEventListener("click", () => setTheme(btn.dataset.theme));
     });
 
-    // --- NUEVOS EVENTOS: AGENDA (DÍAS) ---
-    // Nota: Los botones se generan dinámicamente en initDiaRutaControls
-    
-    // Modal Confirmación Cambio de Día
-    const btnSolicitarZona = document.getElementById("btnSolicitarCambioZona"); // (Si existe en tu HTML viejo)
+    // --- EVENTOS: AGENDA (DÍAS) ---
+    const btnSolicitarZona = document.getElementById("btnSolicitarCambioZona"); 
     if(btnSolicitarZona) btnSolicitarZona.addEventListener("click", abrirConfirmacionDia);
 
-    // Botones del Modal de Confirmación de Zona (Ahora Día)
-    // Asegúrate que en tu HTML los botones del modal tengan estos IDs o ajusta aquí
+    // Botones del Modal de Confirmación
     const btnCancelZone = document.getElementById("btnCancelZone") || document.getElementById("btnCancelZona");
     if(btnCancelZone) btnCancelZone.addEventListener("click", () => document.getElementById("modal-confirm-zona").classList.remove("active"));
     
     const btnOkZone = document.getElementById("btnOkZone") || document.getElementById("btnOkZona");
     if(btnOkZone) btnOkZone.addEventListener("click", confirmarCambioDiaAPI);
 
-    // --- NUEVOS EVENTOS: AJUSTES (PIN & SYNC) ---
+    // --- EVENTOS: AJUSTES (PIN & SYNC) ---
     document.getElementById("btnLogout")?.addEventListener("click", logout);
     
     // Botón Sincronizar
@@ -121,7 +119,7 @@ function showView(viewId) {
     const activeBtn = document.querySelector(`.nav-btn[data-target="${viewId}"]`);
     if(activeBtn) activeBtn.classList.add('active');
     
-    // Si entra a agenda, asegurarse que los controles estén bien
+    // Si entra a agenda, asegurarse que los controles estén bien dibujados
     if(viewId === 'view-agenda') {
         initDiaRutaControls();
     }
@@ -138,6 +136,7 @@ function checkDailyReset() {
         if(vend) localStorage.removeItem("ruta_" + vend);
         localStorage.removeItem("fecha_ruta");
         localStorage.removeItem("vendedor_sesion");
+        localStorage.removeItem("plan_semanal"); // Limpiar plan viejo
         window.location.reload();
     }
 }
@@ -158,7 +157,6 @@ function initFirebase() {
     
     messaging = firebase.messaging();
 
-    // Listener para App Abierta (Foreground)
     messaging.onMessage((payload) => {
         console.log("Mensaje en primer plano:", payload);
         const { tipo, titulo, mensaje } = payload.data;
@@ -192,13 +190,11 @@ async function login() {
     btnLoading(true);
     
     try {
-        // Pedimos ruta y ubicación en paralelo
         const rutaPromise = fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
         const ubicacionPromise = obtenerUbicacion();
 
         await ubicacionPromise;
 
-        // Intentamos cargar clima
         if (estado.ubicacionActual) {
             fetchClimaString(estado.ubicacionActual.lat, estado.ubicacionActual.lng)
                 .then(climaStr => {
@@ -217,8 +213,11 @@ async function login() {
         // Guardar Estado
         estado.vendedor = clave.padStart(4, "0");
         estado.nombre = data.vendedor || "Vendedor";
-        // Capturamos el día asignado desde el Backend
         estado.diaRutaActual = (data.diaAsignado || "LUN").toUpperCase();
+        
+        // -- DATOS DE LOCALIDADES (NUEVO) --
+        estado.planSemanal = data.planSemanal || {}; 
+        estado.localidadesHoy = data.localidadesHoy || "";
         
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
         
@@ -226,12 +225,15 @@ async function login() {
         localStorage.setItem("vendedor_sesion", JSON.stringify({ 
             clave: estado.vendedor, 
             nombre: estado.nombre,
-            diaDefault: estado.diaRutaActual // Guardamos el día también
+            diaDefault: estado.diaRutaActual 
         }));
         localStorage.setItem("vendedor_actual", estado.vendedor);
         localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
         localStorage.setItem("fecha_ruta", new Date().toLocaleDateString()); 
         localStorage.setItem("dia_ruta_actual", estado.diaRutaActual);
+        // Guardamos info extra
+        localStorage.setItem("plan_semanal", JSON.stringify(estado.planSemanal));
+        localStorage.setItem("localidades_hoy", estado.localidadesHoy);
 
         iniciarApp();
         ocultarLoadingToast();
@@ -263,29 +265,36 @@ function logout() {
     location.reload();
 }
 
-/* === NUEVA LÓGICA DE AGENDA (DÍAS) === */
+/* === NUEVA LÓGICA DE AGENDA (DÍAS CON LOCALIDADES) === */
 
-// Dibuja los botones LUN, MAR, MIE...
 function initDiaRutaControls() {
     const selector = document.getElementById('zone-selector'); 
     if (!selector) return;
     
-    selector.innerHTML = ''; // Limpiar
+    selector.innerHTML = ''; 
     
     const dias = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE']; 
     
     dias.forEach(dia => {
         const btn = document.createElement('button');
-        // Si coincide con el día actual de la ruta, lo marcamos
         const isSelected = (estado.diaRutaActual === dia);
+        
+        // Obtener nombre de localidad para el botón
+        let locText = estado.planSemanal[dia] || "Sin ruta";
+        // Cortar si es muy largo
+        if (locText.length > 18) locText = locText.substring(0, 15) + "...";
+
         btn.className = `chip ${isSelected ? 'selected' : ''}`;
-        btn.innerText = dia;
+        
+        // HTML del botón: Día arriba, Localidad abajo
+        btn.innerHTML = `<div style="line-height:1.2">
+            <span style="font-size:14px; font-weight:800">${dia}</span><br>
+            <span style="font-size:10px; opacity:0.8; font-weight:400">${locText}</span>
+        </div>`;
         
         btn.onclick = () => {
             document.querySelectorAll('#zone-selector .chip').forEach(c => c.classList.remove('selected'));
             btn.classList.add('selected');
-            
-            // Guardamos intención y pedimos confirmación
             diaSeleccionadoTemp = dia;
             
             if (dia !== estado.diaRutaActual) {
@@ -295,20 +304,20 @@ function initDiaRutaControls() {
         selector.appendChild(btn);
     });
 
-    // Actualizar texto visual
+    // Actualizar texto visual "LUN - Longchamps"
     const display = document.getElementById("current-zone-display");
-    if(display) display.innerText = estado.diaRutaActual; // Ahora muestra el DÍA
-    
-    // Actualizar título del modal si existe (zonaTargetSpan) para reutilizarlo
-    const modalTitle = document.getElementById("zonaTargetSpan");
-    if(modalTitle) modalTitle.innerText = `RUTA DEL ${estado.diaRutaActual}`;
+    const textoLoc = estado.localidadesHoy ? ` - ${estado.localidadesHoy}` : "";
+    if(display) display.innerText = `${estado.diaRutaActual}${textoLoc}`;
 }
 
 function abrirConfirmacionDia() {
     const modal = document.getElementById("modal-confirm-zona");
-    // Actualizamos el texto del modal dinámicamente
     const msg = modal.querySelector("p") || modal.querySelector("h3");
-    if(msg) msg.innerHTML = `¿Cambiar a ruta del <b>${diaSeleccionadoTemp}</b>?<br>Se recargarán los clientes.`;
+    
+    // Mostrar localidad target en el modal
+    const locTarget = estado.planSemanal[diaSeleccionadoTemp] || "";
+    
+    if(msg) msg.innerHTML = `¿Cambiar a ruta del <b>${diaSeleccionadoTemp}</b>?<br><small>${locTarget}</small><br>Se recargarán los clientes.`;
     
     modal.classList.add("active");
 }
@@ -321,7 +330,7 @@ async function confirmarCambioDiaAPI() {
     
     try {
         const payload = {
-            accion: "cambiarDiaRuta", // Nueva acción en GAS
+            accion: "cambiarDiaRuta", 
             vendedor: estado.vendedor,
             nuevoDia: diaSeleccionadoTemp 
         };
@@ -335,14 +344,12 @@ async function confirmarCambioDiaAPI() {
         const data = await response.json();
 
         if (data.ok) {
-            // Actualizamos localmente
             estado.diaRutaActual = diaSeleccionadoTemp;
             localStorage.setItem('dia_ruta_actual', estado.diaRutaActual);
             
-            // Forzamos recarga de datos (true)
             await recargarDatos(true); 
             
-            showDynamicToast("EXITO", "Ruta Actualizada", `Ahora ves los clientes del ${diaSeleccionadoTemp}.`);
+            showDynamicToast("EXITO", "Ruta Actualizada", `Ahora ves: ${diaSeleccionadoTemp}.`);
             showView('view-app'); 
         } else {
             throw new Error(data.error || "Error desconocido");
@@ -351,7 +358,7 @@ async function confirmarCambioDiaAPI() {
     } catch (e) {
         console.error(e);
         toast("⚠️ Error al cambiar día: " + e.message);
-        initDiaRutaControls(); // Reset visual
+        initDiaRutaControls(); 
     } finally {
         ocultarLoadingToast();
     }
@@ -359,7 +366,6 @@ async function confirmarCambioDiaAPI() {
 
 /* === NUEVA LÓGICA DE AJUSTES (PIN & SYNC) === */
 
-// Guardar Nuevo PIN
 async function guardarNuevoPin() {
     const input = document.getElementById("newPinInput");
     const nuevoPin = input.value.trim();
@@ -383,7 +389,7 @@ async function guardarNuevoPin() {
         
         const response = await fetch(API, { 
             method: "POST", 
-            headers: {"Content-Type": "application/json"}, // Importante para POST
+            headers: {"Content-Type": "application/json"},
             body: JSON.stringify(payload) 
         });
         const data = await response.json();
@@ -392,7 +398,6 @@ async function guardarNuevoPin() {
             document.getElementById("password-change-modal").classList.remove("active");
             showDynamicToast("EXITO", "PIN Cambiado", "Tu clave se actualizó correctamente.");
             input.value = ""; 
-            // Forzamos logout para que pruebe el nuevo PIN
             setTimeout(logout, 2000);
         } else {
             throw new Error(data.error);
@@ -405,7 +410,6 @@ async function guardarNuevoPin() {
     }
 }
 
-// Sincronización Forzada
 function forzarSincronizacion() {
     mostrarLoadingToast("Sincronizando datos con la nube...");
     recargarDatos(true)
@@ -419,7 +423,6 @@ function forzarSincronizacion() {
         });
 }
 
-// Función auxiliar para recargar datos sin pasar por login de UI
 async function recargarDatos(forzar = false) {
     const t = forzar ? Date.now() : 0;
     const res = await fetch(`${API}?accion=getRutaDelDia&clave=${estado.vendedor}&t=${t}`);
@@ -429,10 +432,16 @@ async function recargarDatos(forzar = false) {
         estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
         estado.diaRutaActual = (data.diaAsignado || "LUN").toUpperCase();
         
+        // Actualizar también la metadata
+        estado.planSemanal = data.planSemanal || {};
+        estado.localidadesHoy = data.localidadesHoy || "";
+        
         localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
         localStorage.setItem("dia_ruta_actual", estado.diaRutaActual);
+        localStorage.setItem("plan_semanal", JSON.stringify(estado.planSemanal));
+        localStorage.setItem("localidades_hoy", estado.localidadesHoy);
         
-        iniciarApp(); // Redibuja todo
+        iniciarApp(); 
     } else {
         throw new Error("No se pudo descargar la ruta");
     }
@@ -461,9 +470,12 @@ function checkSesion() {
             if (rutaGuardada) {
                 estado.vendedor = sesion.clave;
                 estado.nombre = sesion.nombre;
-                // Recuperar el día guardado o usar el de la sesión
                 estado.diaRutaActual = localStorage.getItem("dia_ruta_actual") || sesion.diaDefault || "LUN";
                 estado.ruta = rutaGuardada;
+                
+                // Recuperar metadata extra
+                estado.planSemanal = JSON.parse(localStorage.getItem("plan_semanal") || "{}");
+                estado.localidadesHoy = localStorage.getItem("localidades_hoy") || "";
                 
                 iniciarApp(); 
                 activarNotificaciones().catch(e => console.warn("Notificaciones:", e));
@@ -477,51 +489,46 @@ function checkSesion() {
     }
 }
 
-// --- FUNCIÓN PRINCIPAL DE INICIO (ACTUALIZADA) ---
+// --- FUNCIÓN PRINCIPAL DE INICIO (ACTUALIZADA CON LOCALIDADES) ---
 function iniciarApp() {
-    // 1. Mostrar la interfaz principal
     document.getElementById("view-login").classList.remove("active");
     document.getElementById("view-app").classList.add("active");
     
-    // 2. Obtener datos clave
     const primerNombre = estado.nombre.split(' ')[0];
     const totalClientes = estado.ruta.length;
     const diaAsignado = (estado.diaRutaActual || "LUN").toUpperCase();
+    const locsHoy = estado.localidadesHoy || "";
     
-    // 3. Actualizar UI y Mensajes
     const elNombre = document.getElementById("vendedorNombre");
     if(elNombre) elNombre.innerText = estado.nombre;
 
+    // MENSAJE COACH DETALLADO
     let coachMsg = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! `;
     
     if (totalClientes === 0) {
-        coachMsg += `Ruta del **${diaAsignado}** cargada, pero no hay clientes.`;
+        coachMsg += `Día <b>${diaAsignado}</b> sin clientes en <b>${locsHoy}</b>.`;
     } else {
-        coachMsg += `Tu ruta de **${diaAsignado}** tiene ${totalClientes} clientes. ¡A vender! 🚀`;
+        coachMsg += `Tu ruta de <b>${diaAsignado} (${locsHoy})</b> tiene ${totalClientes} clientes. ¡A vender! 🚀`;
     }
     
     const elCoach = document.getElementById("mensajeCoach");
     if(elCoach) elCoach.innerHTML = coachMsg;
     
-    // 4. Mostrar Toast de Bienvenida (Solo si acabamos de loguear o recargar)
-    // Usamos un flag simple para no spammear si solo cambia de vista
+    // TOAST BIENVENIDA DETALLADO
     if (!sessionStorage.getItem("welcome_shown")) {
         showDynamicToast(
             "INFO", 
             `¡Bienvenido, ${primerNombre}!`, 
-            `Hoy cargamos la ruta del día **${diaAsignado}**.`
+            `Hoy ruta: ${diaAsignado} en ${locsHoy}`
         );
         sessionStorage.setItem("welcome_shown", "true");
     }
     
-    // 5. Renderizar
     document.body.setAttribute("data-view-mode", estado.viewMode);
     
     renderRuta();
     actualizarProgreso();
     iniciarSeguimientoGPS();
-    
-    // 6. Inicializar botones de Agenda
     initDiaRutaControls(); 
 }
 
@@ -627,7 +634,6 @@ async function registrarVenta(index, compro, motivo = "") {
     
     localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
     
-    // Animación visual de salida
     const card = document.querySelector(`.card[data-i="${index}"]`);
     let animDuration = 0;
     if (card && estado.viewMode === 'focus') {
@@ -645,7 +651,7 @@ async function registrarVenta(index, compro, motivo = "") {
             accion: "registrarVisita", vendedor: estado.vendedor, vendedorNombre: estado.nombre,
             cliente: cliente.numeroCliente, compro: !!compro, motivo: cliente.motivo || "",
             lat: estado.ubicacionActual?.lat ?? "", lng: estado.ubicacionActual?.lng ?? "",
-            ts: ahora.toISOString(), app: "App Vendedores Pro v2.7"
+            ts: ahora.toISOString(), app: "App Vendedores Pro v2.8"
         };
         await fetch(API, { method: "POST", body: JSON.stringify(payload) });
         toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
@@ -743,7 +749,7 @@ function cargarMarcadores() {
     if (grupo.length) map.fitBounds(grupo, { padding: [50, 50] });
 }
 
-/* === MODALES UTILS === */
+/* === UTILS === */
 let clienteModalIndex = null;
 async function abrirModalCliente(index) {
     clienteModalIndex = index;
@@ -776,8 +782,6 @@ function irACliente() {
     if (c.lat && c.lng) window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, '_blank');
 }
 
-/* === MOTIVOS === */
-let clienteMotivoIndex = null;
 function abrirMotivo(index) {
     clienteMotivoIndex = index;
     estado.motivoSeleccionado = "";
@@ -806,14 +810,12 @@ function confirmarMotivo() {
     cerrarMotivo();
 }
 
-/* === NOTIFICACIONES === */
 async function activarNotificaciones() {
     if (typeof firebase === 'undefined' || !messaging) return;
     try {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") return;
         const reg = await navigator.serviceWorker.ready;
-        // NOTA: Reemplaza esta VAPID key si tienes una nueva
         const token = await messaging.getToken({ vapidKey: "BN480IhH70femCH6611oE699tLXFGYbS4MWcTbcEMbOUkR0vIwxXPrzTjhJEB9JcizJxqu4xs91-bQsal1_Hi8o", serviceWorkerRegistration: reg });
         if (!token) return;
         
@@ -825,7 +827,6 @@ async function activarNotificaciones() {
     } catch (e) { console.error("Error notificaciones:", e); }
 }
 
-/* === UTILS === */
 function getWMOWeatherDescription(code) {
     const codes = { 0: "☀️ Despejado", 1: "🌤️ Mayormente despejado", 2: "🌥️ Parcialmente nublado", 3: "☁️ Nublado", 61: "🌧️ Lluvia", 95: "⛈️ Tormenta" };
     return codes[code] || "Clima";
