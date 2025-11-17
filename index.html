@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -20,19 +21,17 @@
 
 <body data-view-mode="list" data-theme="blue">
 
-    
     <div id="dynamic-toast-container"></div>
-      
-
+    
     <div id="toast-container"></div>
 
-   <div id="loading-toast" class="hidden">
-    <div class="loading-toast-card">
-        <div class="loader-icon"></div>
-        <p id="loading-toast-msg">¡Vamos por un gran día!</p>
-        <span id="loading-toast-weather">Iniciando...</span>
+    <div id="loading-toast" class="hidden">
+        <div class="loading-toast-card">
+            <div class="loader-icon"></div>
+            <p id="loading-toast-msg">¡Vamos por un gran día!</p>
+            <span id="loading-toast-weather">Iniciando...</span>
+        </div>
     </div>
-</div>
 
     <section id="view-login" class="view">
         <div class="login-container">
@@ -88,7 +87,81 @@
             </main>
     </section>
     
-    <button id="fabMapa" class="fab">🗺️</button>
+    <section id="view-calendar" class="view">
+        <div class="internal-header">
+            <h3>📅 Agenda y Zona</h3>
+        </div>
+        <div class="calendar-content">
+            <div class="zone-control-card">
+                <h4>Configuración de Zona</h4>
+                <p>Selecciona tu turno de trabajo para hoy:</p>
+                <div class="chip-grid" id="zone-selector">
+                    <button class="chip" data-zone="AM">☀️ Mañana (AM)</button>
+                    <button class="chip" data-zone="PM">🌙 Tarde (PM)</button>
+                </div>
+                <div class="zone-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Al cambiar la zona, se solicitará una <b>nueva hoja de ruta</b> al servidor.</span>
+                </div>
+                <button id="btnSolicitarCambioZona" class="btn-primary">CONFIRMAR CAMBIO</button>
+            </div>
+
+            <div class="calendar-placeholder">
+                <h4>Esta Semana</h4>
+                <div class="week-row">
+                    <div class="day-col active">LUN<br><b>Hoy</b></div>
+                    <div class="day-col">MAR<br>18</div>
+                    <div class="day-col">MIE<br>19</div>
+                    <div class="day-col">JUE<br>20</div>
+                    <div class="day-col">VIE<br>21</div>
+                </div>
+                <div class="empty-state">
+                    <p>Selecciona un día para ver la proyección.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-settings" class="view">
+        <div class="internal-header">
+            <h3>⚙️ Ajustes</h3>
+        </div>
+        <div class="settings-content">
+            <div class="settings-group">
+                <button class="btn-setting" id="btnCambiarPin">
+                    <i class="fas fa-lock"></i> Cambiar PIN de Acceso
+                </button>
+                <button class="btn-setting" id="btnSync">
+                    <i class="fas fa-sync"></i> Forzar Sincronización
+                </button>
+                <button class="btn-setting logout" id="btnLogout">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+            <p class="app-version">App Vendedores Pro v2.6</p>
+        </div>
+    </section>
+
+    <nav class="app-footer" id="appFooter">
+        <button class="nav-btn active" data-target="view-app">
+            <i class="fas fa-route"></i>
+            <span>Ruta</span>
+        </button>
+        <button class="nav-btn" data-target="view-calendar">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Agenda</span>
+        </button>
+        <button class="nav-btn" id="btnFooterMapa"> <i class="fas fa-map-marked-alt"></i>
+            <span>Mapa</span>
+        </button>
+        <button class="nav-btn" data-target="view-settings">
+            <i class="fas fa-user-cog"></i>
+            <span>Ajustes</span>
+        </button>
+    </nav>
+
+    <button id="fabMapa" class="fab" style="display: none;">🗺️</button>
+
 
     <div id="modal-mapa" class="full-modal hidden">
         <div class="modal-header">
@@ -113,6 +186,18 @@
                 </div>
                 <textarea id="motivoOtro" class="hidden" placeholder="Especifique el motivo..."></textarea>
                 <button id="btnConfirmarMotivo" class="btn-primary">CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-confirm-zona" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>⚠️ Cambiar Zona</h3>
+            <p>Estás por cambiar a la zona <b id="zonaTargetSpan"></b>.</p>
+            <p style="font-size:13px; margin-top:10px;">Esto borrará la ruta actual y cargará la nueva. ¿Confirmas?</p>
+            <div class="modal-actions-row">
+                <button id="btnCancelZona" class="btn-cancel">Cancelar</button>
+                <button id="btnOkZona" class="btn-confirm">Sí, Cambiar</button>
             </div>
         </div>
     </div>
