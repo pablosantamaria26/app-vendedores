@@ -22,7 +22,6 @@
 <body data-view-mode="list" data-theme="blue">
 
     <div id="dynamic-toast-container"></div>
-    
     <div id="toast-container"></div>
 
     <div id="loading-toast" class="hidden">
@@ -89,34 +88,22 @@
     
     <section id="view-calendar" class="view">
         <div class="internal-header">
-            <h3>📅 Agenda y Zona</h3>
+            <h3>📅 Agenda Semanal</h3>
         </div>
         <div class="calendar-content">
             <div class="zone-control-card">
-                <h4>Configuración de Zona</h4>
-                <p>Selecciona tu turno de trabajo para hoy:</p>
-                <div class="chip-grid" id="zone-selector">
-                    <button class="chip" data-zone="AM">☀️ Mañana (AM)</button>
-                    <button class="chip" data-zone="PM">🌙 Tarde (PM)</button>
-                </div>
-                <div class="zone-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Al cambiar la zona, se solicitará una <b>nueva hoja de ruta</b> al servidor.</span>
-                </div>
-                <button id="btnSolicitarCambioZona" class="btn-primary">CONFIRMAR CAMBIO</button>
-            </div>
+                <h4>Control de Ruta</h4>
+                
+                <p style="color: #64748b; margin-bottom: 15px; text-align: center;">
+                    Ruta asignada para hoy: <br>
+                    <strong id="current-zone-display" style="color:#4CC9F0; font-size:24px;">...</strong>
+                </p>
+                
+                <div class="chip-grid" id="zone-selector"></div>
 
-            <div class="calendar-placeholder">
-                <h4>Esta Semana</h4>
-                <div class="week-row">
-                    <div class="day-col active">LUN<br><b>Hoy</b></div>
-                    <div class="day-col">MAR<br>18</div>
-                    <div class="day-col">MIE<br>19</div>
-                    <div class="day-col">JUE<br>20</div>
-                    <div class="day-col">VIE<br>21</div>
-                </div>
-                <div class="empty-state">
-                    <p>Selecciona un día para ver la proyección.</p>
+                <div class="zone-warning" style="margin-top: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span><b>Atención:</b> Cambiar el día descargará una nueva lista de clientes desde el servidor.</span>
                 </div>
             </div>
         </div>
@@ -128,17 +115,17 @@
         </div>
         <div class="settings-content">
             <div class="settings-group">
-                <button class="btn-setting" id="btnCambiarPin">
-                    <i class="fas fa-lock"></i> Cambiar PIN de Acceso
-                </button>
                 <button class="btn-setting" id="btnSync">
                     <i class="fas fa-sync"></i> Forzar Sincronización
+                </button>
+                <button class="btn-setting" id="btnCambiarPin">
+                    <i class="fas fa-lock"></i> Cambiar PIN de Acceso
                 </button>
                 <button class="btn-setting logout" id="btnLogout">
                     <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                 </button>
             </div>
-            <p class="app-version">App Vendedores Pro v2.6</p>
+            <p class="app-version">App Vendedores Pro v2.7</p>
         </div>
     </section>
 
@@ -151,7 +138,8 @@
             <i class="fas fa-calendar-alt"></i>
             <span>Agenda</span>
         </button>
-        <button class="nav-btn" id="btnFooterMapa"> <i class="fas fa-map-marked-alt"></i>
+        <button class="nav-btn" id="btnFooterMapa"> 
+            <i class="fas fa-map-marked-alt"></i>
             <span>Mapa</span>
         </button>
         <button class="nav-btn" data-target="view-settings">
@@ -159,9 +147,6 @@
             <span>Ajustes</span>
         </button>
     </nav>
-
-    <button id="fabMapa" class="fab" style="display: none;">🗺️</button>
-
 
     <div id="modal-mapa" class="full-modal hidden">
         <div class="modal-header">
@@ -192,12 +177,26 @@
 
     <div id="modal-confirm-zona" class="modal-overlay hidden">
         <div class="modal-card">
-            <h3>⚠️ Cambiar Zona</h3>
-            <p>Estás por cambiar a la zona <b id="zonaTargetSpan"></b>.</p>
-            <p style="font-size:13px; margin-top:10px;">Esto borrará la ruta actual y cargará la nueva. ¿Confirmas?</p>
+            <h3>⚠️ Cambiar Ruta</h3>
+            <p id="zone-confirm-msg">¿Seguro que deseas cambiar la ruta?</p>
             <div class="modal-actions-row">
                 <button id="btnCancelZona" class="btn-cancel">Cancelar</button>
                 <button id="btnOkZona" class="btn-confirm">Sí, Cambiar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="password-change-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3>🔒 Nuevo PIN</h3>
+            <p>Ingresa tu nuevo código de 4 dígitos.</p>
+            
+            <input type="tel" id="newPinInput" class="pin-input" maxlength="4" placeholder="0000" 
+                   style="font-size: 32px; letter-spacing: 8px; text-align: center; width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; outline: none;">
+            
+            <div class="modal-actions-row">
+                <button id="btnCancelPinChange" class="btn-cancel">Cancelar</button>
+                <button id="btnSavePinChange" class="btn-confirm">Guardar</button>
             </div>
         </div>
     </div>
@@ -210,7 +209,6 @@
             <div class="ultimo-pedido-box">
                 <h4>🛍️ Último Pedido:</h4>
                 <p id="modal-ultimo-pedido">Cargando...</p>
-                <button id="btnCopiarPedido" class="btn-secondary hidden">📋 Copiar Pedido</button>
             </div>
 
             <div class="modal-actions-row">
