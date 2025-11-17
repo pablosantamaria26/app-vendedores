@@ -401,81 +401,84 @@ body[data-view-mode="focus"] .distancia-badge {
     100% { transform: scale(0.8); opacity: 0.7; }
 }
 
-/* --- 13. TOASTS DINÁMICOS (IA) --- */
+/* --- 13. TOASTS DINÁMICOS (IA) - CORREGIDO --- */
 
-/* Contenedor (arriba de todo) */
 #dynamic-toast-container {
     position: fixed;
-    top: 0; /* Arriba, sobre el header */
-    left: 0;
-    right: 0;
-    z-index: 9999; /* El más alto */
-    padding: 15px;
+    top: 20px; /* Bajamos un poco para que no lo tape la isla dinámica/barra */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647 !important; /* El número más alto posible en CSS */
+    width: 95%;
+    max-width: 420px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    pointer-events: none; /* Permite clics a través de él */
+    gap: 12px;
+    pointer-events: none; /* Permite tocar la app debajo si no hay toasts */
 }
 
-/* Estructura base del toast */
 .dynamic-toast {
-    background: var(--bg-card);
-    border-radius: var(--border-radius-md);
-    padding: 16px 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    border-left: 6px solid var(--accent-solid);
+    background: rgba(28, 31, 38, 0.95); /* Fondo oscuro semi-transparente */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 18px 20px;
+    border-radius: 18px;
+    box-shadow: 0 15px 40px -10px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
     opacity: 0;
-    transform: translateY(-30px);
-    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-    pointer-events: all; /* Se puede hacer clic en el toast */
+    transform: translateY(-150%); /* Empieza bien arriba */
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* Efecto rebote */
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
+
 .dynamic-toast.show {
     opacity: 1;
     transform: translateY(0);
 }
+
+/* Títulos */
 .dynamic-toast p {
     margin: 0;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-size: 15px;
+    font-weight: 800;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
+
+/* Cuerpo del mensaje */
 .dynamic-toast span {
     margin: 0;
-    font-size: 14px;
-    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 500;
+    color: #ffffff;
+    line-height: 1.4;
 }
 
-/* Animación SHAKE (para urgentes) */
-@keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+/* --- COLORES SEGÚN TIPO --- */
+
+/* 🔵 INFO */
+.dynamic-toast.INFO { border-left: 4px solid #4CC9F0; }
+.dynamic-toast.INFO p { color: #4CC9F0; }
+
+/* 🏆 EXITO */
+.dynamic-toast.EXITO { border-left: 4px solid #33D69F; }
+.dynamic-toast.EXITO p { color: #33D69F; }
+
+/* ⏱️ URGENTE (Con animación de sacudida) */
+.dynamic-toast.URGENTE { 
+    border-left: 4px solid #FF5B5B; 
+    box-shadow: 0 10px 30px rgba(255, 91, 91, 0.2);
+}
+.dynamic-toast.URGENTE p { color: #FF5B5B; }
+.dynamic-toast.URGENTE.show {
+    animation: shake-toast 0.5s ease-in-out forwards;
 }
 
-/* --- Variantes de Color/Estilo --- */
-
-/* 🔵 INFO (Azul/Tema) */
-.dynamic-toast.INFO {
-    border-color: var(--accent-solid);
-}
-.dynamic-toast.INFO p {
-    color: var(--accent-solid);
-}
-
-/* 🏆 EXITO (Verde) */
-.dynamic-toast.EXITO {
-    border-color: var(--success);
-}
-.dynamic-toast.EXITO p {
-    color: var(--success);
-}
-
-/* ⏱️ URGENTE (Rojo) */
-.dynamic-toast.URGENTE {
-    border-color: var(--danger);
-    animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both;
-}
-.dynamic-toast.URGENTE p {
-    color: var(--danger);
+@keyframes shake-toast {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
