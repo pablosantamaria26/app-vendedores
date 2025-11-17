@@ -1,25 +1,24 @@
 // =================================================
 // 🔔 Service Worker FCM - App Vendedores Inteligente
-// VERSIÓN v5.3 - Optimizada para iOS Push
+// VERSIÓN v5.7 - FIX FINAL: Renotify & Tag
 // =================================================
 
-self.addEventListener("install", () => {
-  console.log("⚡ Nueva versión del Service Worker (v5.3) instalada");
+self.addEventListener("install", (event) => {
+  console.log("⚡ SW v5.7 Instalado. Forzando espera...");
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("♻️ Activando SW (v5.3) y reclamando clientes...");
+  console.log("♻️ SW v5.7 Activo y controlando.");
   event.waitUntil(clients.claim());
 });
 
 // --------------------------------------------------
-// 📦 Librerías Firebase (Sin cambios)
+// 📦 Librerías Firebase
 // --------------------------------------------------
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
-// ✅ Inicializar Firebase (Sin cambios)
 firebase.initializeApp({
   apiKey: "AIzaSyAKEZoMaPwAcLVRFVPVTQEOoQUuEEUHpwk",
   authDomain: "app-vendedores-inteligente.firebaseapp.com",
@@ -32,52 +31,55 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // --------------------------------------------------
-// 📩 LÓGICA DE NOTIFICACIONES (v5.5) - FIX Título "From Vendedores"
+// 📩 LÓGICA DE NOTIFICACIONES (Background)
 // --------------------------------------------------
 messaging.onBackgroundMessage(async (payload) => {
-  console.log("📨 Notificación en background (v5.5):", payload);
+  console.log("📨 [SW] Push recibido:", payload);
 
-  // Tomamos los datos limpios que preparamos en el GAS.
-  const tituloNotificacion = payload.data?.titulo || "Maestro de Ventas";
-  const mensajeCuerpo = payload.data?.mensaje || "Tienes un nuevo mensaje.";
-  const tipoMensaje = payload.data?.tipo || "INFO"; 
-
-  // NO USAMOS iconoEmoji ya que lo estás manejando en GAS (🔴, 🏆, 🧠)
-  let iconoEmoji = "";
-
-  // Devolvemos la promesa para mostrar la notificación
-  return self.registration.showNotification(tituloNotificacion, {
-    // Es CRÍTICO que el body tenga valor.
-    body: iconoEmoji + mensajeCuerpo, 
+  // 1. Extraer datos
+  const titulo = payload.data?.titulo || "Vendedores";
+  const mensaje = payload.data?.mensaje || "Nueva actualización";
+  
+  // 2. Configuración de la Notificación
+  const notificationOptions = {
+    body: mensaje,
     icon: "/ml-icon-192.png",
     badge: "/ml-icon-192.png",
     
-    // 🔥 FIX CLAVE: Añadir el tag (etiqueta) para ayudar a iOS/navegadores a identificar
-    // la notificación como propia de la aplicación y suprimir el texto de origen.
-    tag: 'fcm-push-v5', 
+    // --- TRUCO MAESTRO ---
+    // Usamos un TAG fijo para que iOS agrupe y oculte el origen.
+    // Usamos RENOTIFY: TRUE para obligar a que suene siempre.
+    tag: 'app-vendedores-alert', 
+    renotify: true, 
     
     data: {
       url: payload.data?.url || "https://pablosantamaria26.github.io/app-vendedores/"
     }
-  });
+  };
+
+  return self.registration.showNotification(titulo, notificationOptions);
 });
 
-
 // --------------------------------------------------
-// 🖱️ Click → Abrir / Enfocar App (Tu código original, preservado)
+// 🖱️ Click en Notificación
 // --------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const destino = event.notification.data.url || "https://pablosantamaria26.github.io/app-vendedores/";
+  // URL por defecto si no viene en el payload
+  const urlToOpen = event.notification.data?.url || "https://pablosantamaria26.github.io/app-vendedores/";
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((tabs) => {
-      for (const tab of tabs) {
-        if (tab.url.startsWith(destino) && "focus" in tab) {
-          return tab.focus();
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // Si la app ya está abierta, la enfocamos
+      for (let client of windowClients) {
+        if (client.url.startsWith(urlToOpen) && "focus" in client) {
+          return client.focus();
         }
       }
-      return clients.openWindow(destino);
+      // Si no, abrimos ventana nueva
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
     })
   );
 });
