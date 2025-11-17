@@ -267,13 +267,15 @@ function logout() {
 
 /* === NUEVA LÓGICA DE AGENDA (DÍAS CON LOCALIDADES) === */
 
+// --- FUNCIÓN REEMPLAZADA: LÓGICA DE AGENDA ---
 function initDiaRutaControls() {
     const selector = document.getElementById('zone-selector'); 
     if (!selector) return;
     
     selector.innerHTML = ''; 
     
-    const dias = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE']; 
+    // Lista de días completa (MIE con tilde para mayor compatibilidad)
+    const dias = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE']; 
     
     dias.forEach(dia => {
         const btn = document.createElement('button');
@@ -281,10 +283,10 @@ function initDiaRutaControls() {
         
         // Obtener nombre de localidad para el botón
         let locText = estado.planSemanal[dia] || "Sin ruta";
-        // Cortar si es muy largo
         if (locText.length > 18) locText = locText.substring(0, 15) + "...";
 
         btn.className = `chip ${isSelected ? 'selected' : ''}`;
+        btn.setAttribute('data-dia', dia); // Usamos un data attribute para el día
         
         // HTML del botón: Día arriba, Localidad abajo
         btn.innerHTML = `<div style="line-height:1.2">
@@ -292,13 +294,19 @@ function initDiaRutaControls() {
             <span style="font-size:10px; opacity:0.8; font-weight:400">${locText}</span>
         </div>`;
         
-        btn.onclick = () => {
-            document.querySelectorAll('#zone-selector .chip').forEach(c => c.classList.remove('selected'));
-            btn.classList.add('selected');
-            diaSeleccionadoTemp = dia;
+        btn.onclick = (e) => {
+            const diaClickeado = e.currentTarget.dataset.dia;
             
-            if (dia !== estado.diaRutaActual) {
+            // 1. Marcar el chip seleccionado
+            document.querySelectorAll('#zone-selector .chip').forEach(c => c.classList.remove('selected'));
+            e.currentTarget.classList.add('selected');
+            diaSeleccionadoTemp = diaClickeado; // Guardamos el día para el modal
+            
+            // 2. Si es diferente al día actual, abrir confirmación
+            if (diaClickeado !== estado.diaRutaActual) {
                 abrirConfirmacionDia();
+            } else {
+                toast(`Ruta del ${diaClickeado} ya está activa.`);
             }
         };
         selector.appendChild(btn);
@@ -307,7 +315,7 @@ function initDiaRutaControls() {
     // Actualizar texto visual "LUN - Longchamps"
     const display = document.getElementById("current-zone-display");
     const textoLoc = estado.localidadesHoy ? ` - ${estado.localidadesHoy}` : "";
-    if(display) display.innerText = `${estado.diaRutaActual}${textoLoc}`;
+    if(display) display.innerHTML = `<strong style="color:#4CC9F0; font-size:24px;">${estado.diaRutaActual}${textoLoc}</strong>`;
 }
 
 function abrirConfirmacionDia() {
