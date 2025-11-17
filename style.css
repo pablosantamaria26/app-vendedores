@@ -1,6 +1,6 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.6 - STYLE (Con Footer y Calendar)
-   ====================================================== */
+    APP VENDEDORES PRO v2.8 - STYLE (FINAL)
+    ====================================================== */
 
 /* --- 1. Paleta de Colores y Temas --- */
 :root {
@@ -239,7 +239,7 @@ body[data-view-mode="focus"] .card-actions { max-height: 70px; opacity: 1; }
 
 .zone-control-card { background: var(--bg-card); padding: 20px; border-radius: var(--border-radius-md); margin-bottom: 20px; }
 .zone-control-card h4 { margin-top: 0; color: var(--accent-solid); }
-.zone-warning { background: rgba(255, 91, 91, 0.1); border-left: 3px solid var(--danger); padding: 10px; margin: 15px 0; font-size: 13px; display: flex; gap: 10px; align-items: center; color: #ffcccc; }
+.zone-warning { background: rgba(255, 91, 91, 0.1); border-left: 3px solid var(--danger); padding: 10px; margin: 15px 0; font-size: 13px; display: flex; gap: 10px; align-items: center; color: var(--text-primary); } /* Ajuste de color de texto */
 .zone-warning i { color: var(--danger); }
 
 .calendar-placeholder { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
@@ -249,7 +249,28 @@ body[data-view-mode="focus"] .card-actions { max-height: 70px; opacity: 1; }
 .empty-state { text-align: center; padding: 20px; font-style: italic; color: var(--text-secondary); }
 
 .settings-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
-.btn-setting { background: var(--bg-card); border: 1px solid var(--bg-input); color: var(--text-primary); padding: 16px; border-radius: 12px; text-align: left; font-weight: 600; display: flex; gap: 12px; align-items: center; font-size: 15px; }
+/* ESTILO CORREGIDO PARA EL TEMA OSCURO */
+.btn-setting { 
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--bg-card); /* USADO: Fondo de tarjeta oscuro */
+    border: 1px solid var(--bg-input); 
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    color: var(--text-primary); /* USADO: Color de texto principal */
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: left;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+.btn-setting:active {
+    background: var(--bg-input); /* USADO: Fondo un poco más oscuro al presionar */
+    transform: scale(0.98);
+}
+/* FIN DE ESTILO CORREGIDO */
+
 .btn-setting i { width: 24px; text-align: center; color: var(--accent-solid); }
 .btn-setting.logout { color: var(--danger); border-color: rgba(255, 91, 91, 0.2); }
 .btn-setting.logout i { color: var(--danger); }
@@ -270,9 +291,8 @@ body[data-view-mode="focus"] .card-actions { max-height: 70px; opacity: 1; }
 .sheet-body { padding: 0 20px 20px 20px; }
 
 .chip-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 20px 0; }
-.chip { background: var(--bg-input); border: 2px solid var(--bg-input); color: var(--text-primary); padding: 10px 16px; border-radius: 50px; font-size: 14px; font-weight: 500; }
-.chip.selected { background: var(--accent-solid); color: #FFF; border-color: var(--accent-solid); }
-textarea { width: 100%; background: var(--bg-input); border: 2px solid var(--bg-input); border-radius: 12px; padding: 12px; color: white; }
+/* ESTILO CORREGIDO PARA AGENDA (se usó .chip más abajo) */
+/* .chip que está en esta sección es para el modal de Motivos, el cual funciona como se espera */
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s ease; pointer-events: none; padding: 20px; }
 .modal-overlay.active { opacity: 1; pointer-events: all; }
@@ -335,8 +355,6 @@ body[data-view-mode="focus"] .distancia-badge { font-size: 14px; padding: 8px 12
 
 /* --- ESTILOS NUEVOS PARA AGENDA Y PIN --- */
 
-/* --- ESTILOS NUEVOS PARA AGENDA Y PIN --- */
-
 /* Contenedor de los días (LUN, MAR, etc.) */
 #zone-selector {
     display: flex;
@@ -380,26 +398,7 @@ body[data-view-mode="focus"] .distancia-badge { font-size: 14px; padding: 8px 12
     padding: 20px;
 }
 
-.btn-setting {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    padding: 15px;
-    border-radius: 12px;
-    font-size: 16px;
-    color: #334155;
-    cursor: pointer;
-    transition: background 0.2s;
-    text-align: left;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-}
-
-.btn-setting:active {
-    background: #f8fafc;
-    transform: scale(0.98);
-}
+/* El estilo de .btn-setting original se movió y corrigió arriba en la sección 9 */
 
 /* Input del PIN en el Modal */
 .pin-input {
@@ -412,7 +411,9 @@ body[data-view-mode="focus"] .distancia-badge { font-size: 14px; padding: 8px 12
     border-radius: 12px;
     margin: 20px 0;
     outline: none;
+    background: var(--bg-input); /* Asegura que el input se vea oscuro */
+    color: var(--text-primary);
 }
 .pin-input:focus {
-    border-color: #4CC9F0;
+    border-color: var(--accent-solid);
 }
