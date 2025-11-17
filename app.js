@@ -95,20 +95,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnOkZone = document.getElementById("btnOkZone") || document.getElementById("btnOkZona");
     if(btnOkZone) btnOkZone.addEventListener("click", confirmarCambioDiaAPI);
 
-    // --- EVENTOS: AJUSTES (PIN & SYNC) ---
-    document.getElementById("btnLogout")?.addEventListener("click", logout);
-    
-    // Botón Sincronizar
-    document.getElementById("btnSync")?.addEventListener("click", forzarSincronizacion);
+// --- EVENTOS: AJUSTES (PIN & SYNC) ---
+document.getElementById("btnLogout")?.addEventListener("click", logout);
 
-    // Cambio de PIN
-    document.getElementById("btnCambiarPin")?.addEventListener("click", () => {
-        document.getElementById("password-change-modal").classList.add("active");
-    });
-    document.getElementById("btnCancelPinChange")?.addEventListener("click", () => {
-        document.getElementById("password-change-modal").classList.remove("active");
-    });
-    document.getElementById("btnSavePinChange")?.addEventListener("click", guardarNuevoPin);
+// Botón Sincronizar
+document.getElementById("btnSync")?.addEventListener("click", forzarSincronizacion);
+
+// Cambio de PIN (CÓDIGO REEMPLAZADO)
+document.getElementById("btnCambiarPin")?.addEventListener("click", () => {
+    // 1. Remover 'hidden' para que se pueda ver
+    document.getElementById("password-change-modal").classList.remove("hidden");
+    // 2. Añadir 'active' para la animación/opacidad
+    setTimeout(() => document.getElementById("password-change-modal").classList.add("active"), 10);
+});
+document.getElementById("btnCancelPinChange")?.addEventListener("click", () => {
+    // Cerrar: remover 'active' y luego añadir 'hidden'
+    document.getElementById("password-change-modal").classList.remove("active");
+    setTimeout(() => document.getElementById("password-change-modal").classList.add("hidden"), 300);
+});
+document.getElementById("btnSavePinChange")?.addEventListener("click", guardarNuevoPin);
 });
 
 /* === LÓGICA DE NAVEGACIÓN === */
