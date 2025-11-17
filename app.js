@@ -11,7 +11,7 @@ let estado = {
     motivoSeleccionado: "",
     ubicacionActual: null,
     viewMode: "list",
-    zonaActual: "AM" // Default
+    diaRutaActual: "LUN"
 };
 let map, markers;
 let gpsWatcher = null;
@@ -306,28 +306,51 @@ function checkSesion() {
 }
 
 function iniciarApp() {
+    // 1. Mostrar la interfaz principal de la app
     document.getElementById("view-login").classList.remove("active");
     document.getElementById("view-app").classList.add("active");
     
+    // 2. Obtener datos clave del estado (cargados previamente por loadData)
     const primerNombre = estado.nombre.split(' ')[0];
+    const totalClientes = estado.ruta.length;
+    
+    // ¡NUEVO! Usamos el 'diaAsignado' que vino del API
+    // Si por alguna razón no viniera, usa el 'diaRutaActual' guardado, o LUN como fallback.
+    const diaAsignado = (estado.diaRutaActual || "LUN").toUpperCase();
+    
+    // 3. Actualizar el saludo principal (Mensaje Coach)
     document.getElementById("vendedorNombre").innerText = estado.nombre;
 
-    const totalClientes = estado.ruta.length;
     let coachMsg = `¡Hola, <span id="coach-nombre">${primerNombre}</span>! `;
     
-    if (totalClientes === 0) coachMsg += "Día libre o sin ruta cargada.";
-    else coachMsg += `Tienes ${totalClientes} clientes hoy. ¡A darle con todo!`;
+    if (totalClientes === 0) {
+        coachMsg += `Ruta del **${diaAsignado}** cargada, pero no hay clientes asignados.`;
+    } else {
+        coachMsg += `Tu ruta de **${diaAsignado}** tiene ${totalClientes} clientes. ¡A vender! 🚀`;
+    }
     
     document.getElementById("mensajeCoach").innerHTML = coachMsg;
     
-    // El FAB ahora está oculto por CSS, usamos el Footer
+    // 4. ¡NUEVO! Mostrar el Toast de Bienvenida
+    // Este es el saludo que pediste al ingresar.
+    showDynamicToast(
+        "INFO", // Tipo de toast (azul)
+        `¡Bienvenido, ${primerNombre}!`, // Título
+        `Hoy cargamos la ruta del día **${diaAsignado}**.` // Mensaje
+    );
+    
+    // 5. Renderizar la ruta y activar el GPS
     document.body.setAttribute("data-view-mode", estado.viewMode);
     
     renderRuta();
     actualizarProgreso();
     iniciarSeguimientoGPS();
+    
+    // 6. ¡NUEVO! Inicializar los botones de la Agenda
+    // Esto dibujará los botones (LUN, MAR...) en la pestaña Agenda
+    // y marcará el 'diaAsignado' actual como seleccionado.
+    initDiaRutaControls(); 
 }
-
 function setViewMode(mode) {
     if (estado.viewMode === mode) return;
     estado.viewMode = mode;
