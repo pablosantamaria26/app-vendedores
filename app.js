@@ -162,13 +162,22 @@ function initFirebase() {
     
     messaging = firebase.messaging();
 
-    messaging.onMessage((payload) => {
-        console.log("Mensaje en primer plano:", payload);
-        const { tipo, titulo, mensaje } = payload.data;
-        if (tipo && mensaje) {
-            showDynamicToast(tipo, titulo, mensaje);
-        }
-    });
+  messaging.onMessage((payload) => {
+        console.log("Mensaje en primer plano:", payload);
+        const { tipo, titulo, mensaje, accionApp, mensajeCoach } = payload.data;
+        
+        if (tipo && mensaje) {
+            showDynamicToast(tipo, titulo, mensaje);
+        }
+        
+        // NUEVA LÓGICA: Si es un comando de coaching, abre el modal
+        if (accionApp === "MOSTRAR_COACH_MODAL" && mensajeCoach) {
+            abrirModalCoach(titulo, mensajeCoach);
+           
+           // Guardar en sesión para abrirlo si la app estaba cerrada
+        sessionStorage.setItem("coach_pending_message", JSON.stringify({ titulo: titulo, mensaje: mensajeCoach }));
+        }
+    });
 }
 
 /* === LOGIN & API === */
@@ -492,6 +501,17 @@ function checkSesion() {
                 
                 iniciarApp(); 
                 activarNotificaciones().catch(e => console.warn("Notificaciones:", e));
+                
+                // === LÓGICA DE COACHING PENDIENTE (NUEVO) ===
+                const pendingCoach = sessionStorage.getItem("coach_pending_message");
+                if (pendingCoach) {
+                    const coachData = JSON.parse(pendingCoach);
+                    // Usa la función que definimos para mostrar el modal
+                    abrirModalCoach(coachData.titulo, coachData.mensaje); 
+                    sessionStorage.removeItem("coach_pending_message"); // Limpiar después de mostrar
+                }
+                // ===========================================
+                
                 return;
             }
         }
@@ -897,3 +917,28 @@ async function enviarReporteSupervisor() {
     await fetch(API, { method: "POST", body: JSON.stringify({ accion: "reporteSupervisor", vendedor: estado.vendedor, vendedorNombre: estado.nombre, fechaISO: new Date().toISOString(), visitas })});
     toast("📧 Reporte enviado");
 }
+
+/* === MODAL COACH METIS === */
+
+function abrirModalCoach(titulo, mensaje) {
+    const modal = document.getElementById("modal-coach-metis");
+    if (!modal) return;
+
+    document.getElementById("coach-modal-titulo").innerText = titulo || "Coach Metis";
+    
+    // Mostrar mensaje de coaching, respetando saltos de línea si Gemini los incluyó
+    const mensajeEl = document.getElementById("coach-modal-mensaje");
+    if(mensajeEl) mensajeEl.innerHTML = mensaje.replace(/\n/g, '<br>');
+
+    modal.classList.remove("hidden");
+    setTimeout(() => modal.classList.add("active"), 10);
+}
+
+function cerrarModalCoach() {
+    const modal = document.getElementById("modal-coach-metis");
+    modal.classList.remove("active");
+    setTimeout(() => modal.classList.add("hidden"), 300);
+}
+
+// Agregar Event Listener al botón
+document.getElementById("btnCoachEntendido")?.addEventListener("click", cerrarModalCoach);
