@@ -197,23 +197,63 @@ body[data-view-mode="focus"] .card {
 }
 body[data-view-mode="focus"] .card-header h3 { font-size: 22px; font-weight: 700; }
 body[data-view-mode="focus"] .card-body p { font-size: 16px; gap: 8px; }
-body[data-view-mode="focus"] .card-actions { max-height: 70px; opacity: 1; }
+/* Se ajustó la cuadrícula para acomodar el botón '¡IR!' (4 columnas) */
+body[data-view-mode="focus"] .card-actions { grid-template-columns: 1fr 1fr 1fr 1fr; max-height: 70px; opacity: 1; }
 
-.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.card-header h3 { margin: 0; font-weight: 600; line-height: 1.4; padding-right: 10px; }
+.card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-start; 
+    margin-bottom: 12px; 
+}
+/* Estilo para el código de cliente dentro del header */
+.card-header .cliente-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    padding-right: 10px;
+}
+.card-header .cliente-meta h3 { 
+    margin: 0; 
+    font-weight: 600; 
+    line-height: 1.4; 
+}
+.card-header .cliente-meta span { 
+    font-size: 12px; 
+    font-weight: 500; 
+    color: var(--text-secondary); 
+    opacity: 0.8;
+}
+
 .badge { font-size: 11px; padding: 5px 10px; border-radius: 50px; font-weight: 700; text-transform: uppercase; }
 .badge.pendiente { background: var(--bg-input); color: var(--text-secondary); }
 .badge.si { background: var(--success); color: #003d1c; }
 .badge.no { background: var(--danger); color: #FFF; }
 
 .card-body p { margin: 6px 0; color: var(--text-secondary); display: flex; align-items: center; }
+
+/* AJUSTE CRÍTICO: Nueva cuadrícula para 4 botones */
 .card-actions {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;  
-    gap: 10px; margin-top: 20px; max-height: 0;
-    overflow: hidden; opacity: 0;
+    display: grid; 
+    grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas iguales */ 
+    gap: 8px; /* Reducimos el gap para que quepan */
+    margin-top: 20px; 
+    max-height: 0;
+    overflow: hidden; 
+    opacity: 0;
     transition: max-height 0.4s ease, opacity 0.4s ease;
 }
-.card.expanded .card-actions { max-height: 70px; opacity: 1; }
+.card.expanded .card-actions { 
+    max-height: 70px; 
+    opacity: 1; 
+    grid-template-columns: 1fr 1fr 1fr 1fr; /* Aseguramos 4 columnas en expandido */
+}
+/* Reajuste de la cuadrícula para el modo list que tiene menos espacio */
+body[data-view-mode="list"] .card.expanded .card-actions {
+    grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); /* Más flexible para móviles pequeños */
+    gap: 6px;
+}
+
 .card.next { border-color: var(--accent-solid); box-shadow: 0 0 0 3px var(--accent-shadow); }
 .card.next::after {
     content: "SIGUIENTE"; position: absolute; top: -10px; left: 16px;
@@ -223,12 +263,23 @@ body[data-view-mode="focus"] .card-actions { max-height: 70px; opacity: 1; }
 
 .ruta-completa { padding: 60px 20px; text-align: center; font-size: 18px; color: var(--text-secondary); }
 .btn-action {
-    padding: 14px 10px; border: none; border-radius: var(--border-radius-sm); font-weight: 700; font-size: 13px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+    padding: 12px 6px; /* Reducimos el padding para que quepan 4 */
+    border: none; 
+    border-radius: var(--border-radius-sm); 
+    font-weight: 700; 
+    font-size: 11px; /* Reducimos el texto para el móvil */
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 4px; /* Reducimos el gap interno */
+    transition: all 0.2s;
+    height: 40px; /* Altura fija para uniformidad */
 }
 .btn-venta { background: var(--success); color: #003d1c; }
 .btn-noventa { background: var(--bg-input); color: var(--text-primary); }
 .btn-detalle { background: var(--bg-input); color: var(--text-primary); }
+.btn-navegar { background: var(--accent-solid); color: #FFF; font-size: 12px; } /* Nuevo estilo para ¡IR! */
 
 /* --- 8. Estilos Footer Navegación --- */
 .app-footer {
@@ -317,7 +368,24 @@ body[data-view-mode="focus"] .card-actions { max-height: 70px; opacity: 1; }
 .btn-secondary { width: 100%; background: var(--bg-input); border: none; padding: 10px; border-radius: 8px; color: var(--text-primary); font-weight: 600; cursor: pointer; }
 .ultimo-pedido-box { background: var(--bg-main); padding: 15px; border-radius: 12px; margin: 15px 0; font-size: 14px; }
 
-.distancia-badge { position: absolute; top: 16px; right: 16px; background: var(--bg-main); padding: 5px 10px; border-radius: 50px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border: 1px solid var(--bg-input); }
+/* AJUSTE PARA MOSTRAR TIEMPO Y DISTANCIA REAL CON MÁS ÉNFASIS */
+.distancia-badge { 
+    position: absolute; 
+    top: 16px; 
+    right: 16px; 
+    background: var(--accent-solid); /* Fondo de acento para destacar la información clave */
+    padding: 5px 10px; 
+    border-radius: 50px; 
+    font-size: 12px; 
+    font-weight: 700; /* Más peso */
+    color: #FFF; 
+    border: 1px solid var(--accent-solid); 
+    max-width: 150px; /* Limitar el ancho para que no se superponga */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
 body[data-view-mode="focus"] .distancia-badge { font-size: 14px; padding: 8px 12px; top: 20px; right: 20px; }
 
 /* --- 11. Toast Normal --- */
