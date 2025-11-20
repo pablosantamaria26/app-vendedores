@@ -125,7 +125,7 @@
                     <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                 </button>
             </div>
-            <p class="app-version">App Vendedores Pro v2.7</p>
+            <p class="app-version">App Vendedores Pro v3.0</p>
         </div>
     </section>
 
@@ -192,7 +192,7 @@
             <p>Ingresa tu nuevo código de 4 dígitos.</p>
             
             <input type="tel" id="newPinInput" class="pin-input" maxlength="4" placeholder="0000" 
-                   style="font-size: 32px; letter-spacing: 8px; text-align: center; width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; outline: none;">
+                    style="font-size: 32px; letter-spacing: 8px; text-align: center; width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin: 20px 0; outline: none;">
             
             <div class="modal-actions-row">
                 <button id="btnCancelPinChange" class="btn-cancel">Cancelar</button>
@@ -216,6 +216,7 @@
     <div id="modal-cliente" class="modal-overlay hidden">
         <div class="modal-card">
             <h3 id="modal-cliente-nombre">Nombre Cliente</h3>
+            <p id="modal-cliente-codigo" style="font-size:14px; color:var(--accent-solid); margin-top:-10px; margin-bottom:15px; font-weight:700;">Código: N/A</p>
             <p id="modal-cliente-direccion">Dirección</p>
             
             <div class="ultimo-pedido-box">
