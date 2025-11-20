@@ -235,8 +235,8 @@ body[data-view-mode="focus"] .card-actions { grid-template-columns: 1fr 1fr 1fr 
 /* AJUSTE CRÍTICO: Nueva cuadrícula para 4 botones */
 .card-actions {
     display: grid; 
-    grid-template-columns: 1fr 1fr 1fr 1fr; /* 4 columnas iguales */ 
-    gap: 8px; /* Reducimos el gap para que quepan */
+    grid-template-columns: repeat(4, 1fr); /* 4 columnas fijas */
+    gap: 8px; 
     margin-top: 20px; 
     max-height: 0;
     overflow: hidden; 
@@ -244,7 +244,7 @@ body[data-view-mode="focus"] .card-actions { grid-template-columns: 1fr 1fr 1fr 
     transition: max-height 0.4s ease, opacity 0.4s ease;
 }
 .card.expanded .card-actions { 
-    max-height: 70px; 
+    max-height: 100px; 
     opacity: 1; 
     grid-template-columns: 1fr 1fr 1fr 1fr; /* Aseguramos 4 columnas en expandido */
 }
