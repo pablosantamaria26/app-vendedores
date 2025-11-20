@@ -1,27 +1,29 @@
 /* ======================================================
-   APP VENDEDORES PRO v2.8 - FINAL (CON LOCALIDADES)
-   ====================================================== */
+    APP VENDEDORES PRO v3.0 - FINAL (CON DISTANCIA REAL)
+    ====================================================== */
 
+// La API apunta a tu Worker (Google Apps Script)
 const API = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
 // --- ESTADO GLOBAL ACTUALIZADO ---
 let estado = {
     vendedor: "",
     nombre: "",
-    ruta: [],
+    ruta: [], // Cada cliente ahora tendrá .distancia y .duracion
     motivoSeleccionado: "",
-    ubicacionActual: null,
+    ubicacionActual: null, // Lat/Lng del dispositivo
     viewMode: "list",
-    diaRutaActual: "LUN", // LUN, MAR, MIE...
-    planSemanal: {},      // { "LUN": "Longchamps", "MAR": "Guernica"... }
-    localidadesHoy: ""    // "Longchamps, Glew"
+    diaRutaActual: "LUN", 
+    planSemanal: {},
+    localidadesHoy: ""
 };
 
 let map, markers;
 let gpsWatcher = null;
 let clientesAvisados = new Set();
 let _reporteEnviado = false;
-let diaSeleccionadoTemp = ""; 
+let diaSeleccionadoTemp = "";
+let clienteMotivoIndex = null; // Variable agregada para Motivos
 
 const MENSAJES_MOTIVACIONALES = [
     "¡Vamos por un gran día de ventas!",
@@ -33,7 +35,7 @@ const MENSAJES_MOTIVACIONALES = [
 
 /* === INICIO & EVENTOS GLOBALES === */
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("🚀 App iniciada (v2.8 PRO)");
+    console.log("🚀 App iniciada (v3.0 PRO)");
     try { initFirebase(); } catch (e) { console.warn("Firebase bloqueado:", e); }
     
     // Verificar si es un nuevo día antes de cargar sesión
@@ -70,7 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Modals
     document.getElementById("btnCancelarModal")?.addEventListener("click", cerrarModalCliente);
-    document.getElementById("btnIrCliente")?.addEventListener("click", irACliente);
+    // *** CAMBIO 1: El botón "Ir a Cliente" ya no llama a una función, sino que abre el enlace que generaremos ***
+    document.getElementById("btnIrCliente")?.addEventListener("click", irACliente); 
 
     // Eventos Motivos
     document.getElementById("overlay-motivo")?.addEventListener("click", cerrarMotivo);
@@ -162,22 +165,22 @@ function initFirebase() {
     
     messaging = firebase.messaging();
 
-  messaging.onMessage((payload) => {
-        console.log("Mensaje en primer plano:", payload);
-        const { tipo, titulo, mensaje, accionApp, mensajeCoach } = payload.data;
-        
-        if (tipo && mensaje) {
-            showDynamicToast(tipo, titulo, mensaje);
-        }
-        
-        // NUEVA LÓGICA: Si es un comando de coaching, abre el modal
-        if (accionApp === "MOSTRAR_COACH_MODAL" && mensajeCoach) {
-            abrirModalCoach(titulo, mensajeCoach);
-           
+    messaging.onMessage((payload) => {
+        console.log("Mensaje en primer plano:", payload);
+        const { tipo, titulo, mensaje, accionApp, mensajeCoach } = payload.data;
+        
+        if (tipo && mensaje) {
+            showDynamicToast(tipo, titulo, mensaje);
+        }
+        
+        // NUEVA LÓGICA: Si es un comando de coaching, abre el modal
+        if (accionApp === "MOSTRAR_COACH_MODAL" && mensajeCoach) {
+            abrirModalCoach(titulo, mensajeCoach);
+            
            // Guardar en sesión para abrirlo si la app estaba cerrada
-        sessionStorage.setItem("coach_pending_message", JSON.stringify({ titulo: titulo, mensaje: mensajeCoach }));
-        }
-    });
+        sessionStorage.setItem("coach_pending_message", JSON.stringify({ titulo: titulo, mensaje: mensajeCoach }));
+        }
+    });
 }
 
 /* === LOGIN & API === */
@@ -204,10 +207,14 @@ async function login() {
     btnLoading(true);
     
     try {
-        const rutaPromise = fetch(`${API}?accion=getRutaDelDia&clave=${clave}&t=${Date.now()}`);
-        const ubicacionPromise = obtenerUbicacion();
-
+        // Obtenemos ubicación antes de pedir la ruta para que la ruta venga ordenada
+        const ubicacionPromise = obtenerUbicacion(); 
         await ubicacionPromise;
+        
+        // Enviamos las coordenadas actuales en la URL para que el backend pueda ordenar
+        const lat = estado.ubicacionActual?.lat || "";
+        const lng = estado.ubicacionActual?.lng || "";
+        const rutaPromise = fetch(`${API}?accion=getRutaDelDia&clave=${clave}&latMovil=${lat}&lngMovil=${lng}&t=${Date.now()}`);
 
         if (estado.ubicacionActual) {
             fetchClimaString(estado.ubicacionActual.lat, estado.ubicacionActual.lng)
@@ -229,11 +236,17 @@ async function login() {
         estado.nombre = data.vendedor || "Vendedor";
         estado.diaRutaActual = (data.diaAsignado || "LUN").toUpperCase();
         
-        // -- DATOS DE LOCALIDADES (NUEVO) --
+        // -- DATOS DE LOCALIDADES --
         estado.planSemanal = data.planSemanal || {}; 
         estado.localidadesHoy = data.localidadesHoy || "";
         
-        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
+        estado.ruta = data.cartera.map(c => ({ 
+            ...c, 
+            visitado: false, 
+            expanded: false, 
+            distancia: c.distancia || null, // Vienen del backend si las calculó
+            duracion: c.duracion || null // Vienen del backend si las calculó
+        }));
         
         // Persistencia
         localStorage.setItem("vendedor_sesion", JSON.stringify({ 
@@ -447,11 +460,20 @@ function forzarSincronizacion() {
 
 async function recargarDatos(forzar = false) {
     const t = forzar ? Date.now() : 0;
-    const res = await fetch(`${API}?accion=getRutaDelDia&clave=${estado.vendedor}&t=${t}`);
+    const lat = estado.ubicacionActual?.lat || "";
+    const lng = estado.ubicacionActual?.lng || "";
+    const res = await fetch(`${API}?accion=getRutaDelDia&clave=${estado.vendedor}&latMovil=${lat}&lngMovil=${lng}&t=${t}`);
     const data = await res.json();
     
     if (data.ok) {
-        estado.ruta = data.cartera.map(c => ({ ...c, visitado: false, expanded: false }));
+        // Actualizamos la ruta con los nuevos datos, incluyendo distancia/duracion si vinieron
+        estado.ruta = data.cartera.map(c => ({ 
+            ...c, 
+            visitado: false, 
+            expanded: false,
+            distancia: c.distancia || null,
+            duracion: c.duracion || null
+        }));
         estado.diaRutaActual = (data.diaAsignado || "LUN").toUpperCase();
         
         // Actualizar también la metadata
@@ -563,6 +585,11 @@ function iniciarApp() {
     actualizarProgreso();
     iniciarSeguimientoGPS();
     initDiaRutaControls(); 
+    
+    // *** CAMBIO 2: Iniciar la actualización de distancia real al inicio ***
+    if (estado.ubicacionActual && estado.ruta.length > 0) {
+        actualizarDistanciasRuta();
+    }
 }
 
 function setViewMode(mode) {
@@ -605,9 +632,14 @@ function renderRuta() {
 function renderClienteCard(c, i, isNext, colorIndex = 0) {
     const container = document.getElementById("listaClientes");
     let distanciaHTML = "";
+    
+    // *** CAMBIO 3: Usar la duración real (con tráfico) si está disponible, si no, usar la de Haversine ***
+    const distanciaDisplay = c.distancia || `(${calcularDistancia(estado.ubicacionActual?.lat, estado.ubicacionActual?.lng, c.lat, c.lng).toFixed(1)}km)`;
+    const duracionDisplay = c.duracion || "calculando..."; 
+    
+    // El badge ahora muestra TIEMPO y luego DISTANCIA. El tiempo es más importante.
     if (estado.ubicacionActual && c.lat && c.lng) {
-        const dist = calcularDistancia(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
-        distanciaHTML = `<div class="distancia-badge">🚗 ${(dist * 2).toFixed(0)}min (${dist.toFixed(1)}km)</div>`;
+        distanciaHTML = `<div class="distancia-badge">⏱️ ${duracionDisplay} (${distanciaDisplay})</div>`;
     }
     
     const frecuenciaTexto = c.frecuencia || "Sin historial";
@@ -629,6 +661,7 @@ function renderClienteCard(c, i, isNext, colorIndex = 0) {
             <button class="btn-action btn-venta" data-i="${i}">✅ VENTA</button>
             <button class="btn-action btn-noventa" data-i="${i}">❌ MOTIVO</button>
             <button class="btn-action btn-detalle" data-i="${i}">${detalleTexto}</button>
+            <button class="btn-action btn-navegar" data-i="${i}">🚀 ¡IR!</button>
         </div>`;
     container.appendChild(card);
 }
@@ -643,6 +676,9 @@ function manejarClicksLista(e) {
     if (e.target.closest('.btn-venta')) { registrarVenta(index, true); return; }
     if (e.target.closest('.btn-noventa')) { abrirMotivo(index); return; }
     if (e.target.closest('.btn-detalle')) { abrirModalCliente(index); return; }
+    
+    // *** CAMBIO 5: Manejar el clic del nuevo botón ¡IR! ***
+    if (e.target.closest('.btn-navegar')) { irACliente(index); return; }
 
     if (estado.viewMode === 'list') {
         const cliente = estado.ruta[index];
@@ -665,6 +701,10 @@ async function registrarVenta(index, compro, motivo = "") {
     cliente.motivo = compro ? "" : (motivo || "");
     cliente.hora = ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
     
+    // Eliminamos datos de GPS de la tarjeta para evitar que se muestren distancias de clientes visitados
+    delete cliente.distancia;
+    delete cliente.duracion;
+
     localStorage.setItem(`ruta_${estado.vendedor}`, JSON.stringify(estado.ruta));
     
     const card = document.querySelector(`.card[data-i="${index}"]`);
@@ -677,6 +717,10 @@ async function registrarVenta(index, compro, motivo = "") {
     setTimeout(() => {
         renderRuta();
         actualizarProgreso();
+        // Volvemos a calcular distancias con la ruta actualizada
+        if (estado.ubicacionActual && estado.ruta.filter(c => !c.visitado).length > 0) {
+            actualizarDistanciasRuta();
+        }
     }, animDuration);
 
     try {
@@ -684,7 +728,7 @@ async function registrarVenta(index, compro, motivo = "") {
             accion: "registrarVisita", vendedor: estado.vendedor, vendedorNombre: estado.nombre,
             cliente: cliente.numeroCliente, compro: !!compro, motivo: cliente.motivo || "",
             lat: estado.ubicacionActual?.lat ?? "", lng: estado.ubicacionActual?.lng ?? "",
-            ts: ahora.toISOString(), app: "App Vendedores Pro v2.8"
+            ts: ahora.toISOString(), app: "App Vendedores Pro v3.0"
         };
         await fetch(API, { method: "POST", body: JSON.stringify(payload) });
         toast(compro ? "🎉 ¡Venta registrada!" : "ℹ️ Visita registrada");
@@ -717,6 +761,8 @@ function iniciarSeguimientoGPS() {
             estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             ordenarRutaPorDistancia();
             verificarProximidadClientes();
+            // *** CAMBIO 6: Recalcular distancias con la ubicación actualizada ***
+            actualizarDistanciasRuta(); 
         },
         (err) => console.warn("GPS error:", err),
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 7000 }
@@ -730,6 +776,9 @@ function ordenarRutaPorDistancia() {
         if (a.visitado !== b.visitado) return a.visitado ? 1 : -1;
         if (!a.lat || !a.lng) return 1;
         if (!b.lat || !b.lng) return -1;
+        // La Distance Matrix API en el backend ya ordena la lista al inicio, 
+        // pero la ordenación de Haversine (cálculo de línea recta) sigue siendo útil 
+        // para la reordenación rápida en el móvil si el GPS se actualiza.
         return calcularDistancia(lat, lng, a.lat, a.lng) - calcularDistancia(lat, lng, b.lat, b.lng);
     });
     renderRuta();
@@ -745,6 +794,52 @@ function verificarProximidadClientes() {
             toast(`📍 Estás cerca de: ${c.nombre}`);
         }
     });
+}
+
+// *** NUEVA FUNCIÓN: Obtener distancias reales del backend (Distance Matrix API) ***
+async function actualizarDistanciasRuta() {
+    if (!estado.ubicacionActual || estado.ruta.length === 0) return;
+    
+    const lat = estado.ubicacionActual.lat;
+    const lng = estado.ubicacionActual.lng;
+    
+    // Filtrar solo los clientes pendientes que tienen coordenadas válidas
+    const clientesPendientesConCoords = estado.ruta
+        .filter(c => !c.visitado && c.lat && c.lng);
+
+    if (clientesPendientesConCoords.length === 0) return;
+
+    // Construir la lista de destinos (coordenadas de clientes)
+    const destinos = clientesPendientesConCoords.map(c => `${c.lat},${c.lng}`).join('|');
+    
+    // Llamada al backend para obtener la matriz de distancias (Distance Matrix API)
+    try {
+        const res = await fetch(`${API}?accion=getDistancias&latMovil=${lat}&lngMovil=${lng}&destinos=${destinos}`);
+        const data = await res.json();
+
+        if (data.ok && data.results) {
+            data.results.forEach((r, index) => {
+                const cliente = clientesPendientesConCoords[index];
+                const clienteOriginal = estado.ruta.find(c => c.numeroCliente === cliente.numeroCliente);
+                
+                if (clienteOriginal && r.status === 'OK') {
+                    // Actualizar el objeto del cliente en el estado global
+                    clienteOriginal.distancia = r.distance; // Texto de Distancia
+                    clienteOriginal.duracion = r.duration;   // Texto de Duración
+                } else if (clienteOriginal) {
+                    clienteOriginal.distancia = "N/A";
+                    clienteOriginal.duracion = "Error";
+                }
+            });
+            // Una vez que todos los datos se actualizaron en el estado, volvemos a renderizar
+            renderRuta();
+        } else {
+            console.warn("Backend no pudo devolver distancias:", data.message || data.error);
+        }
+
+    } catch (e) {
+        console.error("Fallo la llamada a getDistancias:", e);
+    }
 }
 
 /* === MAPA === */
@@ -791,6 +886,18 @@ async function abrirModalCliente(index) {
     document.getElementById("modal-cliente-direccion").innerText = c.domicilio;
     document.getElementById("modal-ultimo-pedido").innerText = "⌛ Cargando...";
     
+    // *** CAMBIO 7: Actualizar botón ¡IR! del modal ***
+    const btnIr = document.getElementById("btnIrCliente");
+    if (btnIr) {
+        if (c.lat && c.lng && estado.ubicacionActual) {
+            btnIr.classList.remove('disabled');
+            btnIr.dataset.i = index; // Guardar el índice para la función irACliente
+        } else {
+            btnIr.classList.add('disabled');
+            btnIr.dataset.i = -1;
+        }
+    }
+    
     const modal = document.getElementById("modal-cliente");
     modal.classList.remove("hidden");
     setTimeout(() => modal.classList.add("active"), 10);
@@ -810,9 +917,23 @@ function cerrarModalCliente() {
     setTimeout(() => modal.classList.add("hidden"), 300);
 }
 
-function irACliente() {
-    const c = estado.ruta[clienteModalIndex];
-    if (c.lat && c.lng) window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, '_blank');
+// *** CAMBIO 8: Función irACliente ahora usa la URL de navegación de Google Maps ***
+function irACliente(index = clienteModalIndex) {
+    const c = estado.ruta[index];
+    
+    if (!c.lat || !c.lng || !estado.ubicacionActual) {
+        toast("❌ Cliente sin coordenadas o GPS inactivo.");
+        return;
+    }
+    
+    const latVendedor = estado.ubicacionActual.lat;
+    const lngVendedor = estado.ubicacionActual.lng;
+    
+    // Generación de la URL de navegación (el esquema de Maps universal)
+    const url = `http://maps.google.com/maps?saddr=${latVendedor},${lngVendedor}&daddr=${c.lat},${c.lng}`;
+    
+    window.open(url, '_system'); // Usamos '_system' para forzar que abra en la aplicación nativa
+    cerrarModalCliente();
 }
 
 function abrirMotivo(index) {
@@ -871,6 +992,8 @@ async function fetchClimaString(lat, lng) {
         return `${getWMOWeatherDescription(data.current_weather.weathercode)}, ${data.current_weather.temperature.toFixed(0)}°C`;
     } catch { return "Sin datos clima"; }
 }
+
+// Función Haversine (distancia en línea recta - usada para ordenamiento rápido y fallback)
 function calcularDistancia(lat1, lon1, lat2, lon2) {
     const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
@@ -921,23 +1044,23 @@ async function enviarReporteSupervisor() {
 /* === MODAL COACH METIS === */
 
 function abrirModalCoach(titulo, mensaje) {
-    const modal = document.getElementById("modal-coach-metis");
-    if (!modal) return;
+    const modal = document.getElementById("modal-coach-metis");
+    if (!modal) return;
 
-    document.getElementById("coach-modal-titulo").innerText = titulo || "Coach Metis";
-    
-    // Mostrar mensaje de coaching, respetando saltos de línea si Gemini los incluyó
-    const mensajeEl = document.getElementById("coach-modal-mensaje");
-    if(mensajeEl) mensajeEl.innerHTML = mensaje.replace(/\n/g, '<br>');
+    document.getElementById("coach-modal-titulo").innerText = titulo || "Coach Metis";
+    
+    // Mostrar mensaje de coaching, respetando saltos de línea si Gemini los incluyó
+    const mensajeEl = document.getElementById("coach-modal-mensaje");
+    if(mensajeEl) mensajeEl.innerHTML = mensaje.replace(/\n/g, '<br>');
 
-    modal.classList.remove("hidden");
-    setTimeout(() => modal.classList.add("active"), 10);
+    modal.classList.remove("hidden");
+    setTimeout(() => modal.classList.add("active"), 10);
 }
 
 function cerrarModalCoach() {
-    const modal = document.getElementById("modal-coach-metis");
-    modal.classList.remove("active");
-    setTimeout(() => modal.classList.add("hidden"), 300);
+    const modal = document.getElementById("modal-coach-metis");
+    modal.classList.remove("active");
+    setTimeout(() => modal.classList.add("hidden"), 300);
 }
 
 // Agregar Event Listener al botón
