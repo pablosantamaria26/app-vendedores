@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#111319">
-    <title>App Vendedores Pro</title>
+    <meta name="theme-color" content="#0f172a">
+    <title>App Vendedores Pro - Metis IA</title>
 
+    <!-- FUENTES E ICONOS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,734 +14,764 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <style>
-        /* === ESTILOS CSS INTEGRADOS === */
+        /* =========================================
+           ESTILOS CSS (MODERN UI/UX)
+           ========================================= */
         :root {
             --bg-body: #0f172a;
             --bg-card: #1e293b;
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --accent: #4CC9F0;
-            --accent-hover: #4895EF;
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --header-bg: rgba(15, 23, 42, 0.98);
         }
 
-        [data-theme="violet"] {
-            --accent: #7C5DFF;
-            --accent-hover: #6B46C1;
-        }
+        [data-theme="violet"] { --accent: #7C5DFF; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-primary); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* Layout & Views */
-        .view { display: none; height: 100%; flex-direction: column; overflow-y: auto; padding-bottom: 80px; }
-        .view.active { display: flex; animation: fadeIn 0.3s ease; }
+        /* ANIMACIONES */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Login */
-        .login-container { display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%); z-index: 200; position: absolute; top: 0; left: 0; width: 100%; }
-        .login-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; text-align: center; }
-        .input-group { position: relative; margin: 25px 0; }
-        .input-group input { width: 100%; padding: 15px; background: #334155; border: 2px solid #475569; border-radius: 12px; color: white; font-size: 18px; text-align: center; letter-spacing: 5px; outline: none; transition: 0.3s; }
-        .input-group input:focus { border-color: var(--accent); }
-        .btn-toggle-clave { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 20px; cursor: pointer; color: #aaa; }
+        /* VISTAS */
+        .view { display: none; height: 100%; flex-direction: column; overflow-y: auto; padding-bottom: 90px; }
+        .view.active { display: flex; animation: fadeIn 0.3s ease; }
 
-        /* Header */
-        .app-header { padding: 15px 20px; background: rgba(15, 23, 42, 0.95); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #334155; }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .header-stats-container { display: flex; align-items: center; gap: 15px; }
-        .progress-ring { position: relative; width: 60px; height: 60px; }
+        /* HEADER */
+        .app-header { padding: 15px 20px; background: var(--header-bg); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #334155; backdrop-filter: blur(5px); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        
+        /* ALERTAS DE RUTA */
+        .route-alert {
+            background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: var(--warning);
+            padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px; animation: fadeIn 0.5s ease;
+        }
+        .route-alert i { font-size: 14px; }
+        .route-alert.normal { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: var(--success); }
+
+        /* PROGRESO */
+        .progress-ring { position: relative; width: 45px; height: 45px; }
         .progress-ring circle { fill: transparent; stroke: #334155; stroke-width: 4; }
-        .progress-ring .progreso-value { stroke: var(--accent); stroke-dasharray: 163; stroke-dashoffset: 163; transition: 0.5s; transform: rotate(-90deg); transform-origin: 50% 50%; stroke-linecap: round; }
-        .progress-ring span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: 700; }
-        .header-stats-text { display: flex; flex-direction: column; font-size: 11px; color: var(--text-secondary); }
+        .progress-ring .progreso-value { stroke: var(--accent); stroke-dasharray: 126; stroke-dashoffset: 126; transition: 0.8s; transform: rotate(-90deg); transform-origin: 50% 50%; stroke-linecap: round; }
+        .progress-ring span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; font-weight: 700; }
         
-        .coach-banner { background: linear-gradient(90deg, #1e293b, #0f172a); border-left: 4px solid var(--accent); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; line-height: 1.4; }
-        .header-controls { display: flex; justify-content: space-between; align-items: center; }
-        
-        /* Buttons */
-        .btn-primary { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-action { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .btn-venta { background: var(--success); color: white; }
-        .btn-noventa { background: var(--danger); color: white; }
-        .btn-detalle { background: #334155; color: white; }
-        .btn-navegar { background: var(--warning); color: #000; }
-        
-        .view-mode-btn { background: transparent; border: 1px solid #475569; color: var(--text-secondary); padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
-        .view-mode-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        /* BARRA INFO */
+        .info-bar { background: linear-gradient(90deg, #1e293b, #0f172a); border-left: 4px solid var(--accent); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display:flex; justify-content: space-between; align-items:center; gap:8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .sync-status { font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; }
+        .sync-status.syncing { color: var(--accent); }
+        .sync-status.syncing i { animation: spin 1s infinite linear; }
 
-        /* Lista Clientes */
+        /* LISTA CLIENTES */
         .cliente-list { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: var(--bg-card); border-radius: 16px; padding: 15px; border: 1px solid #334155; position: relative; overflow: hidden; transition: 0.3s; }
-        .card.expanded { border-color: var(--accent); box-shadow: 0 0 15px rgba(76, 201, 240, 0.1); }
-        .card.next::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .card h3 { margin: 0; font-size: 16px; font-weight: 600; width: 70%; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-        .badge.pendiente { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
-        .distancia-badge { font-size: 11px; background: #334155; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 8px; color: var(--accent); }
-        .card-body p { margin: 3px 0; font-size: 13px; color: var(--text-secondary); }
-        .card-actions { display: none; gap: 8px; margin-top: 15px; }
+        .card { background: var(--bg-card); border-radius: 16px; padding: 16px; border: 1px solid #334155; position: relative; overflow: hidden; transition: all 0.3s ease; }
+        .card.expanded { border-color: var(--accent); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); transform: translateY(-2px); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
+        .card h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; flex: 1; }
+        .client-id-span { color: var(--accent); font-weight: 800; margin-right: 4px; font-size: 15px; }
+
+        /* BADGES */
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+        .badge.pendiente { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .badge.visitado { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        
+        /* GPS BADGE */
+        .gps-badge { 
+            display: inline-flex; align-items: center; gap: 6px; 
+            font-size: 11px; font-weight: 600; 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid #334155; 
+            padding: 5px 10px; border-radius: 20px; margin-bottom: 10px; 
+            color: var(--text-secondary);
+            width: fit-content;
+        }
+        .gps-badge.active { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.4); color: var(--success); }
+
+        .card-body p { margin: 4px 0; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+        
+        /* BOTONES ACCIÓN */
+        .card-actions { display: none; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
         .card.expanded .card-actions { display: flex; }
+        .btn-action { flex: 1; padding: 10px 4px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.2s; background: #334155; color: white; border: 1px solid #475569; }
+        .btn-action:active { transform: scale(0.95); }
+        .btn-venta { background: rgba(16, 185, 129, 0.15); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+        .btn-noventa { background: rgba(239, 68, 68, 0.15); color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+        .btn-navegar { background: rgba(245, 158, 11, 0.15); color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
 
-        /* Footer Nav - OCULTO POR DEFECTO */
-        .app-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; border-top: 1px solid #334155; display: none; justify-content: space-around; padding: 10px 0; z-index: 100; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
-        /* Clase para mostrar el footer cuando estamos logueados */
-        body.logged-in .app-footer { display: flex; }
-
-        .nav-btn { background: none; border: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; cursor: pointer; width: 25%; }
-        .nav-btn i { font-size: 20px; margin-bottom: 2px; }
+        /* AGENDA CHIPS */
+        .chip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
+        .chip { background: #334155; border: 1px solid #475569; color: #fff; padding: 15px 10px; border-radius: 12px; cursor: pointer; text-align: center; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:0.2s; }
+        .chip.selected { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; box-shadow: 0 4px 15px rgba(76,201,240,0.3); }
+        
+        /* FOOTER */
+        .app-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #1e293b; border-top: 1px solid #334155; display: none; justify-content: space-around; padding: 12px 0; z-index: 100; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+        body.logged-in .app-footer { display: flex !important; }
+        .nav-btn { background: none; border: none; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; cursor: pointer; width: 25%; }
         .nav-btn.active { color: var(--accent); }
+        .nav-btn i { font-size: 20px; }
 
-        /* Modals & Utils */
+        /* LOGIN */
+        .login-container { display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%); position: absolute; top:0; left:0; width:100%; z-index:200; }
+        .login-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; text-align: center; }
+        .input-group input { width: 100%; padding: 15px; background: #334155; border: 2px solid #475569; border-radius: 12px; color: white; font-size: 24px; text-align: center; letter-spacing: 5px; outline: none; margin: 20px 0; font-weight:700; }
+        .btn-primary { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; text-transform: uppercase; }
+
+        /* MODALES */
         .hidden { display: none !important; }
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index: 300; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
+        .modal-card { background: var(--bg-card); width: 90%; max-width: 340px; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
         .full-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 200; display: flex; flex-direction: column; }
-        .modal-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #1e293b; border-bottom: 1px solid #334155; }
-        #map { flex: 1; width: 100%; height: 100%; }
-        
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index: 300; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(5px); opacity: 0; transition: 0.3s; pointer-events: none;}
-        .modal-overlay.active { opacity: 1; pointer-events: all;}
-        .modal-card { background: var(--bg-card); width: 90%; max-width: 320px; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid #334155; transform: scale(0.9); transition: 0.3s; }
-        .modal-overlay.active .modal-card { transform: scale(1); }
-        .modal-actions-row { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-confirm { background: var(--accent); color: #000; border:none; padding: 10px; border-radius: 8px; flex:1; font-weight:700; }
-        .btn-cancel { background: transparent; border: 1px solid #475569; color: #fff; padding: 10px; border-radius: 8px; flex:1; }
+        #map { flex: 1; width: 100%; }
 
-        /* Chips for Agenda */
-        .chip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; }
-        .chip { background: #334155; border: 1px solid #475569; color: #fff; padding: 10px 5px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 13px; text-align: center; }
-        .chip.selected { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(76,201,240,0.3); }
-
-        /* Toasts */
-        #dynamic-toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999; width: 90%; max-width: 350px; display: flex; flex-direction: column; gap: 10px; }
-        .dynamic-toast { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); color: white; padding: 15px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid var(--accent); transform: translateY(-20px); opacity: 0; transition: 0.3s; }
-        .dynamic-toast.show { transform: translateY(0); opacity: 1; }
-        .loading-toast-card { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: #1e293b; padding: 15px 25px; border-radius: 30px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.4); z-index: 500; border: 1px solid var(--accent); }
-        .loader-icon { width: 20px; height: 20px; border: 2px solid var(--accent); border-bottom-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        
-        /* Map Go Button */
-        .btn-map-go { width: 100%; margin-top: 5px; padding: 8px; background: var(--accent); border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 
 <body data-view-mode="list" data-theme="blue">
 
-    <div id="dynamic-toast-container"></div>
-    <div id="toast-container"></div>
-
-    <div id="loading-toast" class="hidden">
-        <div class="loading-toast-card">
-            <div class="loader-icon"></div>
-            <p id="loading-toast-msg" style="margin:0; font-size:13px; font-weight:600;">Cargando...</p>
-        </div>
+    <!-- LOADER -->
+    <div id="loading-toast" class="hidden" style="position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#1e293b; padding:15px 30px; border-radius:50px; z-index:500; border:1px solid var(--accent); display:flex; gap:10px; align-items:center; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+        <div style="width:20px; height:20px; border:3px solid var(--accent); border-top-color:transparent; border-radius:50%; animation:spin 1s infinite linear;"></div>
+        <span id="loader-msg" style="color:#fff; font-size:14px; font-weight:600;">Cargando...</span>
     </div>
 
-    <!-- LOGIN -->
+    <div id="toast-container" style="position:fixed; bottom:80px; width:100%; text-align:center; pointer-events:none; z-index:1000;"></div>
+
+    <!-- VISTA 1: LOGIN -->
     <section id="view-login" class="view active">
         <div class="login-container">
             <div class="login-card">
-                <h2>Bienvenido</h2>
-                <p>Ingresa tu clave de ruta</p>
+                <i class="fas fa-brain" style="font-size: 40px; color: var(--purple); margin-bottom:20px;"></i>
+                <h2>Vendedores Pro</h2>
+                <p style="color:var(--text-secondary); margin-bottom:20px;">Powered by Metis AI</p>
                 <div class="input-group">
-                    <input type="password" id="claveInput" placeholder="●●●●" maxlength="4" autocomplete="off" inputmode="numeric">
-                    <button id="toggleClave" class="btn-icon btn-toggle-clave">👁️</button>
+                    <input type="password" id="claveInput" placeholder="●●●●" maxlength="4" inputmode="numeric">
                 </div>
                 <button id="btnIngresar" class="btn-primary">INGRESAR</button>
+                <p style="margin-top:20px; font-size:12px; color:#475569;">v7.0 Autonomous</p>
             </div>
         </div>
     </section>
 
-    <!-- APP PRINCIPAL -->
+    <!-- VISTA 2: APP PRINCIPAL -->
     <section id="view-app" class="view">
         <header class="app-header">
             <div class="header-top">
-                <h2 id="vendedorNombre" style="margin:0; font-size:18px;">Vendedor</h2>
-                <div class="header-stats-container">
-                    <div id="progreso-ring" class="progress-ring">
-                        <svg><circle r="26" cx="30" cy="30"></circle><circle class="progreso-value" r="26" cx="30" cy="30"></circle></svg>
+                <div>
+                    <span style="font-size:11px; color:var(--accent); font-weight:700;">VENDEDOR</span>
+                    <h2 id="vendedorNombre" style="margin:0; font-size:18px;">...</h2>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="text-align:right; font-size:11px; color:var(--text-secondary);">
+                        <div id="ventas-texto">0 Ventas</div>
+                        <div id="pendientes-texto">0 Pend.</div>
+                    </div>
+                    <div class="progress-ring">
+                        <svg><circle r="20" cx="22.5" cy="22.5"></circle><circle class="progreso-value" r="20" cx="22.5" cy="22.5"></circle></svg>
                         <span id="progreso-texto">0/0</span>
                     </div>
                 </div>
             </div>
             
-            <div class="coach-banner">
-                <span id="mensajeCoach">Cargando ruta...</span>
+            <!-- ALERTA DE RUTA PROGRAMADA -->
+            <div id="route-alert-box" class="hidden"></div>
+
+            <div class="info-bar">
+                <span id="mensajeCoach"><i class="fas fa-satellite-dish"></i> GPS: Iniciando...</span>
+                <span id="sync-indicator" class="sync-status hidden"><i class="fas fa-sync"></i> Sincronizando</span>
             </div>
 
-            <div class="header-controls">
-                <div class="view-mode-switcher">
-                    <button id="btnViewList" class="view-mode-btn active">📋 Lista</button>
-                    <button id="btnViewFocus" class="view-mode-btn">🎯 Foco</button>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="view-mode-switcher" style="background:#334155; padding:4px; border-radius:20px; display:inline-flex;">
+                    <button id="btnViewList" class="active" style="background:var(--accent); color:#000; border:none; padding:6px 14px; border-radius:16px; font-size:12px; font-weight:700; cursor:pointer;">Lista</button>
+                    <button id="btnViewFocus" style="background:transparent; color:#94a3b8; border:none; padding:6px 14px; border-radius:16px; font-size:12px; cursor:pointer;">Foco</button>
                 </div>
-                <div class="theme-switcher">
-                    <button class="theme-btn" data-theme="blue" style="width:20px; height:20px; border-radius:50%; background:#4CC9F0; border:none;"></button>
-                    <button class="theme-btn" data-theme="violet" style="width:20px; height:20px; border-radius:50%; background:#7C5DFF; border:none; margin-left:5px;"></button>
-                </div>
+                <button class="theme-btn" style="width:28px; height:28px; border-radius:50%; background:#7C5DFF; border:2px solid #fff; cursor:pointer;"></button>
             </div>
         </header>
 
-        <main id="listaClientes" class="cliente-list">
-            <!-- Clientes se inyectan aquí -->
-        </main>
+        <main id="listaClientes" class="cliente-list"></main>
     </section>
     
-    <!-- CALENDARIO / AGENDA -->
-    <section id="view-calendar" class="view">
-        <div class="internal-header" style="padding:20px;">
-            <h3>📅 Gestión de Ruta</h3>
-        </div>
-        <div class="calendar-content" style="padding:0 20px;">
-            <div class="zone-control-card" style="background:var(--bg-card); padding:20px; border-radius:15px; border:1px solid #334155;">
-                <p style="color: #64748b; margin-bottom: 10px; text-align: center;">Ruta visualizada actualmente:</p>
+    <!-- VISTA 3: AGENDA -->
+    <section id="view-agenda" class="view">
+        <div style="padding:25px 20px;">
+            <h3>📅 Agenda Semanal</h3>
+            <div style="background:var(--bg-card); padding:20px; border-radius:16px; border:1px solid #334155;">
                 <div style="text-align:center; margin-bottom:20px;">
-                    <strong id="current-zone-display" style="color:var(--accent); font-size:28px;">...</strong>
+                    <span style="font-size:12px; color:#94a3b8; text-transform:uppercase;">Día Activo (Metis Tracking)</span>
+                    <div id="current-zone-display" style="font-size:28px; font-weight:800; color:var(--accent);">...</div>
+                    <div id="current-zone-detail" style="font-size:14px; color:#fff; margin-top:5px;">...</div>
                 </div>
-                
-                <p style="font-size:13px; margin-bottom:10px;">Selecciona un día para cargar su ruta:</p>
-                <!-- Solo Lunes a Viernes -->
-                <div class="chip-grid" id="zone-selector">
-                    <!-- JS generará LUN, MAR, MIE, JUE, VIE -->
-                </div>
-
-                <div class="zone-warning" style="margin-top: 20px; font-size:12px; color:var(--warning); background:rgba(245,158,11,0.1); padding:10px; border-radius:8px;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span><b>Nota:</b> Si hoy es feriado o fin de semana, selecciona manualmente la ruta que deseas realizar.</span>
-                </div>
+                <p style="font-size:13px; color:#94a3b8; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; font-weight:600;">Programar Ruta Alternativa:</p>
+                <div class="chip-grid" id="zone-selector"></div>
             </div>
         </div>
     </section>
 
-    <!-- AJUSTES -->
+    <!-- VISTA 4: AJUSTES -->
     <section id="view-settings" class="view">
-        <div style="padding:20px;">
+        <div style="padding:25px;">
             <h3>⚙️ Ajustes</h3>
-            <button class="btn-primary" id="btnSync" style="margin-bottom:15px; background:#334155; color:white;"><i class="fas fa-sync"></i> Forzar Sincronización</button>
-            <button class="btn-primary" id="btnLogout" style="background:var(--danger); color:white;"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
-            <p style="text-align:center; margin-top:20px; color:#64748b; font-size:12px;">App Vendedores Pro v3.1 (L-V)</p>
+            <div style="background:var(--bg-card); border-radius:16px; overflow:hidden; border:1px solid #334155;">
+                <button class="btn-primary" id="btnSync" style="width:100%; text-align:left; background:transparent; color:#fff; padding:20px; border-bottom:1px solid #334155;">
+                    <i class="fas fa-sync" style="color:var(--accent); margin-right:10px;"></i> Forzar Sincronización
+                </button>
+                <button class="btn-primary" id="btnTestIA" style="width:100%; text-align:left; background:transparent; color:var(--purple); padding:20px; border-bottom:1px solid #334155;">
+                    <i class="fas fa-robot" style="margin-right:10px;"></i> Test IA Coach (Demo)
+                </button>
+                <button class="btn-primary" id="btnLogout" style="width:100%; text-align:left; background:transparent; color:var(--danger); padding:20px;">
+                    <i class="fas fa-sign-out-alt" style="margin-right:10px;"></i> Cerrar Sesión
+                </button>
+            </div>
         </div>
     </section>
 
-    <!-- FOOTER NAVEGACION -->
-    <nav class="app-footer" id="appFooter">
-        <button class="nav-btn active" data-target="view-app"><i class="fas fa-route"></i><span>Ruta</span></button>
-        <button class="nav-btn" data-target="view-calendar"><i class="fas fa-calendar-alt"></i><span>Agenda</span></button>
+    <!-- FOOTER -->
+    <nav class="app-footer">
+        <button class="nav-btn active" data-target="view-app"><i class="fas fa-map-signs"></i><span>Ruta</span></button>
+        <button class="nav-btn" data-target="view-agenda"><i class="fas fa-calendar-day"></i><span>Agenda</span></button>
         <button class="nav-btn" id="btnFooterMapa"><i class="fas fa-map-marked-alt"></i><span>Mapa</span></button>
-        <button class="nav-btn" data-target="view-settings"><i class="fas fa-user-cog"></i><span>Ajustes</span></button>
+        <button class="nav-btn" data-target="view-settings"><i class="fas fa-cog"></i><span>Ajustes</span></button>
     </nav>
 
-    <!-- MODAL MAPA FULLSCREEN -->
+    <!-- MODALES -->
     <div id="modal-mapa" class="full-modal hidden">
-        <div class="modal-header">
-            <h3>Mapa de Ruta</h3>
-            <button id="btnCerrarMapa" class="btn-icon" style="background:none; border:none; color:white; font-size:20px;">✕</button>
+        <div style="padding:15px; background:#1e293b; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">Mapa</h3>
+            <button id="btnCerrarMapa" style="background:none; border:none; color:#fff; font-size:24px;">✕</button>
         </div>
         <div id="map"></div>
     </div>
 
-    <!-- MODAL CONFIRMACION CAMBIO DE DIA -->
-    <div id="modal-confirm-zona" class="modal-overlay hidden">
-        <div class="modal-card">
-            <h3>⚠️ Cambiar Ruta</h3>
-            <p id="zone-confirm-msg">¿Seguro que deseas cambiar la ruta?</p>
-            <div class="modal-actions-row">
-                <button id="btnCancelZona" class="btn-cancel">Cancelar</button>
-                <button id="btnOkZona" class="btn-confirm">Sí, Cambiar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- MODAL MOTIVO NO COMPRA -->
+    <!-- MODAL MOTIVO -->
     <div id="sheet-motivo" class="modal-overlay hidden">
          <div class="modal-card">
             <h3>¿Por qué NO compró?</h3>
             <div class="chip-grid" id="motivoOptions">
                 <button class="chip" data-val="Precio">💸 Precio</button>
-                <button class="chip" data-val="Stock">📦 Tiene Stock</button>
-                <button class="chip" data-val="Ausente">🔒 Cerrado</button>
+                <button class="chip" data-val="Stock">📦 Stock</button>
+                <button class="chip" data-val="Cerrado">🔒 Cerrado</button>
+                <button class="chip" data-val="Dinero">🚫 $ Dinero</button>
                 <button class="chip" data-val="Otro">📝 Otro...</button>
             </div>
-            <textarea id="motivoOtro" class="hidden" placeholder="Especifique..." style="width:100%; margin-top:10px; background:#334155; border:none; color:white; padding:10px; border-radius:8px;"></textarea>
-            <div class="modal-actions-row">
-                 <button id="btnCloseMotivo" class="btn-cancel">Cancelar</button>
-                 <button id="btnConfirmarMotivo" class="btn-confirm">Guardar</button>
+            <textarea id="motivoOtro" class="hidden" placeholder="Especifique..." style="width:100%; margin-top:15px; background:#334155; border:1px solid #475569; color:white; padding:15px; border-radius:12px; resize:none;"></textarea>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                 <button id="btnCancelarMotivo" class="btn-cancel" style="flex:1; background:transparent; border:1px solid #475569; color:#fff; padding:12px; border-radius:10px;">Cancelar</button>
+                 <button id="btnConfirmarMotivo" class="btn-confirm" style="flex:1; background:var(--accent); border:none; color:#000; padding:12px; border-radius:10px; font-weight:700;">Guardar</button>
             </div>
          </div>
     </div>
 
+    <!-- MODAL CONFIRMACION ZONA -->
+    <div id="modal-confirm-zona" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div style="font-size:40px; margin-bottom:10px; color:var(--warning);">⚠️</div>
+            <h3 style="font-size:20px;">¿Programar Ruta?</h3>
+            <p id="zone-confirm-msg" style="color:#94a3b8; margin:15px 0;">Esto avisará a la IA de tu cambio de estrategia.</p>
+            <div style="display:flex; gap:10px;">
+                <button id="btnCancelZona" class="btn-cancel" style="flex:1; background:transparent; border:1px solid #475569; color:#fff; padding:12px; border-radius:10px;">Cancelar</button>
+                <button id="btnOkZona" class="btn-confirm" style="flex:1; background:var(--accent); border:none; color:#000; padding:12px; border-radius:10px; font-weight:700;">Sí, Cambiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CLIENTE INFO -->
+    <div id="modal-cliente" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h3 id="modal-cliente-nombre">Cliente</h3>
+            <p id="modal-cliente-direccion" style="color:#94a3b8; margin-bottom:15px;">...</p>
+            <div style="background:#0f172a; padding:15px; border-radius:12px; text-align:left; margin-bottom:15px;">
+                <small style="color:var(--accent); font-weight:700;">ÚLTIMO PEDIDO</small>
+                <p id="modal-ultimo-pedido" style="margin-top:5px; font-size:13px;">Cargando...</p>
+            </div>
+            <button id="btnCerrarModalCliente" style="width:100%; background:#334155; border:1px solid #475569; color:white; padding:12px; border-radius:10px;">Cerrar</button>
+        </div>
+    </div>
+    
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
-        /* ======================================================
-           APP VENDEDORES PRO v3.1 - LÓGICA INTEGRADA
-           ====================================================== */
-        
-        // 🔥 IMPORTANTE: CAMBIA ESTA URL POR LA DE TU SCRIPT DE GOOGLE PUBLICADO
-        const API = "https://script.google.com/macros/s/AKfycbwO.../exec"; 
+        // ==========================================
+        // CONFIGURACIÓN (CLOUDFLARE WORKER)
+        // ==========================================
+        const API_URL = "https://frosty-term-20ea.santamariapablodaniel.workers.dev";
 
+        // ESTADO GLOBAL
         let estado = {
-            vendedor: "", nombre: "", ruta: [], ubicacionActual: null,
-            viewMode: "list", diaRutaActual: "LUN", planSemanal: {},
-            motivoSeleccionado: "", clienteMotivoIndex: null
+            vendedor: "", nombre: "", ruta: [], ubicacionActual: null, 
+            viewMode: "list", diaRutaActual: "LUN", planSemanal: {}, localidadesHoy: ""
         };
+        
+        let map, markers, gpsWatcher;
+        let tempDia = "";
+        let clienteIndexAccion = -1; 
+        let pendingSyncs = 0;
 
-        let map, markersLayer;
-        let diaSeleccionadoTemp = "";
-
-        // === INICIO ===
         document.addEventListener("DOMContentLoaded", () => {
             checkSesion();
-            initListeners();
+            
+            // Listeners
+            document.getElementById("btnIngresar").onclick = login;
+            document.querySelectorAll('.nav-btn').forEach(b => b.onclick = (e) => showView(e.currentTarget.dataset.target));
+            document.getElementById("btnFooterMapa").onclick = toggleMapa;
+            document.getElementById("btnCerrarMapa").onclick = toggleMapa;
+            document.getElementById("btnViewList").onclick = () => setViewMode("list");
+            document.getElementById("btnViewFocus").onclick = () => setViewMode("focus");
+            document.querySelector(".theme-btn").onclick = () => {
+                const b = document.body;
+                b.setAttribute("data-theme", b.getAttribute("data-theme") === "blue" ? "violet" : "blue");
+            };
+            
+            document.getElementById("listaClientes").onclick = manejarClicksLista;
+            document.getElementById("btnCancelZona").onclick = () => document.getElementById("modal-confirm-zona").classList.add("hidden");
+            document.getElementById("btnOkZona").onclick = confirmarCambioDiaAPI;
+
+            document.getElementById("btnCancelarMotivo").onclick = () => document.getElementById("sheet-motivo").classList.add("hidden");
+            document.getElementById("btnConfirmarMotivo").onclick = guardarMotivo;
+            document.getElementById("motivoOptions").onclick = (e) => {
+                if(e.target.classList.contains("chip")) {
+                    document.querySelectorAll("#motivoOptions .chip").forEach(c => c.classList.remove("selected"));
+                    e.target.classList.add("selected");
+                    document.getElementById("motivoOtro").classList.toggle("hidden", e.target.dataset.val !== "Otro");
+                }
+            };
+            document.getElementById("btnCerrarModalCliente").onclick = () => document.getElementById("modal-cliente").classList.add("hidden");
+            document.getElementById("btnLogout").onclick = () => { localStorage.clear(); location.reload(); };
+            document.getElementById("btnSync").onclick = () => recargarDatos();
+            document.getElementById("btnTestIA").onclick = async () => {
+               toast("🧠 Ejecutando Metis IA...");
+               await apiCall({accion: "testIA"});
+               toast("✅ Análisis completado");
+            };
         });
 
-        function initListeners() {
-            // Login
-            document.getElementById("btnIngresar").addEventListener("click", login);
-            document.getElementById("claveInput").addEventListener("keyup", (e) => e.key === "Enter" && login());
-            document.getElementById("toggleClave").addEventListener("click", () => {
-                const i = document.getElementById("claveInput");
-                i.type = i.type === "password" ? "text" : "password";
-            });
-
-            // Nav Footer
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                if(btn.id === "btnFooterMapa") return; 
-                btn.addEventListener('click', (e) => showView(e.currentTarget.dataset.target));
-            });
-            
-            // Mapa
-            document.getElementById("btnFooterMapa").addEventListener("click", toggleMapa);
-            document.getElementById("btnCerrarMapa").addEventListener("click", toggleMapa);
-
-            // Ajustes
-            document.getElementById("btnLogout").addEventListener("click", logout);
-            document.getElementById("btnSync").addEventListener("click", () => recargarDatos(true));
-
-            // Vistas y Theme
-            document.getElementById("btnViewList").addEventListener("click", () => setViewMode("list"));
-            document.getElementById("btnViewFocus").addEventListener("click", () => setViewMode("focus"));
-            document.querySelectorAll('.theme-btn').forEach(b => b.addEventListener("click", () => {
-                document.body.setAttribute('data-theme', b.dataset.theme);
-                localStorage.setItem('theme', b.dataset.theme);
-            }));
-
-            // Delegación Eventos Lista Clientes
-            document.getElementById("listaClientes").addEventListener("click", (e) => {
-                const card = e.target.closest('.card');
-                if (!card) return;
-                const i = parseInt(card.dataset.i);
-                
-                if (e.target.closest('.btn-venta')) registrarVenta(i, true);
-                else if (e.target.closest('.btn-noventa')) abrirMotivo(i);
-                else if (e.target.closest('.btn-navegar')) irACliente(i);
-                else if (estado.viewMode === 'list') {
-                    // Expandir tarjeta
-                    estado.ruta[i].expanded = !estado.ruta[i].expanded;
-                    renderRuta();
-                }
-            });
-
-            // Modal Cambio Dia
-            document.getElementById("btnCancelZona").addEventListener("click", () => document.getElementById("modal-confirm-zona").classList.remove("active"));
-            document.getElementById("btnOkZona").addEventListener("click", confirmarCambioDiaAPI);
-
-            // Modal Motivo
-            document.getElementById("btnCloseMotivo").addEventListener("click", () => document.getElementById("sheet-motivo").classList.remove("active"));
-            document.getElementById("motivoOptions").addEventListener("click", (e) => {
-                if(!e.target.classList.contains('chip')) return;
-                document.querySelectorAll('#motivoOptions .chip').forEach(c => c.classList.remove('selected'));
-                e.target.classList.add('selected');
-                estado.motivoSeleccionado = e.target.dataset.val;
-                document.getElementById("motivoOtro").classList.toggle("hidden", estado.motivoSeleccionado !== "Otro");
-            });
-            document.getElementById("btnConfirmarMotivo").addEventListener("click", confirmarMotivo);
-        }
-
-        // === LÓGICA DE SESIÓN Y DATOS ===
-        function checkSesion() {
-            const sesion = JSON.parse(localStorage.getItem("vendedor_sesion"));
-            const tema = localStorage.getItem("theme");
-            if(tema) document.body.setAttribute('data-theme', tema);
-
-            if (sesion && sesion.clave) {
-                // Hay sesión guardada
-                estado.vendedor = sesion.clave;
-                estado.nombre = sesion.nombre;
-                const rutaGuardada = localStorage.getItem("ruta_data");
-                
-                if(rutaGuardada) {
-                    const data = JSON.parse(rutaGuardada);
-                    // Verificamos si es del mismo día para no mostrar datos viejos
-                    const hoy = new Date().toLocaleDateString();
-                    if(data.fechaGuardado === hoy) {
-                        cargarEstadoDesdeData(data);
-                        iniciarApp();
-                        return;
-                    }
-                }
-                // Si no hay ruta o es vieja, recargamos
-                recargarDatos(); 
-            } else {
-                document.getElementById("view-login").classList.add("active");
-                document.body.classList.remove("logged-in"); // Asegurar footer oculto
+        // --- API HANDLER ---
+        async function apiCall(data) {
+            updateSyncStatus(true);
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                return await res.json();
+            } catch (e) {
+                console.error("API Error", e);
+                toast("⚠️ Error de conexión (Datos en cola)");
+                throw e;
+            } finally {
+                updateSyncStatus(false);
             }
         }
 
-        function cargarEstadoDesdeData(data) {
-            estado.ruta = data.ruta || [];
-            estado.diaRutaActual = data.dia || "LUN";
-            estado.planSemanal = data.plan || {};
-            estado.vendedor = data.vendedor || estado.vendedor;
+        function updateSyncStatus(isSyncing) {
+            if(isSyncing) pendingSyncs++; else pendingSyncs = Math.max(0, pendingSyncs - 1);
+            const ind = document.getElementById("sync-indicator");
+            if(pendingSyncs > 0) {
+                ind.classList.remove("hidden");
+                ind.classList.add("syncing");
+            } else {
+                ind.classList.remove("syncing");
+                setTimeout(() => { if(pendingSyncs === 0) ind.classList.add("hidden"); }, 1000);
+            }
         }
 
         async function login() {
-            const clave = document.getElementById("claveInput").value;
-            if(clave.length !== 4) return alert("Clave de 4 dígitos");
-            estado.vendedor = clave;
-            await recargarDatos();
-        }
-
-        function logout() {
-            localStorage.clear();
-            location.reload();
-        }
-
-        async function recargarDatos(force = false) {
-            loading(true);
+            const clave = document.getElementById("claveInput").value.trim();
+            if(clave.length < 4) return alert("Clave corta");
+            
+            toggleLoader(true, "Conectando al Núcleo...");
+            
             try {
-                // Obtenemos GPS antes de pedir ruta para cálculos
-                await obtenerUbicacion(); 
-                const lat = estado.ubicacionActual ? estado.ubicacionActual.lat : "";
-                const lng = estado.ubicacionActual ? estado.ubicacionActual.lng : "";
-
-                const res = await fetch(`${API}?accion=getRutaDelDia&clave=${estado.vendedor}&lat=${lat}&lng=${lng}`);
-                const data = await res.json();
+                // 1. GPS Primero
+                await obtenerUbicacion();
                 
-                if(!data.ok) throw new Error(data.error);
+                // 2. Registro Token FCM (Simulado por ahora o real si tienes Service Worker)
+                // En web pura sin HTTPS/SW completos, esto es un placeholder.
+                const tokenSimulado = "web_user_" + Date.now(); 
 
+                // 3. Login API
+                const data = await apiCall({ 
+                    accion: "getRutaDelDia", 
+                    clave: clave, 
+                    lat: estado.ubicacionActual?.lat, 
+                    lng: estado.ubicacionActual?.lng 
+                });
+                
+                if(!data.ok) throw new Error(data.error || "Error desconocido");
+                
+                estado.vendedor = clave;
                 estado.nombre = data.vendedor;
-                estado.ruta = data.cartera.map(c => ({...c, visitado: false, expanded: false}));
-                estado.diaRutaActual = data.diaAsignado;
-                estado.planSemanal = data.planSemanal;
-
-                // Guardar Sesión
-                localStorage.setItem("vendedor_sesion", JSON.stringify({clave: estado.vendedor, nombre: estado.nombre}));
+                estado.ruta = (data.cartera || []).map(c => ({...c, visitado:c.visitado, expanded:false})); // Backend ya manda visitado
+                estado.diaRutaActual = data.diaAsignado || "LUN";
+                estado.planSemanal = data.planSemanal || {};
+                estado.localidadesHoy = data.localidadesHoy || "";
                 
-                // Guardar Ruta
-                const rutaSave = {
-                    ruta: estado.ruta,
-                    dia: estado.diaRutaActual,
-                    plan: estado.planSemanal,
-                    vendedor: estado.vendedor,
-                    fechaGuardado: new Date().toLocaleDateString()
-                };
-                localStorage.setItem("ruta_data", JSON.stringify(rutaSave));
+                localStorage.setItem("sesion_pro", JSON.stringify(estado));
+                
+                // 4. Registrar Token en Background para la IA
+                apiCall({accion: "registrarToken", vendedor: clave, token: tokenSimulado});
 
                 iniciarApp();
+
             } catch(e) {
                 alert("Error: " + e.message);
-                document.getElementById("view-login").classList.add("active");
-                document.body.classList.remove("logged-in");
             } finally {
-                loading(false);
+                toggleLoader(false);
+            }
+        }
+
+        function checkSesion() {
+            const s = JSON.parse(localStorage.getItem("sesion_pro"));
+            if(s && s.vendedor) {
+                estado = s;
+                iniciarApp();
+                iniciarGPS();
             }
         }
 
         function iniciarApp() {
             document.getElementById("view-login").classList.remove("active");
             document.getElementById("view-app").classList.add("active");
-            document.body.classList.add("logged-in"); // MOSTRAR FOOTER AHORA
-
+            document.body.classList.add("logged-in");
             document.getElementById("vendedorNombre").innerText = estado.nombre;
             
-            // Mensaje Coach
-            const clientesPend = estado.ruta.length;
-            const dia = estado.diaRutaActual;
-            const loc = estado.planSemanal[dia] || "";
+            checkRouteDayAlert(); // Chequea si el día es diferente
+            renderRuta();
+            initAgenda();
+        }
+
+        function checkRouteDayAlert() {
+            // Lógica para saber el día "Natural"
+            const dias = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SAB"];
+            const hoyIndex = new Date().getDay();
+            let hoyNatural = dias[hoyIndex];
+            if(hoyNatural === "DOM" || hoyNatural === "SAB") hoyNatural = "LUN"; // Ajuste finde
             
-            if(clientesPend === 0 && (dia === 'SAB' || dia === 'DOM')) {
-                document.getElementById("mensajeCoach").innerHTML = `🏖️ Hoy es <b>${dia}</b>. Disfruta tu descanso o selecciona una ruta manual en Agenda.`;
-            } else if (clientesPend === 0) {
-                 document.getElementById("mensajeCoach").innerHTML = `👍 No hay clientes asignados para hoy <b>${dia}</b>. Revisa tu agenda.`;
+            const rutaActual = estado.diaRutaActual.replace("MIE","MIÉ");
+            const box = document.getElementById("route-alert-box");
+
+            if(rutaActual !== hoyNatural) {
+                box.innerHTML = `<div class="route-alert"><i class="fas fa-exclamation-triangle"></i> <span>Estás operando en Ruta Programada: <b>${rutaActual}</b> (Hoy es ${hoyNatural})</span></div>`;
+                box.classList.remove("hidden");
             } else {
-                document.getElementById("mensajeCoach").innerHTML = `🚀 Ruta de <b>${dia}</b>: ${clientesPend} clientes en <b>${loc}</b>.`;
+                box.innerHTML = `<div class="route-alert normal"><i class="fas fa-check-circle"></i> <span>Ruta del Día Asignada Correctamente (${rutaActual})</span></div>`;
+                box.classList.remove("hidden");
+                // Ocultar después de 5 seg si es normal
+                setTimeout(() => box.classList.add("hidden"), 5000);
             }
-
-            initAgendaControls();
-            renderRuta();
-            actualizarProgreso();
-            iniciarSeguimientoGPS();
         }
 
-        // === VISTAS Y RENDERIZADO ===
-        function showView(id) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.nav-btn[data-target="${id}"]`).classList.add('active');
-        }
-
-        function setViewMode(mode) {
-            estado.viewMode = mode;
-            document.body.setAttribute("data-view-mode", mode);
-            document.getElementById("btnViewList").classList.toggle("active", mode === "list");
-            document.getElementById("btnViewFocus").classList.toggle("active", mode === "focus");
-            renderRuta();
-        }
-
+        // --- RENDERIZADO INTELIGENTE ---
         function renderRuta() {
-            const container = document.getElementById("listaClientes");
-            container.innerHTML = "";
-
+            const list = document.getElementById("listaClientes");
+            list.innerHTML = "";
+            
             const pendientes = estado.ruta.filter(c => !c.visitado);
             
-            if(pendientes.length === 0 && estado.ruta.length > 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px;">🎉<br><h3>¡Ruta Finalizada!</h3></div>`;
-                return;
-            } else if (estado.ruta.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px; color:#64748b;">😴<br><h3>Sin ruta hoy</h3><p>Ve a Agenda si deseas cargar un día.</p></div>`;
+            if(estado.ubicacionActual && estado.viewMode === 'list') {
+                pendientes.sort((a,b) => getDistVal(a) - getDistVal(b));
+            }
+
+            if(pendientes.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:40px; color:#fff;">🎉<br>RUTA DEL ${estado.diaRutaActual}<br>COMPLETADA</div>`;
+                updateStats();
                 return;
             }
 
-            // Modo Foco: Solo muestra el siguiente
-            const listToRender = estado.viewMode === 'focus' ? [pendientes[0]] : estado.ruta;
+            const loop = estado.viewMode === 'focus' ? [pendientes[0]] : pendientes;
 
-            listToRender.forEach((c) => {
-                if(!c) return; // Por si acaso
-                const i = estado.ruta.findIndex(x => x.numeroCliente === c.numeroCliente); // Indice real
+            loop.forEach(c => {
+                const idxReal = estado.ruta.indexOf(c);
+                const isExpanded = c.expanded || estado.viewMode === 'focus';
                 
-                if (c.visitado && estado.viewMode === 'list') return; // Opcional: ocultar visitados en lista
-
-                // Cálculo Distancia Visual
-                let distHTML = "";
-                if (c.distanciaTexto) {
-                     distHTML = `<div class="distancia-badge">⏱️ ${c.duracionTexto || '--'} (${c.distanciaTexto})</div>`;
+                let badgeGPS = "";
+                let distText = c.distanciaTexto;
+                
+                // Fallback Local GPS
+                if(!distText && estado.ubicacionActual && c.lat && c.lng) {
+                     const dKm = haversine(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
+                     distText = dKm.toFixed(1) + " km";
                 }
 
-                const div = document.createElement("div");
-                div.className = `card ${c.expanded || estado.viewMode === 'focus' ? 'expanded' : ''} ${i === estado.ruta.findIndex(x=>!x.visitado) ? 'next' : ''}`;
-                div.dataset.i = i;
-                div.innerHTML = `
-                    ${distHTML}
+                if(distText) badgeGPS = `<div class="gps-badge active"><i class="fas fa-car"></i> ${distText}</div>`;
+                else badgeGPS = `<div class="gps-badge"><i class="fas fa-satellite-dish"></i> ...</div>`;
+
+                const card = document.createElement("div");
+                card.className = `card ${isExpanded ? 'expanded' : ''}`;
+                card.dataset.idx = idxReal; 
+
+                card.innerHTML = `
+                    ${badgeGPS}
                     <div class="card-header">
-                        <h3>${c.nombre}</h3>
+                        <h3><span class="client-id-span">#${c.numeroCliente}</span> ${c.nombre}</h3>
                         <span class="badge pendiente">PENDIENTE</span>
                     </div>
                     <div class="card-body">
                         <p>📍 ${c.domicilio}</p>
-                        <p>📊 ${c.frecuencia || 'Cliente estándar'}</p>
                     </div>
                     <div class="card-actions">
-                        <button class="btn-action btn-venta">✅ VENTA</button>
-                        <button class="btn-action btn-noventa">❌ MOTIVO</button>
-                        <button class="btn-action btn-navegar">🚀 IR GPS</button>
+                        <button class="btn-action btn-venta" data-action="venta" data-idx="${idxReal}">
+                            <i class="fas fa-check"></i> VENTA
+                        </button>
+                        <button class="btn-action btn-noventa" data-action="motivo" data-idx="${idxReal}">
+                            <i class="fas fa-times"></i> MOTIVO
+                        </button>
+                        <button class="btn-action btn-detalle" data-action="detalle" data-idx="${idxReal}">
+                            <i class="fas fa-info"></i> INFO
+                        </button>
+                        <button class="btn-action btn-navegar" data-action="ir" data-idx="${idxReal}">
+                            <i class="fas fa-location-arrow"></i> IR
+                        </button>
                     </div>
                 `;
-                container.appendChild(div);
+                list.appendChild(card);
             });
+            updateStats();
         }
 
-        function actualizarProgreso() {
-            const total = estado.ruta.length;
-            const visitados = estado.ruta.filter(c => c.visitado).length;
-            const porc = total === 0 ? 0 : (visitados/total)*100;
-            
-            const circle = document.querySelector('.progreso-value');
-            const radius = circle.r.baseVal.value;
-            const circumference = 2 * Math.PI * radius;
-            circle.style.strokeDasharray = circumference;
-            circle.style.strokeDashoffset = circumference - (porc / 100) * circumference;
-            
-            document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
+        function getDistVal(c) {
+            if(c.distanciaValor) return c.distanciaValor;
+            if(estado.ubicacionActual && c.lat && c.lng) return haversine(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
+            return 999999;
         }
 
-        // === AGENDA Y CAMBIO DE DÍA ===
-        function initAgendaControls() {
-            const container = document.getElementById("zone-selector");
-            container.innerHTML = "";
-            const dias = ["LUN", "MAR", "MIÉ", "JUE", "VIE"]; // Sábados y Domingos excluidos de selección rápida
+        // --- AGENDA ---
+        function initAgenda() {
+            const grid = document.getElementById("zone-selector");
+            grid.innerHTML = "";
+            const dias = ["LUN", "MAR", "MIÉ", "JUE", "VIE"];
             
             document.getElementById("current-zone-display").innerText = estado.diaRutaActual;
+            document.getElementById("current-zone-detail").innerText = estado.localidadesHoy || "General";
 
             dias.forEach(d => {
-                const btn = document.createElement("button");
-                btn.className = `chip ${estado.diaRutaActual === d ? 'selected' : ''}`;
-                // Buscar localidad del plan
-                const loc = estado.planSemanal[d] || "Sin asignar";
-                const locCorta = loc.split(',')[0].substring(0,10);
+                const zoneName = estado.planSemanal[d] || "";
+                const btn = document.createElement("div");
+                const isSelected = estado.diaRutaActual === d;
+                btn.className = `chip ${isSelected ? 'selected' : ''}`;
+                btn.innerHTML = `<span style="display:block; font-size:18px; font-weight:800;">${d}</span><span style="font-size:10px;">${zoneName.substring(0,10)}..</span>`;
                 
-                btn.innerHTML = `<div><b>${d}</b><br><small>${locCorta}</small></div>`;
-                btn.onclick = () => solicitarCambioDia(d);
-                container.appendChild(btn);
+                btn.onclick = () => {
+                    if(estado.diaRutaActual === d) return toast("Ya estás en este día");
+                    tempDia = d;
+                    document.getElementById("zone-confirm-msg").innerHTML = `¿Programar ruta del <b>${d}</b>?<br>Metis analizará este cambio.`;
+                    document.getElementById("modal-confirm-zona").classList.remove("hidden");
+                };
+                grid.appendChild(btn);
             });
-        }
-
-        function solicitarCambioDia(dia) {
-            if(dia === estado.diaRutaActual) return;
-            diaSeleccionadoTemp = dia;
-            const loc = estado.planSemanal[dia] || "";
-            document.getElementById("zone-confirm-msg").innerHTML = `¿Cargar ruta del <b>${dia}</b>?<br><small>${loc}</small>`;
-            document.getElementById("modal-confirm-zona").classList.add("active");
         }
 
         async function confirmarCambioDiaAPI() {
-            document.getElementById("modal-confirm-zona").classList.remove("active");
-            loading(true);
+            document.getElementById("modal-confirm-zona").classList.add("hidden");
+            toggleLoader(true, "Reprogramando Ruta...");
+            
             try {
-                // Enviamos al backend el cambio para que persista hoy
-                const res = await fetch(`${API}?accion=cambiarDiaRuta&vendedor=${estado.vendedor}&nuevoDia=${diaSeleccionadoTemp}`, {method:'POST'});
-                const data = await res.json();
+                await apiCall({ accion: "cambiarDiaRuta", vendedor: estado.vendedor, nuevoDia: tempDia });
+                await recargarDatos();
+            } catch(e) {
+                alert("Error al cambiar día: " + e.message);
+                toggleLoader(false);
+            }
+        }
+
+        async function recargarDatos() {
+            toggleLoader(true, "Sincronizando...");
+            try {
+                const data = await apiCall({ 
+                    accion: "getRutaDelDia", 
+                    clave: estado.vendedor, 
+                    lat: estado.ubicacionActual?.lat, 
+                    lng: estado.ubicacionActual?.lng 
+                });
+                
                 if(data.ok) {
-                    await recargarDatos(true); // Recargamos la ruta completa con el nuevo día
-                    showView("view-app");
-                } else {
-                    alert("Error cambiando ruta: " + data.error);
+                    estado.ruta = (data.cartera || []).map(c => ({...c, visitado:c.visitado, expanded:false}));
+                    estado.diaRutaActual = data.diaAsignado;
+                    estado.localidadesHoy = data.localidadesHoy;
+                    estado.planSemanal = data.planSemanal;
+                    localStorage.setItem("sesion_pro", JSON.stringify(estado));
+                    renderRuta();
+                    initAgenda();
+                    checkRouteDayAlert();
+                    toast("✅ Sincronizado");
                 }
             } catch(e) {
-                alert("Error de conexión");
+                console.error(e);
             } finally {
-                loading(false);
+                toggleLoader(false);
             }
         }
 
-        // === MAPA Y GPS ===
-        function toggleMapa() {
-            const modal = document.getElementById("modal-mapa");
-            modal.classList.toggle("hidden");
-            if(!modal.classList.contains("hidden")) {
-                if(!map) initMap();
-                else {
-                     setTimeout(() => { map.invalidateSize(); cargarMarcadores(); }, 200);
-                }
-            }
-        }
-
-        function initMap() {
-            // Centro por defecto (Buenos Aires) si no hay GPS
-            const lat = estado.ubicacionActual ? estado.ubicacionActual.lat : -34.6037;
-            const lng = estado.ubicacionActual ? estado.ubicacionActual.lng : -58.3816;
-            
-            map = L.map('map').setView([lat, lng], 12);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '©OpenStreetMap, ©CartoDB'
-            }).addTo(map);
-            markersLayer = L.layerGroup().addTo(map);
-            cargarMarcadores();
-        }
-
-        function cargarMarcadores() {
-            markersLayer.clearLayers();
-            const bounds = [];
-            
-            // Icono Vendedor
-            if(estado.ubicacionActual) {
-                L.circleMarker([estado.ubicacionActual.lat, estado.ubicacionActual.lng], {
-                    color: '#fff', fillColor: '#4CC9F0', fillOpacity: 1, radius: 8
-                }).addTo(markersLayer).bindPopup("Tú estás aquí");
-            }
-
-            estado.ruta.forEach((c, index) => {
-                if(!c.visitado && c.lat && c.lng) {
-                    // Marcador Rojo standard
-                    const marker = L.marker([c.lat, c.lng]).addTo(markersLayer);
-                    
-                    // Tooltip Permanente con Nombre (como pidió el usuario)
-                    marker.bindTooltip(c.nombre, {permanent: true, direction: 'top', className: 'map-tooltip'});
-                    
-                    // Popup con Botón "IR"
-                    const popupContent = `
-                        <div style="text-align:center; min-width:150px;">
-                            <b>${c.nombre}</b><br>
-                            <span style="font-size:11px; color:#666;">${c.domicilio}</span><br>
-                            <button class="btn-map-go" onclick="window.irACliente(${index})">
-                                🚀 IR CON GPS
-                            </button>
-                        </div>
-                    `;
-                    marker.bindPopup(popupContent);
-                    bounds.push([c.lat, c.lng]);
-                }
-            });
-            
-            if(bounds.length > 0) map.fitBounds(bounds, {padding: [50,50]});
-        }
-
-        // Función Global para poder llamarla desde el HTML del Popup del Mapa
-        window.irACliente = (index) => {
-            const c = estado.ruta[index];
-            if(c.lat && c.lng) {
-                // Abre Google Maps Nativo en Android/iOS
-                const url = `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}&travelmode=driving`;
-                window.open(url, '_blank');
-            } else {
-                alert("Cliente sin coordenadas GPS");
-            }
-        };
-
-        // === ACCIONES VENTA / MOTIVO ===
-        async function registrarVenta(index, esVenta) {
-            // Lógica simplificada para frontend
-            estado.ruta[index].visitado = true;
-            renderRuta();
-            actualizarProgreso();
-            
-            // Enviar al backend (fire and forget visualmente)
-            const c = estado.ruta[index];
-            const payload = JSON.stringify({
-                accion: "registrarVisita",
-                vendedor: estado.vendedor,
-                cliente: c.numeroCliente,
-                compro: esVenta,
-                motivo: esVenta ? "" : estado.motivoSeleccionado
-            });
-            fetch(API, {method: 'POST', body: payload}); // No esperamos respuesta para agilidad
-        }
-
-        function abrirMotivo(index) {
-            estado.clienteMotivoIndex = index;
-            estado.motivoSeleccionado = "";
-            document.querySelectorAll('#motivoOptions .chip').forEach(c => c.classList.remove('selected'));
-            document.getElementById("sheet-motivo").classList.add("active");
-        }
-
-        function confirmarMotivo() {
-            if(!estado.motivoSeleccionado) return alert("Elige un motivo");
-            let motivo = estado.motivoSeleccionado;
-            if(motivo === "Otro") motivo = document.getElementById("motivoOtro").value;
-            
-            registrarVenta(estado.clienteMotivoIndex, false); // false = no venta
-            document.getElementById("sheet-motivo").classList.remove("active");
-        }
-
-        // === UTILS ===
-        function loading(show) {
-            const el = document.getElementById("loading-toast");
-            if(show) el.classList.remove("hidden");
-            else el.classList.add("hidden");
-        }
-
+        // --- GPS ---
         function obtenerUbicacion() {
-            return new Promise(resolve => {
-                if("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(pos => {
-                        estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                        resolve();
-                    }, () => resolve(), {timeout: 5000});
-                } else resolve();
+            return new Promise(r => {
+                if(!navigator.geolocation) return r(null);
+                navigator.geolocation.getCurrentPosition(
+                    p => {
+                        estado.ubicacionActual = { lat: p.coords.latitude, lng: p.coords.longitude };
+                        r(estado.ubicacionActual);
+                    },
+                    () => r(null),
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
             });
         }
 
-        function iniciarSeguimientoGPS() {
-            if("geolocation" in navigator) {
-                navigator.geolocation.watchPosition(pos => {
-                    estado.ubicacionActual = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    // Recalcular distancias si quisieramos en tiempo real puro
-                });
-            }
+        function iniciarGPS() {
+            if(!navigator.geolocation) return;
+            gpsWatcher = navigator.geolocation.watchPosition(
+                p => {
+                    estado.ubicacionActual = { lat: p.coords.latitude, lng: p.coords.longitude };
+                    document.getElementById("mensajeCoach").innerHTML = `<i class="fas fa-satellite-dish" style="color:var(--success)"></i> GPS Activo`;
+                },
+                e => console.log(e),
+                { enableHighAccuracy: true }
+            );
         }
 
+        // --- UTILS ---
+        function manejarClicksLista(e) {
+            const btn = e.target.closest('button');
+            if(btn) {
+                const action = btn.dataset.action;
+                const idx = parseInt(btn.dataset.idx);
+                if(action === 'venta') registrarVisitaOptimista(idx, true);
+                if(action === 'motivo') abrirMotivo(idx);
+                if(action === 'detalle') abrirDetalle(idx);
+                if(action === 'ir') navegar(idx);
+                return;
+            }
+            const card = e.target.closest('.card');
+            if(card && estado.viewMode === 'list') {
+                const idx = parseInt(card.dataset.idx);
+                estado.ruta.forEach((c, i) => { if(i===idx) c.expanded = !c.expanded; else c.expanded = false; });
+                renderRuta();
+            }
+        }
+        
+        function navegar(idx) {
+            const c = estado.ruta[idx];
+            if(!c.lat || !c.lng) return toast("Sin coordenadas");
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, '_system');
+        }
+
+        // --- OPTIMISTIC UI UPDATE ---
+        function registrarVisitaOptimista(idx, venta, motivo="") {
+            const c = estado.ruta[idx];
+            // 1. Actualizar UI Inmediatamente
+            c.visitado = true;
+            c.compro = venta;
+            c.motivo = motivo;
+            renderRuta(); // Se borra de pendientes instantáneamente
+            toast(venta ? "💰 Venta Registrada" : "📝 Motivo Guardado");
+
+            // 2. Enviar a Backend en Segundo Plano
+            apiCall({ 
+                accion: "registrarVisita", 
+                vendedor: estado.vendedor, 
+                cliente: c.numeroCliente, 
+                compro: venta, 
+                motivo: motivo, 
+                lat: estado.ubicacionActual?.lat, 
+                lng: estado.ubicacionActual?.lng 
+            }).catch(e => {
+                // Si falla, podrías guardar en cola local y reintentar (ToDo avanzado)
+                toast("⚠️ Error guardando en nube (Se reintentará)");
+            });
+        }
+
+        function abrirMotivo(idx) {
+            clienteIndexAccion = idx;
+            document.getElementById("sheet-motivo").classList.remove("hidden");
+            document.querySelectorAll("#motivoOptions .chip").forEach(c => c.classList.remove("selected"));
+            document.getElementById("motivoOtro").classList.add("hidden");
+        }
+
+        function guardarMotivo() {
+            const sel = document.querySelector("#motivoOptions .chip.selected");
+            if(!sel) return toast("Selecciona motivo");
+            let m = sel.dataset.val;
+            if(m==="Otro") m = document.getElementById("motivoOtro").value;
+            registrarVisitaOptimista(clienteIndexAccion, false, m);
+            document.getElementById("sheet-motivo").classList.add("hidden");
+        }
+
+        async function abrirDetalle(idx) {
+            const c = estado.ruta[idx];
+            document.getElementById("modal-cliente-nombre").innerText = c.nombre;
+            document.getElementById("modal-cliente-direccion").innerText = c.domicilio;
+            document.getElementById("modal-ultimo-pedido").innerText = "Buscando...";
+            document.getElementById("modal-cliente").classList.remove("hidden");
+            
+            try {
+                const res = await apiCall({accion: "getUltimoPedido", cliente: c.numeroCliente});
+                if(res.ok && res.ultimoPedido) {
+                    document.getElementById("modal-ultimo-pedido").innerHTML = `<b>${res.ultimoPedido.fecha}</b><br>${res.ultimoPedido.texto}`;
+                } else {
+                    document.getElementById("modal-ultimo-pedido").innerText = "Sin datos recientes";
+                }
+            } catch(e) { document.getElementById("modal-ultimo-pedido").innerText = "-"; }
+        }
+
+        function haversine(lat1, lon1, lat2, lon2) {
+            const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function toggleLoader(show, msg="Cargando...") {
+            const l = document.getElementById("loading-toast");
+            document.getElementById("loader-msg").innerText = msg;
+            if(show) l.classList.remove("hidden"); else l.classList.add("hidden");
+        }
+        function updateStats() {
+            const total = estado.ruta.length;
+            const visitados = estado.ruta.filter(c => c.visitado).length;
+            document.getElementById("progreso-texto").innerText = `${visitados}/${total}`;
+            const c = document.querySelector('.progreso-value');
+            const r = c.r.baseVal.value; const circ = 2 * Math.PI * r;
+            c.style.strokeDashoffset = circ - ((visitados/total) * circ);
+            document.getElementById("ventas-texto").innerText = `${estado.ruta.filter(c=>c.compro).length} Ventas`;
+            document.getElementById("pendientes-texto").innerText = `${total - visitados} Pend.`;
+        }
+        function setViewMode(m) { 
+            estado.viewMode = m; 
+            renderRuta(); 
+            document.getElementById("btnViewList").style.background = m === 'list' ? 'var(--accent)' : 'transparent';
+            document.getElementById("btnViewList").style.color = m === 'list' ? '#000' : '#94a3b8';
+            document.getElementById("btnViewFocus").style.background = m === 'focus' ? 'var(--accent)' : 'transparent';
+            document.getElementById("btnViewFocus").style.color = m === 'focus' ? '#000' : '#94a3b8';
+        }
+        function toggleMapa() {
+            const m = document.getElementById("modal-mapa");
+            m.classList.toggle("hidden");
+            if(!m.classList.contains("hidden") && !map) {
+                map = L.map('map').setView([-34.6, -58.4], 12);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+            }
+            if(!m.classList.contains("hidden")) setTimeout(()=>map.invalidateSize(), 300);
+        }
+        function showView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'view-agenda') initAgenda();
+        }
+        function toast(msg) {
+            const t = document.createElement("div");
+            t.style.cssText = "background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; display:inline-block; margin-top:10px; font-size:14px;";
+            t.innerText = msg;
+            document.getElementById("toast-container").appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
     </script>
 </body>
 </html>
