@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0f172a">
     <title>App Vendedores Pro - Metis IA</title>
 
+    <!-- FUENTES E ICONOS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -38,7 +39,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
         /* VISTAS */
         .view { display: none; height: 100%; flex-direction: column; overflow-y: auto; padding-bottom: 90px; }
@@ -48,27 +48,6 @@
         .app-header { padding: 15px 20px; background: var(--header-bg); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #334155; backdrop-filter: blur(5px); }
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         
-        /* NUEVO: BUSCADOR INTELIGENTE */
-        .search-container {
-            margin-top: 10px;
-            position: relative;
-        }
-        .smart-input {
-            width: 100%; padding: 12px 15px; padding-left: 40px;
-            background: #1e293b; border: 1px solid #475569; border-radius: 12px;
-            color: #fff; font-size: 16px; outline: none; transition: 0.3s;
-        }
-        .smart-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(76,201,240,0.15); }
-        .search-icon { position: absolute; left: 12px; top: 12px; color: #94a3b8; }
-        
-        .live-result {
-            margin-top: 8px; padding: 10px; border-radius: 10px;
-            display: flex; align-items: center; gap: 10px; font-size: 13px;
-            animation: fadeIn 0.3s;
-        }
-        .live-result.success { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); }
-        .live-result.error { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); }
-
         /* ALERTAS DE RUTA */
         .route-alert {
             background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: var(--warning);
@@ -149,27 +128,6 @@
         .hidden { display: none !important; }
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index: 300; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
         .modal-card { background: var(--bg-card); width: 90%; max-width: 340px; padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        
-        /* NUEVO: ESTILOS MODAL DIVERTIDO */
-        .fun-modal { border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(76,201,240,0.2); }
-        .modal-emoji { font-size: 50px; margin-bottom: 15px; display: block; animation: bounce 1s infinite; }
-        .client-highlight { 
-            background: #0f172a; padding: 15px; border-radius: 12px; border-left: 4px solid var(--accent);
-            margin: 15px 0; text-align: left;
-        }
-        .client-highlight span { display: block; font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-        .client-highlight small { color: #94a3b8; font-size: 13px; }
-        
-        .btn-super-confirm { 
-            width: 100%; padding: 15px; background: var(--accent); color: #000; 
-            border: none; border-radius: 50px; font-weight: 800; font-size: 16px; 
-            margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .btn-ghost {
-            width: 100%; padding: 12px; background: transparent; color: #94a3b8;
-            border: 2px solid #334155; border-radius: 50px; font-weight: 600; cursor: pointer;
-        }
-
         .full-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 200; display: flex; flex-direction: column; }
         #map { flex: 1; width: 100%; }
 
@@ -178,6 +136,7 @@
 
 <body data-view-mode="list" data-theme="blue">
 
+    <!-- LOADER -->
     <div id="loading-toast" class="hidden" style="position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#1e293b; padding:15px 30px; border-radius:50px; z-index:500; border:1px solid var(--accent); display:flex; gap:10px; align-items:center; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
         <div style="width:20px; height:20px; border:3px solid var(--accent); border-top-color:transparent; border-radius:50%; animation:spin 1s infinite linear;"></div>
         <span id="loader-msg" style="color:#fff; font-size:14px; font-weight:600;">Cargando...</span>
@@ -185,6 +144,7 @@
 
     <div id="toast-container" style="position:fixed; bottom:80px; width:100%; text-align:center; pointer-events:none; z-index:1000;"></div>
 
+    <!-- VISTA 1: LOGIN -->
     <section id="view-login" class="view active">
         <div class="login-container">
             <div class="login-card">
@@ -200,6 +160,7 @@
         </div>
     </section>
 
+    <!-- VISTA 2: APP PRINCIPAL -->
     <section id="view-app" class="view">
         <header class="app-header">
             <div class="header-top">
@@ -219,6 +180,7 @@
                 </div>
             </div>
             
+            <!-- ALERTA DE RUTA PROGRAMADA -->
             <div id="route-alert-box" class="hidden"></div>
 
             <div class="info-bar">
@@ -226,13 +188,7 @@
                 <span id="sync-indicator" class="sync-status hidden"><i class="fas fa-sync"></i> Sincronizando</span>
             </div>
 
-            <div class="search-container">
-                <i class="fas fa-search search-icon"></i>
-                <input type="tel" id="inputBuscadorCliente" class="smart-input" placeholder="Buscar Cliente (ID o Nombre)...">
-                <div id="liveResultBox" class="hidden"></div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div class="view-mode-switcher" style="background:#334155; padding:4px; border-radius:20px; display:inline-flex;">
                     <button id="btnViewList" class="active" style="background:var(--accent); color:#000; border:none; padding:6px 14px; border-radius:16px; font-size:12px; font-weight:700; cursor:pointer;">Lista</button>
                     <button id="btnViewFocus" style="background:transparent; color:#94a3b8; border:none; padding:6px 14px; border-radius:16px; font-size:12px; cursor:pointer;">Foco</button>
@@ -244,6 +200,7 @@
         <main id="listaClientes" class="cliente-list"></main>
     </section>
     
+    <!-- VISTA 3: AGENDA -->
     <section id="view-agenda" class="view">
         <div style="padding:25px 20px;">
             <h3>📅 Agenda Semanal</h3>
@@ -259,6 +216,7 @@
         </div>
     </section>
 
+    <!-- VISTA 4: AJUSTES -->
     <section id="view-settings" class="view">
         <div style="padding:25px;">
             <h3>⚙️ Ajustes</h3>
@@ -276,6 +234,7 @@
         </div>
     </section>
 
+    <!-- FOOTER -->
     <nav class="app-footer">
         <button class="nav-btn active" data-target="view-app"><i class="fas fa-map-signs"></i><span>Ruta</span></button>
         <button class="nav-btn" data-target="view-agenda"><i class="fas fa-calendar-day"></i><span>Agenda</span></button>
@@ -283,6 +242,7 @@
         <button class="nav-btn" data-target="view-settings"><i class="fas fa-cog"></i><span>Ajustes</span></button>
     </nav>
 
+    <!-- MODALES -->
     <div id="modal-mapa" class="full-modal hidden">
         <div style="padding:15px; background:#1e293b; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="margin:0;">Mapa</h3>
@@ -291,6 +251,7 @@
         <div id="map"></div>
     </div>
 
+    <!-- MODAL MOTIVO -->
     <div id="sheet-motivo" class="modal-overlay hidden">
          <div class="modal-card">
             <h3>¿Por qué NO compró?</h3>
@@ -309,6 +270,7 @@
          </div>
     </div>
 
+    <!-- MODAL CONFIRMACION ZONA -->
     <div id="modal-confirm-zona" class="modal-overlay hidden">
         <div class="modal-card">
             <div style="font-size:40px; margin-bottom:10px; color:var(--warning);">⚠️</div>
@@ -321,6 +283,7 @@
         </div>
     </div>
 
+    <!-- MODAL CLIENTE INFO -->
     <div id="modal-cliente" class="modal-overlay hidden">
         <div class="modal-card">
             <h3 id="modal-cliente-nombre">Cliente</h3>
@@ -330,30 +293,6 @@
                 <p id="modal-ultimo-pedido" style="margin-top:5px; font-size:13px;">Cargando...</p>
             </div>
             <button id="btnCerrarModalCliente" style="width:100%; background:#334155; border:1px solid #475569; color:white; padding:12px; border-radius:10px;">Cerrar</button>
-        </div>
-    </div>
-
-    <div id="modal-confirm-order" class="modal-overlay hidden">
-        <div class="modal-card fun-modal">
-            <span class="modal-emoji">🚀</span>
-            <h3>¿Confirmar Pedido?</h3>
-            
-            <p style="color:#94a3b8; margin:10px 0;">Estás enviando pedido para:</p>
-            
-            <div class="client-highlight">
-                <span id="confirm-client-name">Juan Perez</span>
-                <small id="confirm-client-loc">San Bernardo</small>
-            </div>
-
-            <p style="font-size:12px; color:#64748b; margin-bottom:20px;">Revisa bien para evitar errores en el reparto.</p>
-
-            <button id="btnConfirmarEnvio" class="btn-super-confirm">
-                ✅ SÍ, ENVIAR
-            </button>
-            
-            <button id="btnCorregirCliente" class="btn-ghost">
-                ✏️ No, corregir
-            </button>
         </div>
     </div>
     
@@ -375,9 +314,6 @@
         let tempDia = "";
         let clienteIndexAccion = -1; 
         let pendingSyncs = 0;
-        
-        // NUEVA VARIABLE PARA BASE DE CLIENTES
-        let baseClientesCache = [];
 
         document.addEventListener("DOMContentLoaded", () => {
             checkSesion();
@@ -415,11 +351,6 @@
                await apiCall({accion: "testIA"});
                toast("✅ Análisis completado");
             };
-
-            // NUEVOS LISTENERS (BUSCADOR Y MODAL CONFIRMACIÓN)
-            document.getElementById("inputBuscadorCliente").addEventListener("input", buscarClienteEnVivo);
-            document.getElementById("btnConfirmarEnvio").onclick = procesarEnvioFinal;
-            document.getElementById("btnCorregirCliente").onclick = cerrarModalConfirmacion;
         });
 
         // --- API HANDLER ---
@@ -463,7 +394,11 @@
                 // 1. GPS Primero
                 await obtenerUbicacion();
                 
-                // 2. Login API
+                // 2. Registro Token FCM (Simulado por ahora o real si tienes Service Worker)
+                // En web pura sin HTTPS/SW completos, esto es un placeholder.
+                const tokenSimulado = "web_user_" + Date.now(); 
+
+                // 3. Login API
                 const data = await apiCall({ 
                     accion: "getRutaDelDia", 
                     clave: clave, 
@@ -475,15 +410,15 @@
                 
                 estado.vendedor = clave;
                 estado.nombre = data.vendedor;
-                estado.ruta = (data.cartera || []).map(c => ({...c, visitado:c.visitado, expanded:false})); 
+                estado.ruta = (data.cartera || []).map(c => ({...c, visitado:c.visitado, expanded:false})); // Backend ya manda visitado
                 estado.diaRutaActual = data.diaAsignado || "LUN";
                 estado.planSemanal = data.planSemanal || {};
                 estado.localidadesHoy = data.localidadesHoy || "";
                 
                 localStorage.setItem("sesion_pro", JSON.stringify(estado));
                 
-                // 3. Registrar Token
-                apiCall({accion: "registrarToken", vendedor: clave, token: "web_user_" + Date.now()});
+                // 4. Registrar Token en Background para la IA
+                apiCall({accion: "registrarToken", vendedor: clave, token: tokenSimulado});
 
                 iniciarApp();
 
@@ -509,74 +444,17 @@
             document.body.classList.add("logged-in");
             document.getElementById("vendedorNombre").innerText = estado.nombre;
             
-            checkRouteDayAlert(); 
+            checkRouteDayAlert(); // Chequea si el día es diferente
             renderRuta();
             initAgenda();
-            
-            // NUEVO: CARGAR BASE COMPLETA EN SEGUNDO PLANO
-            cargarBaseClientesGlobal();
-        }
-        
-        // NUEVA FUNCIÓN: CARGAR BASE DE CLIENTES
-        async function cargarBaseClientesGlobal() {
-            try {
-                // Solo si la API soporta esta acción (verificar backend)
-                // Usamos GET con parámetros en URL para Cloudflare/GAS a veces es más facil
-                // Aquí simulamos llamada POST
-                const res = await fetch(`${API_URL}?accion=getListaClientes`);
-                const data = await res.json();
-                if(data.ok) {
-                    baseClientesCache = data.clientes;
-                    console.log("Base Clientes Cargada:", baseClientesCache.length);
-                }
-            } catch(e) {
-                console.warn("No se pudo cargar base global clientes", e);
-            }
-        }
-
-        // NUEVA FUNCIÓN: BUSCADOR EN VIVO
-        function buscarClienteEnVivo(e) {
-            const val = e.target.value.toLowerCase().trim();
-            const box = document.getElementById("liveResultBox");
-            
-            if(val.length === 0) {
-                box.classList.add("hidden");
-                box.innerHTML = "";
-                // Restaurar lista completa
-                renderRuta(); 
-                return;
-            }
-
-            // 1. Filtrar la ruta actual primero (prioridad)
-            const rutaFiltrada = estado.ruta.filter(c => 
-                c.nombre.toLowerCase().includes(val) || 
-                c.numeroCliente.toString().includes(val)
-            );
-            
-            // Renderizar la lista filtrada abajo
-            renderRuta(rutaFiltrada);
-
-            // 2. Buscar en base global (para mostrar feedback visual rápido en el input)
-            // Si tenemos base global cargada
-            if(baseClientesCache.length > 0) {
-                const encontrado = baseClientesCache.find(c => c.id === val || c.nombre.toLowerCase().includes(val));
-                
-                box.classList.remove("hidden");
-                if(encontrado) {
-                    box.className = "live-result success";
-                    box.innerHTML = `<i class="fas fa-check-circle"></i> <div><strong>${encontrado.nombre}</strong><br><small>${encontrado.loc}</small></div>`;
-                } else {
-                    box.className = "live-result error";
-                    box.innerHTML = `<i class="fas fa-times-circle"></i> Cliente no encontrado en Base Global`;
-                }
-            }
         }
 
         function checkRouteDayAlert() {
+            // Lógica para saber el día "Natural"
             const dias = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SAB"];
             const hoyIndex = new Date().getDay();
             let hoyNatural = dias[hoyIndex];
-            if(hoyNatural === "DOM" || hoyNatural === "SAB") hoyNatural = "LUN"; 
+            if(hoyNatural === "DOM" || hoyNatural === "SAB") hoyNatural = "LUN"; // Ajuste finde
             
             const rutaActual = estado.diaRutaActual.replace("MIE","MIÉ");
             const box = document.getElementById("route-alert-box");
@@ -587,44 +465,41 @@
             } else {
                 box.innerHTML = `<div class="route-alert normal"><i class="fas fa-check-circle"></i> <span>Ruta del Día Asignada Correctamente (${rutaActual})</span></div>`;
                 box.classList.remove("hidden");
+                // Ocultar después de 5 seg si es normal
                 setTimeout(() => box.classList.add("hidden"), 5000);
             }
         }
 
-        // --- RENDERIZADO INTELIGENTE (Modificado para aceptar filtro) ---
-        function renderRuta(listaOpcional = null) {
+        // --- RENDERIZADO INTELIGENTE ---
+        function renderRuta() {
             const list = document.getElementById("listaClientes");
             list.innerHTML = "";
             
-            // Si pasamos listaOpcional es porque estamos buscando/filtrando
-            let pendientes = listaOpcional ? listaOpcional : estado.ruta.filter(c => !c.visitado);
+            const pendientes = estado.ruta.filter(c => !c.visitado);
             
-            if(estado.ubicacionActual && estado.viewMode === 'list' && !listaOpcional) {
+            if(estado.ubicacionActual && estado.viewMode === 'list') {
                 pendientes.sort((a,b) => getDistVal(a) - getDistVal(b));
             }
 
             if(pendientes.length === 0) {
-                if(listaOpcional) {
-                    list.innerHTML = `<div style="text-align:center; padding:20px; color:#94a3b8;">No hay coincidencias en esta ruta.</div>`;
-                } else {
-                    list.innerHTML = `<div style="text-align:center; padding:40px; color:#fff;">🎉<br>RUTA DEL ${estado.diaRutaActual}<br>COMPLETADA</div>`;
-                }
+                list.innerHTML = `<div style="text-align:center; padding:40px; color:#fff;">🎉<br>RUTA DEL ${estado.diaRutaActual}<br>COMPLETADA</div>`;
                 updateStats();
                 return;
             }
 
-            const loop = (estado.viewMode === 'focus' && !listaOpcional) ? [pendientes[0]] : pendientes;
+            const loop = estado.viewMode === 'focus' ? [pendientes[0]] : pendientes;
 
             loop.forEach(c => {
-                const idxReal = estado.ruta.indexOf(c); // Importante para mantener referencia
-                const isExpanded = c.expanded || estado.viewMode === 'focus' || listaOpcional; // Expandir si busco
+                const idxReal = estado.ruta.indexOf(c);
+                const isExpanded = c.expanded || estado.viewMode === 'focus';
                 
                 let badgeGPS = "";
                 let distText = c.distanciaTexto;
                 
+                // Fallback Local GPS
                 if(!distText && estado.ubicacionActual && c.lat && c.lng) {
-                      const dKm = haversine(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
-                      distText = dKm.toFixed(1) + " km";
+                     const dKm = haversine(estado.ubicacionActual.lat, estado.ubicacionActual.lng, c.lat, c.lng);
+                     distText = dKm.toFixed(1) + " km";
                 }
 
                 if(distText) badgeGPS = `<div class="gps-badge active"><i class="fas fa-car"></i> ${distText}</div>`;
@@ -769,8 +644,7 @@
             if(btn) {
                 const action = btn.dataset.action;
                 const idx = parseInt(btn.dataset.idx);
-                // MODIFICADO: AHORA ABRE CONFIRMACIÓN
-                if(action === 'venta') abrirConfirmacionVenta(idx);
+                if(action === 'venta') registrarVisitaOptimista(idx, true);
                 if(action === 'motivo') abrirMotivo(idx);
                 if(action === 'detalle') abrirDetalle(idx);
                 if(action === 'ir') navegar(idx);
@@ -780,48 +654,14 @@
             if(card && estado.viewMode === 'list') {
                 const idx = parseInt(card.dataset.idx);
                 estado.ruta.forEach((c, i) => { if(i===idx) c.expanded = !c.expanded; else c.expanded = false; });
-                // Volvemos a renderizar, pero si hay filtro activo (input con texto), lo respetamos
-                const filtro = document.getElementById("inputBuscadorCliente").value.trim();
-                if(filtro.length > 0) {
-                     // Redisparamos el filtro
-                     document.getElementById("inputBuscadorCliente").dispatchEvent(new Event('input'));
-                } else {
-                    renderRuta();
-                }
+                renderRuta();
             }
         }
         
         function navegar(idx) {
             const c = estado.ruta[idx];
             if(!c.lat || !c.lng) return toast("Sin coordenadas");
-            window.open(`http://googleusercontent.com/maps.google.com/?daddr=${c.lat},${c.lng}`, '_system');
-        }
-
-        // --- LÓGICA DE MODAL DE CONFIRMACIÓN (NUEVO) ---
-        function abrirConfirmacionVenta(idx) {
-            clienteIndexAccion = idx; // Guardamos índice
-            const c = estado.ruta[idx];
-            
-            // Llenamos datos en el modal
-            document.getElementById("confirm-client-name").innerText = `${c.nombre} (#${c.numeroCliente})`;
-            document.getElementById("confirm-client-loc").innerText = c.domicilio;
-            
-            // Mostramos
-            const modal = document.getElementById("modal-confirm-order");
-            modal.classList.remove("hidden");
-        }
-
-        function cerrarModalConfirmacion() {
-            document.getElementById("modal-confirm-order").classList.add("hidden");
-        }
-
-        function procesarEnvioFinal() {
-            cerrarModalConfirmacion();
-            // Ejecutamos la venta real
-            registrarVisitaOptimista(clienteIndexAccion, true);
-            // Limpiar buscador si estaba en uso
-            document.getElementById("inputBuscadorCliente").value = "";
-            document.getElementById("liveResultBox").classList.add("hidden");
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`, '_system');
         }
 
         // --- OPTIMISTIC UI UPDATE ---
@@ -831,7 +671,6 @@
             c.visitado = true;
             c.compro = venta;
             c.motivo = motivo;
-            
             renderRuta(); // Se borra de pendientes instantáneamente
             toast(venta ? "💰 Venta Registrada" : "📝 Motivo Guardado");
 
@@ -845,6 +684,7 @@
                 lat: estado.ubicacionActual?.lat, 
                 lng: estado.ubicacionActual?.lng 
             }).catch(e => {
+                // Si falla, podrías guardar en cola local y reintentar (ToDo avanzado)
                 toast("⚠️ Error guardando en nube (Se reintentará)");
             });
         }
