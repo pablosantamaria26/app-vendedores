@@ -1,5 +1,5 @@
-// ⚠️ TU WORKER
-const WORKER = 'https://app-vendedores.santamariapablodaniel.workers.dev'; 
+
+const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev';
 
 const state = {
     user: JSON.parse(localStorage.getItem('ml_user')) || null,
