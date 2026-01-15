@@ -1,281 +1,261 @@
-// ==========================================
-// ⚙️ CONFIGURACIÓN Y ESTADO
-// ==========================================
-
-// 🔥 ¡OJO AQUÍ! PEGA LA URL DE TU CLOUDFLARE WORKER 
-// NO la de Google Script. El Worker se encarga de hablar con Google.
-const WORKER_URL = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/'; 
+// ⚠️ TU WORKER
+const WORKER = 'https://app-vendedores.santamariapablodaniel.workers.dev'; 
 
 const state = {
     user: JSON.parse(localStorage.getItem('ml_user')) || null,
-    clients: [],
-    currentClient: null,
-    selectedAction: null,
+    clients: [], // Todos los clientes descargados
+    selectedZones: new Set(), // Zonas seleccionadas
+    activeRoute: [], // Clientes filtrados y ordenados
+    current: null, // Cliente actual en detalle
+    action: null,
     coords: null
 };
 
-// ==========================================
-// 🧠 LÓGICA DE LA APP
-// ==========================================
 const app = {
     init: () => {
-        // 1. Verificar sesión guardada
         if (state.user) {
-            app.showView('view-dashboard');
-            app.loadData();
-            document.getElementById('lbl-user').innerText = state.user.usuario;
+            app.loadData(); // Cargar datos y mostrar zonas
+        } else {
+            app.show('view-login');
         }
         
-        // 2. Obtener GPS (Importante para registrar visitas)
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                pos => {
-                    state.coords = `${pos.coords.latitude},${pos.coords.longitude}`;
-                    console.log("📍 GPS OK");
-                }, 
-                err => console.log('⚠️ Sin GPS o permiso denegado')
-            );
-        }
+        // GPS
+        navigator.geolocation.getCurrentPosition(p => {
+            state.coords = `${p.coords.latitude},${p.coords.longitude}`;
+        });
 
-        // 3. Registrar Service Worker (Para instalar App y Offline básico)
-        if ('serviceWorker' in navigator) {
-            // Registramos el sw.js básico que creaste (el que tiene skipWaiting)
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('✅ Service Worker Registrado:', reg.scope))
-                .catch(err => console.log('❌ Error SW:', err));
-        }
+        // SW
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js');
     },
 
-    // 🔐 LOGIN
+    // --- NAVEGACIÓN ---
+    show: (id) => {
+        document.querySelectorAll('.view').forEach(v => {
+            v.classList.remove('active');
+            setTimeout(() => { if(!v.classList.contains('active')) v.classList.add('hidden'); }, 300);
+        });
+        const el = document.getElementById(id);
+        el.classList.remove('hidden');
+        // Pequeño delay para permitir que el display:block renderice antes de la opacidad
+        setTimeout(() => el.classList.add('active'), 10);
+        window.scrollTo(0,0);
+    },
+
+    // --- LOGIN ---
     login: async () => {
         const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
-        if (!u || !p) return app.toast('Completa los datos');
-
-        app.loader(true);
+        if(!u || !p) return app.toast('Faltan datos');
+        
+        app.loading(true);
         try {
-            // Petición al PROXY (Cloudflare)
-            const res = await fetch(WORKER_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'login', 
-                    payload: { user: u, pass: p } 
-                })
+            const r = await fetch(WORKER, {
+                method:'POST',
+                body: JSON.stringify({ action:'login', payload:{user:u, pass:p} })
             });
-            
-            const json = await res.json();
-
-            if (json.status === 'success') {
-                state.user = json.data;
-                localStorage.setItem('ml_user', JSON.stringify(state.user));
-                document.getElementById('lbl-user').innerText = state.user.usuario;
-                app.showView('view-dashboard');
+            const d = await r.json();
+            if(d.status === 'success') {
+                state.user = d.data;
+                localStorage.setItem('ml_user', JSON.stringify(d.data));
                 app.loadData();
             } else {
-                app.toast('❌ ' + json.message);
+                app.toast(d.message);
             }
-        } catch (e) {
-            app.toast('Error de conexión con el servidor');
-            console.error(e);
-        }
-        app.loader(false);
+        } catch(e) { app.toast('Error de conexión'); }
+        app.loading(false);
     },
 
-    // 📥 CARGAR CARTERA
+    // --- CARGA DE DATOS ---
     loadData: async () => {
-        app.loader(true);
+        app.loading(true);
         try {
-            const res = await fetch(WORKER_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            const r = await fetch(WORKER, {
+                method:'POST',
                 body: JSON.stringify({ 
-                    action: 'get_data_inicial', 
-                    payload: { 
-                        vendedorAsignado: state.user.vendedorAsignado, 
-                        rol: state.user.rol 
-                    } 
+                    action:'get_data_inicial', 
+                    payload:{ vendedorAsignado: state.user.vendedorAsignado, rol: state.user.rol } 
                 })
             });
-            
-            const json = await res.json();
-            
-            if (json.status === 'success') {
-                state.clients = json.data.clientes;
-                app.renderList(state.clients);
-                app.toast(`Cargados ${state.clients.length} clientes`);
-            } else {
-                app.toast('⚠️ Error cargando datos');
+            const d = await r.json();
+            if(d.status === 'success') {
+                state.clients = d.data.clientes;
+                document.getElementById('lbl-user').innerText = state.user.usuario;
+                app.renderZones();
+                app.show('view-zonas');
             }
-        } catch (e) {
-            console.error(e);
-            app.toast('Error de red al actualizar');
-        }
-        app.loader(false);
+        } catch(e) { app.toast('Error cargando clientes'); }
+        app.loading(false);
     },
 
-    // 🎨 RENDERIZAR LISTA
-    renderList: (list) => {
-        const container = document.getElementById('client-list');
-        container.innerHTML = '';
+    // --- RENDER ZONAS (Paso 1) ---
+    renderZones: () => {
+        const zones = {};
+        // Agrupar
+        state.clients.forEach(c => {
+            const z = c.localidad || 'Otras';
+            if(!zones[z]) zones[z] = 0;
+            zones[z]++;
+        });
+
+        const grid = document.getElementById('grid-zonas');
+        grid.innerHTML = '';
         
-        if (!list || list.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8"><h4>Sin clientes asignados</h4><p>Contacta al administrador.</p></div>';
-            return;
-        }
-
-        list.forEach(c => {
-            // Lógica visual de estados
-            let borderClass = 'status-aldia';
-            let badgeColor = '#dcfce7'; let badgeText = '#166534'; let badgeLabel = 'AL DÍA';
-
-            if (c.estado === 'critico') { 
-                borderClass = 'status-critico'; badgeColor = '#fee2e2'; badgeText = '#991b1b'; badgeLabel = 'CRÍTICO'; 
-            } else if (c.estado === 'atencion' || c.estado === 'inactivo') {
-                borderClass = 'status-atencion'; badgeColor = '#fef3c7'; badgeText = '#92400e'; badgeLabel = 'VISITAR';
-            } else if (c.estado === 'nuevo') {
-                badgeColor = '#e0f2fe'; badgeText = '#075985'; badgeLabel = 'NUEVO';
-            }
-
-            const html = `
-                <div class="client-card ${borderClass}" onclick="app.openDetail('${c.id}')">
-                    <div class="status-badge" style="background:${badgeColor}; color:${badgeText}">${badgeLabel}</div>
-                    <div class="client-name">${c.nombre} <small style="font-weight:400; color:#94a3b8">(${c.id})</small></div>
-                    <div class="client-meta"><i class="fas fa-map-marker-alt"></i> ${c.direccion || 'Sin dirección'}</div>
-                    <div class="client-meta"><i class="fas fa-history"></i> Última: ${c.ultimaFecha || '-'} (${c.diasSinCompra} días)</div>
-                    ${c.zona ? `<div class="client-meta" style="color:var(--primary); font-weight:600; margin-top:4px; font-size:11px;">📍 ${c.zona}</div>` : ''}
-                </div>
+        Object.keys(zones).sort().forEach(z => {
+            const div = document.createElement('div');
+            div.className = 'card-zona';
+            div.onclick = () => app.toggleZone(z, div);
+            div.innerHTML = `
+                <span class="zona-name">${z}</span>
+                <span class="zona-count">${zones[z]} clientes</span>
             `;
-            container.insertAdjacentHTML('beforeend', html);
+            grid.appendChild(div);
         });
     },
 
-    // 👁️ ABRIR DETALLE
-    openDetail: (id) => {
-        state.currentClient = state.clients.find(c => c.id == id);
-        if(!state.currentClient) return;
+    toggleZone: (zone, el) => {
+        if(state.selectedZones.has(zone)) {
+            state.selectedZones.delete(zone);
+            el.classList.remove('selected');
+        } else {
+            state.selectedZones.add(zone);
+            el.classList.add('selected');
+        }
         
-        document.getElementById('detail-name').innerText = state.currentClient.nombre;
-        document.getElementById('detail-address').innerText = state.currentClient.direccion;
-        
-        app.selectAction(null);
-        document.getElementById('txt-nota-venta').value = '';
-        document.getElementById('txt-nota-visita').value = '';
-        
-        app.showView('view-detail');
+        // Animación botón
+        const btn = document.getElementById('btn-armar');
+        btn.innerText = state.selectedZones.size > 0 
+            ? `🚀 ARMAR RUTA (${state.selectedZones.size} ZONAS)` 
+            : 'SELECCIONA UNA ZONA';
     },
 
-    // 🔘 SELECCIONAR ACCIÓN
-    selectAction: (type) => {
-        state.selectedAction = type;
-        document.querySelectorAll('.action-card').forEach(el => el.classList.remove('selected'));
-        if (type) document.getElementById('opt-' + type).classList.add('selected');
+    // --- ARMAR RUTA INTELIGENTE (Paso 2) ---
+    buildRoute: () => {
+        if(state.selectedZones.size === 0) return app.toast('Selecciona al menos una localidad');
+        
+        // 1. Filtrar
+        const filtered = state.clients.filter(c => state.selectedZones.has(c.localidad || 'Otras'));
+        
+        // 2. Ordenar por SCORE (Inteligencia Backend)
+        // Mayor score primero
+        filtered.sort((a,b) => b.score - a.score);
+        
+        state.activeRoute = filtered;
+        app.renderTimeline();
+        app.show('view-route');
+    },
 
+    renderTimeline: () => {
+        const ctn = document.getElementById('timeline');
+        ctn.innerHTML = '';
+        
+        state.activeRoute.forEach(c => {
+            let clase = 'normal';
+            let badge = 'Al día';
+            if(c.estado === 'critico') { clase = 'critico'; badge = 'URGENTE'; }
+            if(c.estado === 'atencion') { clase = 'atencion'; badge = 'VISITAR'; }
+            if(c.estado === 'nuevo') { clase = 'nuevo'; badge = 'NUEVO'; }
+
+            const div = document.createElement('div');
+            div.className = `client-item ${clase}`;
+            div.onclick = () => app.openDetail(c.id);
+            div.innerHTML = `
+                <div class="client-top">
+                    <span class="c-name">${c.nombre}</span>
+                    <span class="c-badge">${badge}</span>
+                </div>
+                <div class="c-address"><i class="fas fa-map-marker-alt"></i> ${c.direccion}</div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:4px;">
+                   ${c.diasSin === 999 ? 'Nunca compró' : 'Hace ' + c.diasSin + ' días'}
+                </div>
+            `;
+            ctn.appendChild(div);
+        });
+    },
+
+    // --- DETALLE Y ACCIONES (Paso 3) ---
+    openDetail: (id) => {
+        state.current = state.activeRoute.find(c => c.id === id);
+        document.getElementById('d-name').innerText = state.current.nombre;
+        document.getElementById('d-address').innerText = state.current.direccion;
+        
+        // Links
+        let maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(state.current.direccion + ' ' + state.current.localidad)}`;
+        if(state.current.lat) maps = `https://www.google.com/maps/search/?api=1&query=${state.current.lat},${state.current.lng}`;
+        document.getElementById('btn-maps').href = maps;
+        
+        document.getElementById('btn-wa').href = `https://wa.me/?text=Hola ${encodeURIComponent(state.current.nombre)}`;
+        
+        // Reset UI
+        document.querySelectorAll('.opt-card').forEach(e => e.classList.remove('active'));
         document.getElementById('form-venta').classList.add('hidden');
         document.getElementById('form-visita').classList.add('hidden');
-        document.getElementById('btn-submit').disabled = true;
-
-        if (type === 'venta') {
-            document.getElementById('form-venta').classList.remove('hidden');
-            document.getElementById('btn-submit').disabled = false;
-        } else if (type === 'visita') {
-            document.getElementById('form-visita').classList.remove('hidden');
-            document.getElementById('btn-submit').disabled = false;
-        }
+        document.getElementById('btn-confirm').classList.add('hidden');
+        
+        app.show('view-detail');
     },
 
-    // 📤 ENVIAR REPORTE
-    submitVisit: async () => {
-        if (!state.selectedAction) return;
+    selectOpt: (type) => {
+        state.action = type;
+        document.querySelectorAll('.opt-card').forEach(e => e.classList.remove('active'));
+        document.getElementById('opt-'+type).classList.add('active');
+        
+        document.getElementById('form-venta').classList.add('hidden');
+        document.getElementById('form-visita').classList.add('hidden');
+        document.getElementById('btn-confirm').classList.remove('hidden');
+        
+        document.getElementById('form-'+type).classList.remove('hidden');
+    },
 
-        // Validaciones simples
-        if (state.selectedAction === 'venta') {
-           const obs = document.getElementById('txt-nota-venta').value;
-           if (!obs) return app.toast('⚠️ Escribe el detalle del pedido');
-        }
-
+    submit: async () => {
         const payload = {
-            vendedor: state.user.vendedorAsignado, // IMPORTANTE: Usa el nombre mapeado (ej: MARTIN)
-            clienteId: state.currentClient.id,
-            tipo: state.selectedAction,
+            vendedor: state.user.vendedorAsignado,
+            clienteId: state.current.id,
+            tipo: state.action,
             coords: state.coords || ''
         };
 
-        if (state.selectedAction === 'venta') {
-            payload.observacion = document.getElementById('txt-nota-venta').value;
+        if(state.action === 'venta') {
+            payload.observacion = document.getElementById('note-venta').value;
+            if(!payload.observacion) return app.toast('Ingresa el pedido');
         } else {
             payload.motivo = document.getElementById('sel-motivo').value;
-            payload.observacion = document.getElementById('txt-nota-visita').value;
+            payload.observacion = document.getElementById('note-visita').value;
         }
 
-        app.loader(true);
+        app.loading(true);
         try {
-            const res = await fetch(WORKER_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'registrar_movimiento', payload: payload })
+            const r = await fetch(WORKER, {
+                method:'POST',
+                body: JSON.stringify({ action:'registrar_movimiento', payload })
             });
-            const json = await res.json();
-            
-            if (json.status === 'success') {
-                app.toast(state.selectedAction === 'venta' ? '💰 Venta registrada' : '📝 Visita registrada');
-                app.showView('view-dashboard');
-                // Opcional: recargar datos para actualizar estado del cliente
-                setTimeout(() => app.loadData(), 1000); 
+            const d = await r.json();
+            if(d.status === 'success') {
+                app.toast('✅ Guardado');
+                app.show('view-route'); // Vuelve a la ruta
             } else {
-                app.toast('❌ Error: ' + json.message);
+                app.toast('Error al guardar');
             }
-        } catch (e) {
-            console.error(e);
-            app.toast('Error enviando datos');
-        }
-        app.loader(false);
+        } catch(e) { app.toast('Error de conexión'); }
+        app.loading(false);
     },
 
-    // UTILS
-    filter: (type, el) => {
-        document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
-        
-        if (type === 'todos') {
-            app.renderList(state.clients);
-        } else {
-            let target = type;
-            // Mapeo de filtros a estados reales
-            if (type === 'atencion') target = ['atencion', 'inactivo']; 
-            if (type === 'critico') target = ['critico'];
-            if (type === 'aldia') target = ['al_dia', 'nuevo'];
-            
-            const filtered = state.clients.filter(c => target.includes(c.estado));
-            app.renderList(filtered);
-        }
-    },
-    showView: (id) => {
-        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
-        window.scrollTo(0, 0);
-    },
-    loader: (show) => {
-        const el = document.getElementById('loader');
-        show ? el.classList.remove('hidden') : el.classList.add('hidden');
-    },
-    toast: (msg) => {
+    // --- UTILS ---
+    toast: (m) => {
         const t = document.getElementById('toast');
-        t.innerText = msg;
+        t.innerText = m;
         t.style.opacity = 1;
-        t.style.bottom = '30px';
-        setTimeout(() => { 
-            t.style.opacity = 0; 
-            t.style.bottom = '20px';
-        }, 3000);
+        t.style.bottom = '40px';
+        setTimeout(() => { t.style.opacity = 0; t.style.bottom = '30px'; }, 3000);
+    },
+    loading: (show) => {
+        const l = document.getElementById('loader');
+        if(show) l.classList.remove('hidden');
+        else l.classList.add('hidden');
     },
     logout: () => {
-        if(confirm('¿Cerrar sesión?')) {
-            localStorage.removeItem('ml_user');
-            location.reload();
-        }
+        localStorage.removeItem('ml_user');
+        location.reload();
     }
 };
 
-// Iniciar App cuando el HTML cargue
 document.addEventListener('DOMContentLoaded', app.init);
