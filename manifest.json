@@ -1,7 +1,7 @@
 {
   "id": "./?source=pwa",
-  "name": "App de Vendedor Inteligente",
-  "short_name": "Vendedores",
+  "name": "Mercado Limpio",
+  "short_name": "Ventas ML",
   "lang": "es-AR",
   "dir": "ltr",
   "start_url": "./",
@@ -9,28 +9,43 @@
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "portrait",
-  "background_color": "#f4f6f8",
-  "theme_color": "#007aff",
-  "description": "Ruta del día, mapa, resumen y notificaciones push para vendedores. Funciona offline con sincronización automática.",
-  "categories": ["business", "productivity", "navigation"],
-  "permissions": ["notifications"],
+  "background_color": "#f1f5f9",
+  "theme_color": "#6366f1",
+  "description": "Gestión de rutas y clientes para vendedores de Mercado Limpio.",
+  "categories": ["business", "productivity"],
   "icons": [
-    { "src": "ml-icon-48.png",  "sizes": "48x48",   "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "ml-icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "ml-icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "ml-icon-96-monochrome.png", "sizes": "96x96", "type": "image/png", "purpose": "monochrome" }
+    {
+      "src": "ml-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "ml-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "ml-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "ml-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Ruta del día", "short_name": "Ruta", "url": "./#ruta", "icons": [{ "src": "ml-icon-192.png", "sizes": "192x192", "type": "image/png" }] },
-    { "name": "Mapa", "short_name": "Mapa", "url": "./#mapa", "icons": [{ "src": "ml-icon-192.png", "sizes": "192x192", "type": "image/png" }] },
-    { "name": "Resumen", "short_name": "Resumen", "url": "./#resumen", "icons": [{ "src": "ml-icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+    {
+      "name": "Ver Ruta",
+      "short_name": "Ruta",
+      "url": "./",
+      "icons": [{ "src": "ml-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
   ],
   "prefer_related_applications": false
 }
