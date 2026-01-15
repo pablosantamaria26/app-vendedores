@@ -1,205 +1,160 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ML Vendedores</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#4f46e5">
     
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        /* --- TEMA ENFOQUE (Por defecto) --- */
         :root {
-            --primary: #6366f1; /* Indigo vibrante */
-            --dark: #0f172a;
-            --light: #f8fafc;
+            --bg: #f8fafc;
             --surface: #ffffff;
-            --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --text-main: #0f172a;
+            --text-sec: #64748b;
+            --primary: #4f46e5; /* Indigo */
+            --accent: #0ea5e9;  /* Sky Blue */
+            --gradient: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%);
+            --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
             --radius: 20px;
         }
 
+        /* --- TEMA ENERGÍA (Dinámico) --- */
+        [data-theme="energia"] {
+            --bg: #fff1f2;
+            --surface: #ffffff;
+            --text-main: #4c0519;
+            --text-sec: #9f1239;
+            --primary: #e11d48; /* Rose */
+            --accent: #f59e0b;  /* Amber */
+            --gradient: linear-gradient(135deg, #e11d48 0%, #f59e0b 100%);
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--light); color: var(--dark); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s; }
 
-        /* Vistas y Animaciones */
-        .view { position: absolute; inset: 0; background: var(--light); display: flex; flex-direction: column; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; overflow-y: auto; }
-        .view.active { opacity: 1; pointer-events: all; transform: translateY(0); z-index: 10; }
-        .hidden { display: none !important; }
-
+        /* Vistas */
+        .view { position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; background: var(--bg); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; overflow-y: auto; }
+        .view.active { transform: translateX(0); z-index: 20; }
+        
         /* Botones */
-        .btn { border: none; padding: 18px; border-radius: 16px; font-weight: 800; font-size: 16px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .btn:active { transform: scale(0.97); }
-        .btn-gradient { background: var(--gradient); color: white; }
-        .btn-outline { background: white; border: 2px solid #e2e8f0; color: #64748b; box-shadow: none; }
-        
-        /* === VISTA 1: LOGIN === */
-        #view-login { justify-content: center; align-items: center; background: white; z-index: 50; }
-        .login-box { width: 100%; max-width: 320px; text-align: center; }
-        .logo-anim { width: 80px; height: 80px; background: var(--gradient); border-radius: 24px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; transform: rotate(-10deg); box-shadow: var(--shadow-lg); }
-        .inp { width: 100%; padding: 18px; background: #f1f5f9; border: 2px solid transparent; border-radius: 16px; margin-bottom: 12px; font-size: 16px; font-weight: 600; outline: none; transition: 0.3s; }
-        .inp:focus { background: white; border-color: var(--primary); }
+        .btn { border: none; padding: 16px; border-radius: 16px; font-weight: 800; font-size: 16px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn:active { transform: scale(0.95); }
+        .btn-primary { background: var(--gradient); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-float { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: var(--gradient); color: white; font-size: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 50; display: flex; align-items: center; justify-content: center; animation: float 3s ease-in-out infinite; }
 
-        /* === VISTA 2: SELECTOR DE ZONAS === */
-        .welcome-header { margin-bottom: 20px; }
-        .welcome-header h1 { margin: 0; font-size: 28px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .welcome-header p { margin: 5px 0 0; color: #64748b; font-weight: 600; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
 
-        .grid-zonas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 100px; }
-        .card-zona { background: white; padding: 20px; border-radius: var(--radius); border: 2px solid transparent; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .card-zona.selected { border-color: var(--primary); background: #eef2ff; }
-        .card-zona.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
-        .zona-name { font-weight: 700; font-size: 16px; margin-bottom: 5px; display: block; }
-        .zona-count { font-size: 13px; color: #64748b; font-weight: 600; }
+        /* Login */
+        .login-card { background: var(--surface); padding: 40px 30px; border-radius: 30px; text-align: center; box-shadow: var(--card-shadow); width: 100%; max-width: 350px; margin: auto; }
+        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; background: #f8fafc; }
+        .input-field:focus { border-color: var(--primary); background: white; }
 
-        .fab-bar { position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 20; }
+        /* Zonas Grid */
+        .grid-zonas { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .card-zona { background: var(--surface); padding: 20px; border-radius: 16px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: 0.2s; box-shadow: var(--card-shadow); }
+        .card-zona.selected { border-color: var(--primary); background: #f0fdf4; }
 
-        /* === VISTA 3: RUTA (TIMELINE) === */
-        .route-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .timeline { position: relative; padding-left: 20px; padding-bottom: 100px; }
-        .timeline::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 0; width: 4px; background: #e2e8f0; border-radius: 2px; }
-        
-        .client-item { position: relative; background: white; padding: 16px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; transition: transform 0.2s; }
-        .client-item:active { transform: scale(0.98); }
-        
-        /* El punto del timeline */
-        .client-item::before { content: ''; position: absolute; left: -26px; top: 20px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 2px var(--primary); background: var(--primary); z-index: 1; }
-        
-        /* Estados del punto */
-        .client-item.critico::before { background: #ef4444; box-shadow: 0 0 0 2px #ef4444; }
-        .client-item.atencion::before { background: #f59e0b; box-shadow: 0 0 0 2px #f59e0b; }
-        
-        .client-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .c-name { font-weight: 800; font-size: 16px; color: var(--dark); }
-        .c-badge { font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700; text-transform: uppercase; background: #f1f5f9; color: #64748b; }
-        .critico .c-badge { background: #fee2e2; color: #991b1b; }
-        .atencion .c-badge { background: #fef3c7; color: #92400e; }
-        .nuevo .c-badge { background: #e0f2fe; color: #075985; }
+        /* CLIENTE CARD (Lista) */
+        .client-item { background: var(--surface); padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: var(--card-shadow); border-left: 6px solid #e2e8f0; position: relative; }
+        .client-item.critico { border-left-color: #ef4444; }
+        .client-item.atencion { border-left-color: #f59e0b; }
+        .client-item.aldia { border-left-color: #22c55e; }
 
-        .c-address { font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 5px; }
+        /* MODO FOCO (Pantalla Completa) */
+        .focus-container { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 10px; }
+        .card-focus { background: var(--surface); padding: 30px; border-radius: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 2px solid var(--primary); animation: slideUp 0.4s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* === VISTA 4: DETALLE === */
-        #view-detail { background: white; z-index: 30; padding: 0; }
-        .detail-hero { background: var(--light); padding: 30px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; }
-        .hero-title { font-size: 24px; font-weight: 800; margin: 0 0 10px 0; }
-        .hero-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-        .btn-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s; }
-        .btn-circle:active { transform: scale(0.9); }
+        /* Chat Bot */
+        .bot-bubble { background: var(--surface); border: 2px solid var(--primary); padding: 15px; border-radius: 20px 20px 20px 0; margin-bottom: 10px; font-size: 14px; box-shadow: var(--card-shadow); animation: popIn 0.3s; }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
 
-        .action-selector { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .opt-card { padding: 20px; border-radius: 16px; border: 2px solid #e2e8f0; text-align: center; cursor: pointer; transition: 0.2s; }
-        .opt-card.active { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
-        .opt-card i { font-size: 28px; margin-bottom: 8px; display: block; }
-        
-        textarea { width: 100%; border: 2px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 15px; font-family: inherit; font-size: 16px; resize: none; outline: none; margin-top: 10px; }
-        textarea:focus { border-color: var(--primary); background: white; }
+        /* Header App */
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; }
+        .toggle-theme { background: none; border: none; font-size: 20px; cursor: pointer; }
 
-        /* Loader & Toast */
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        /* Utils */
+        .hidden { display: none !important; }
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: max-content; }
-
     </style>
 </head>
-<body>
+<body data-theme="enfoque">
 
     <div id="loader" class="hidden"><div class="spinner"></div></div>
-    <div id="toast">Mensaje</div>
 
-    <div id="view-login" class="view active">
-        <div class="login-box">
-            <div class="logo-anim"><i class="fas fa-rocket"></i></div>
-            <h1 style="margin:0 0 5px 0; font-size: 24px;">Mercado Limpio</h1>
-            <p style="color:#64748b; margin:0 0 30px 0;">Acceso Vendedores</p>
-            
-            <input type="text" id="user" class="inp" placeholder="Usuario" autocomplete="off">
-            <input type="password" id="pass" class="inp" placeholder="Contraseña">
-            
-            <button class="btn btn-gradient" onclick="app.login()">
-                ENTRAR <i class="fas fa-arrow-right"></i>
-            </button>
+    <div id="view-login" class="view active" style="z-index: 30;">
+        <div class="login-card">
+            <h1 style="background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 10px 0;">Mercado Limpio</h1>
+            <p style="color: var(--text-sec);">App Vendedores v2.0</p>
+            <input type="text" id="user" class="input-field" placeholder="Usuario (ej: martin)" autocapitalize="none">
+            <input type="password" id="pass" class="input-field" placeholder="Contraseña">
+            <button class="btn btn-primary" onclick="app.login()">INGRESAR</button>
         </div>
     </div>
 
     <div id="view-zonas" class="view">
-        <div class="welcome-header">
-            <div style="display:flex; justify-content:space-between;">
-                <h1>Hola, <span id="lbl-user">User</span> 👋</h1>
-                <button onclick="app.logout()" style="background:none; border:none; color:#64748b;"><i class="fas fa-sign-out-alt fa-lg"></i></button>
+        <div class="app-header">
+            <div>
+                <h2 style="margin:0;">Hola, <span id="lbl-user">...</span></h2>
+                <small style="color: var(--text-sec);">¿Dónde vendemos hoy?</small>
             </div>
-            <p>¿Qué zonas vas a visitar hoy?</p>
+            <button class="toggle-theme" onclick="app.toggleTheme()">🎨</button>
         </div>
-
-        <div id="grid-zonas" class="grid-zonas">
-            </div>
-
-        <div class="fab-bar">
-            <button class="btn btn-gradient" id="btn-armar" onclick="app.buildRoute()">
-                🚀 ARMAR RUTA INTELIGENTE
-            </button>
-        </div>
+        <div id="container-zonas" class="grid-zonas"></div>
+        <button class="btn btn-primary" style="margin-top: 30px;" onclick="app.prepareRoute()">
+            ARMAR RUTA 🚀
+        </button>
     </div>
 
     <div id="view-route" class="view">
-        <div class="route-header">
-            <button class="btn-outline" style="width:auto; padding:10px 16px; border-radius:12px;" onclick="app.show('view-zonas')">
-                <i class="fas fa-arrow-left"></i> Zonas
+        <div class="app-header">
+            <button onclick="app.show('view-zonas')" style="background:none; border:none; font-size:18px;"><i class="fas fa-arrow-left"></i></button>
+            <div style="font-weight:bold;">Ruta del Día</div>
+            <button onclick="app.toggleMode()" style="background:var(--surface); padding:8px 12px; border-radius:20px; border:1px solid #e2e8f0;">
+                <i class="fas fa-eye"></i> <span id="lbl-mode">Lista</span>
             </button>
-            <div style="font-weight:700; font-size:18px;">Ruta del Día</div>
-            <div style="width:50px"></div>
         </div>
 
-        <div id="timeline" class="timeline">
-            </div>
+        <div id="route-list" style="padding-bottom: 80px;"></div>
+
+        <div id="route-focus" class="focus-container hidden">
+            <div id="focus-card" class="card-focus">
+                </div>
+        </div>
     </div>
 
-    <div id="view-detail" class="view">
-        <div class="detail-hero">
-            <button onclick="app.show('view-route')" style="background:none; border:none; position:absolute; top:20px; left:20px; font-size:20px; color:#64748b;"><i class="fas fa-arrow-left"></i></button>
-            <h2 id="d-name" class="hero-title">Nombre Cliente</h2>
-            <div style="color:#64748b; font-size:14px;" id="d-address">Dirección</div>
-            
-            <div class="hero-actions">
-                <a id="btn-maps" href="#" target="_blank" class="btn-circle" style="background:#4285F4"><i class="fas fa-map-marker-alt"></i></a>
-                <a id="btn-wa" href="#" target="_blank" class="btn-circle" style="background:#25D366"><i class="fab fa-whatsapp"></i></a>
-            </div>
-        </div>
+    <button id="btn-bot" class="btn-float hidden" onclick="app.askBot()">
+        <i class="fas fa-robot"></i>
+    </button>
 
-        <div class="action-selector">
-            <div class="opt-card" id="opt-venta" onclick="app.selectOpt('venta')">
-                <i class="fas fa-shopping-bag" style="color:var(--primary)"></i>
-                <strong>Venta</strong>
-            </div>
-            <div class="opt-card" id="opt-visita" onclick="app.selectOpt('visita')">
-                <i class="fas fa-comment-alt" style="color:#f59e0b"></i>
-                <strong>No compró</strong>
-            </div>
+    <div id="modal-bot" class="hidden" style="position:fixed; bottom:100px; right:30px; width:300px; z-index:60;">
+        <div class="bot-bubble">
+            <strong style="color:var(--primary)">🤖 MercadoBot:</strong>
+            <p id="bot-msg" style="margin:5px 0 0 0;">Analizando cliente...</p>
         </div>
+    </div>
 
-        <div style="padding: 0 20px;">
-            <div id="form-venta" class="hidden">
-                <h4 style="margin:0 0 10px 0">¿Qué pidió?</h4>
-                <textarea id="note-venta" rows="4" placeholder="Ej: 5 lavandinas, 2 detergentes..."></textarea>
+    <div id="modal-action" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:50; display:flex; align-items:flex-end;">
+        <div style="background:var(--surface); width:100%; padding:30px; border-radius:30px 30px 0 0; animation: slideUp 0.3s;">
+            <h3 style="margin-top:0;">Resultado de Visita</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                <button class="btn btn-outline" onclick="app.setAction('visita')">NO COMPRÓ</button>
+                <button class="btn btn-primary" onclick="app.setAction('venta')">¡VENTA!</button>
             </div>
             
-            <div id="form-visita" class="hidden">
-                <h4 style="margin:0 0 10px 0">Motivo</h4>
-                <select id="sel-motivo" class="inp" style="background:white;">
-                    <option value="Stock Lleno">📦 Tiene Stock</option>
-                    <option value="Sin Dinero">💸 No tiene dinero</option>
-                    <option value="Cerrado">🔒 Cerrado</option>
-                    <option value="Ausente">👤 Ausente</option>
-                </select>
-                <textarea id="note-visita" rows="2" placeholder="Observación adicional..."></textarea>
+            <div id="form-details" class="hidden">
+                <textarea id="obs" class="input-field" rows="3" placeholder="Detalles..."></textarea>
+                <button class="btn btn-primary" onclick="app.submit()">CONFIRMAR Y SIGUIENTE</button>
             </div>
-
-            <button id="btn-confirm" class="btn btn-gradient hidden" style="margin-top:20px;" onclick="app.submit()">
-                CONFIRMAR
-            </button>
         </div>
     </div>
 
