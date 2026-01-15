@@ -3,405 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vendedores ML</title>
+    <title>ML Vendedores</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#6366f1">
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root {
-            /* 🎨 TEMA DUO-TONO: Indigo (Profundo) + Coral (Vibrante) */
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
-            --accent: #ff6b6b;
-            --bg: #f8fafc;
+            --primary: #6366f1; /* Indigo vibrante */
+            --dark: #0f172a;
+            --light: #f8fafc;
             --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-light: #64748b;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --radius: 16px;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius: 20px;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; }
+        body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--light); color: var(--dark); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- UTILIDADES --- */
+        /* Vistas y Animaciones */
+        .view { position: absolute; inset: 0; background: var(--light); display: flex; flex-direction: column; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; overflow-y: auto; }
+        .view.active { opacity: 1; pointer-events: all; transform: translateY(0); z-index: 10; }
         .hidden { display: none !important; }
-        .btn { border: none; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 16px; width: 100%; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:active { transform: scale(0.98); }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
-        .btn-accent { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3); }
-        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
 
-        /* --- VISTAS (SPA) --- */
-        .view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow-y: auto; background: var(--bg); transition: opacity 0.3s; padding: 20px; display: flex; flex-direction: column; }
+        /* Botones */
+        .btn { border: none; padding: 18px; border-radius: 16px; font-weight: 800; font-size: 16px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .btn:active { transform: scale(0.97); }
+        .btn-gradient { background: var(--gradient); color: white; }
+        .btn-outline { background: white; border: 2px solid #e2e8f0; color: #64748b; box-shadow: none; }
         
-        /* 1. LOGIN */
-        #view-login { justify-content: center; align-items: center; background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%); color: white; }
-        .login-card { background: rgba(255,255,255,0.95); padding: 30px; border-radius: 24px; width: 100%; max-width: 350px; color: var(--text-main); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); }
-        .login-input { width: 100%; padding: 14px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; transition: border-color 0.2s; }
-        .login-input:focus { border-color: var(--primary); }
+        /* === VISTA 1: LOGIN === */
+        #view-login { justify-content: center; align-items: center; background: white; z-index: 50; }
+        .login-box { width: 100%; max-width: 320px; text-align: center; }
+        .logo-anim { width: 80px; height: 80px; background: var(--gradient); border-radius: 24px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; transform: rotate(-10deg); box-shadow: var(--shadow-lg); }
+        .inp { width: 100%; padding: 18px; background: #f1f5f9; border: 2px solid transparent; border-radius: 16px; margin-bottom: 12px; font-size: 16px; font-weight: 600; outline: none; transition: 0.3s; }
+        .inp:focus { background: white; border-color: var(--primary); }
 
-        /* 2. DASHBOARD (Lista Clientes) */
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: 10px; }
-        .user-chip { background: white; padding: 6px 12px; border-radius: 50px; font-size: 13px; font-weight: 600; color: var(--primary); box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px; }
-        
-        .filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; scrollbar-width: none; }
-        .filter-tag { background: white; padding: 8px 16px; border-radius: 50px; font-size: 14px; color: var(--text-light); white-space: nowrap; border: 1px solid #e2e8f0; }
-        .filter-tag.active { background: var(--primary); color: white; border-color: var(--primary); }
+        /* === VISTA 2: SELECTOR DE ZONAS === */
+        .welcome-header { margin-bottom: 20px; }
+        .welcome-header h1 { margin: 0; font-size: 28px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .welcome-header p { margin: 5px 0 0; color: #64748b; font-weight: 600; }
 
-        .client-card { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; border-left: 5px solid transparent; transition: transform 0.2s; }
-        .client-card:active { transform: scale(0.99); background: #f1f5f9; }
-        
-        /* Estados visuales */
-        .status-critico { border-left-color: var(--danger); }
-        .status-atencion { border-left-color: var(--warning); }
-        .status-aldia { border-left-color: var(--success); }
-        .status-badge { position: absolute; top: 16px; right: 16px; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; }
-        
-        .client-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; color: var(--text-main); }
-        .client-meta { font-size: 13px; color: var(--text-light); display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+        .grid-zonas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 100px; }
+        .card-zona { background: white; padding: 20px; border-radius: var(--radius); border: 2px solid transparent; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card-zona.selected { border-color: var(--primary); background: #eef2ff; }
+        .card-zona.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .zona-name { font-weight: 700; font-size: 16px; margin-bottom: 5px; display: block; }
+        .zona-count { font-size: 13px; color: #64748b; font-weight: 600; }
 
-        /* 3. DETALLE / VISITA */
-        .detail-header { text-align: center; margin-bottom: 25px; }
-        .big-icon { font-size: 40px; color: var(--primary); margin-bottom: 10px; background: #e0e7ff; width: 80px; height: 80px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .action-card { background: white; padding: 20px; border-radius: var(--radius); text-align: center; border: 2px solid #e2e8f0; cursor: pointer; transition: all 0.2s; }
-        .action-card.selected { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
-        .action-card i { font-size: 24px; margin-bottom: 8px; display: block; }
-        
-        textarea { width: 100%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; font-family: inherit; resize: none; margin-bottom: 20px; }
+        .fab-bar { position: fixed; bottom: 20px; left: 20px; right: 20px; z-index: 20; }
 
-        /* LOADER */
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(2px); }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        /* === VISTA 3: RUTA (TIMELINE) === */
+        .route-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .timeline { position: relative; padding-left: 20px; padding-bottom: 100px; }
+        .timeline::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 0; width: 4px; background: #e2e8f0; border-radius: 2px; }
+        
+        .client-item { position: relative; background: white; padding: 16px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; transition: transform 0.2s; }
+        .client-item:active { transform: scale(0.98); }
+        
+        /* El punto del timeline */
+        .client-item::before { content: ''; position: absolute; left: -26px; top: 20px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 2px var(--primary); background: var(--primary); z-index: 1; }
+        
+        /* Estados del punto */
+        .client-item.critico::before { background: #ef4444; box-shadow: 0 0 0 2px #ef4444; }
+        .client-item.atencion::before { background: #f59e0b; box-shadow: 0 0 0 2px #f59e0b; }
+        
+        .client-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .c-name { font-weight: 800; font-size: 16px; color: var(--dark); }
+        .c-badge { font-size: 11px; padding: 4px 8px; border-radius: 8px; font-weight: 700; text-transform: uppercase; background: #f1f5f9; color: #64748b; }
+        .critico .c-badge { background: #fee2e2; color: #991b1b; }
+        .atencion .c-badge { background: #fef3c7; color: #92400e; }
+        .nuevo .c-badge { background: #e0f2fe; color: #075985; }
+
+        .c-address { font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 5px; }
+
+        /* === VISTA 4: DETALLE === */
+        #view-detail { background: white; z-index: 30; padding: 0; }
+        .detail-hero { background: var(--light); padding: 30px 20px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        .hero-title { font-size: 24px; font-weight: 800; margin: 0 0 10px 0; }
+        .hero-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .btn-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s; }
+        .btn-circle:active { transform: scale(0.9); }
+
+        .action-selector { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .opt-card { padding: 20px; border-radius: 16px; border: 2px solid #e2e8f0; text-align: center; cursor: pointer; transition: 0.2s; }
+        .opt-card.active { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
+        .opt-card i { font-size: 28px; margin-bottom: 8px; display: block; }
+        
+        textarea { width: 100%; border: 2px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 15px; font-family: inherit; font-size: 16px; resize: none; outline: none; margin-top: 10px; }
+        textarea:focus { border-color: var(--primary); background: white; }
+
+        /* Loader & Toast */
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 100; display: flex; justify-content: center; align-items: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.2); width: max-content; }
 
-        /* TOAST */
-        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 50px; font-size: 14px; opacity: 0; transition: opacity 0.3s; z-index: 1000; white-space: nowrap; }
     </style>
 </head>
 <body>
 
     <div id="loader" class="hidden"><div class="spinner"></div></div>
-    <div id="toast">Notificación</div>
+    <div id="toast">Mensaje</div>
 
-    <div id="view-login" class="view">
-        <div class="login-card">
-            <h2 style="text-align: center; margin-top: 0; color: var(--primary);">Mercado Limpio</h2>
-            <p style="text-align: center; color: var(--text-light); margin-bottom: 20px; font-size: 14px;">App de Vendedores v1.0</p>
-            <input type="text" id="user" class="login-input" placeholder="Usuario (ej: martin)" autocapitalize="none">
-            <input type="password" id="pass" class="login-input" placeholder="Contraseña">
-            <button class="btn btn-primary" onclick="app.login()">
-                Ingresar <i class="fas fa-arrow-right"></i>
+    <div id="view-login" class="view active">
+        <div class="login-box">
+            <div class="logo-anim"><i class="fas fa-rocket"></i></div>
+            <h1 style="margin:0 0 5px 0; font-size: 24px;">Mercado Limpio</h1>
+            <p style="color:#64748b; margin:0 0 30px 0;">Acceso Vendedores</p>
+            
+            <input type="text" id="user" class="inp" placeholder="Usuario" autocomplete="off">
+            <input type="password" id="pass" class="inp" placeholder="Contraseña">
+            
+            <button class="btn btn-gradient" onclick="app.login()">
+                ENTRAR <i class="fas fa-arrow-right"></i>
             </button>
         </div>
     </div>
 
-    <div id="view-dashboard" class="view hidden">
-        <header>
-            <h1 style="margin: 0; font-size: 22px;">Mis Clientes</h1>
-            <div class="user-chip" onclick="app.logout()">
-                <i class="fas fa-user-circle"></i> <span id="lbl-user">Usuario</span>
+    <div id="view-zonas" class="view">
+        <div class="welcome-header">
+            <div style="display:flex; justify-content:space-between;">
+                <h1>Hola, <span id="lbl-user">User</span> 👋</h1>
+                <button onclick="app.logout()" style="background:none; border:none; color:#64748b;"><i class="fas fa-sign-out-alt fa-lg"></i></button>
             </div>
-        </header>
-
-        <div class="filters">
-            <div class="filter-tag active" onclick="app.filter('todos', this)">Todos</div>
-            <div class="filter-tag" onclick="app.filter('critico', this)">🚨 Críticos</div>
-            <div class="filter-tag" onclick="app.filter('atencion', this)">⚠️ Atención</div>
-            <div class="filter-tag" onclick="app.filter('aldia', this)">✅ Al día</div>
+            <p>¿Qué zonas vas a visitar hoy?</p>
         </div>
 
-        <div id="client-list">
+        <div id="grid-zonas" class="grid-zonas">
             </div>
-        
-        <button class="btn btn-outline" style="margin-top: 20px;" onclick="app.loadData()">
-            <i class="fas fa-sync"></i> Actualizar Lista
-        </button>
+
+        <div class="fab-bar">
+            <button class="btn btn-gradient" id="btn-armar" onclick="app.buildRoute()">
+                🚀 ARMAR RUTA INTELIGENTE
+            </button>
+        </div>
     </div>
 
-    <div id="view-detail" class="view hidden">
-        <button class="btn btn-outline" style="width: auto; padding: 8px 16px; font-size: 14px; margin-bottom: 15px;" onclick="app.showView('view-dashboard')">
-            <i class="fas fa-arrow-left"></i> Volver
-        </button>
-
-        <div class="detail-header">
-            <div class="big-icon"><i class="fas fa-store"></i></div>
-            <h2 id="detail-name" style="margin: 10px 0 5px 0;">Nombre Cliente</h2>
-            <p id="detail-address" style="color: var(--text-light); margin: 0;">Dirección</p>
+    <div id="view-route" class="view">
+        <div class="route-header">
+            <button class="btn-outline" style="width:auto; padding:10px 16px; border-radius:12px;" onclick="app.show('view-zonas')">
+                <i class="fas fa-arrow-left"></i> Zonas
+            </button>
+            <div style="font-weight:700; font-size:18px;">Ruta del Día</div>
+            <div style="width:50px"></div>
         </div>
 
-        <h4 style="margin-bottom: 10px;">¿Cuál fue el resultado?</h4>
-        <div class="action-grid">
-            <div class="action-card" id="opt-venta" onclick="app.selectAction('venta')">
-                <i class="fas fa-shopping-cart" style="color: var(--success);"></i>
-                <strong>¡Venta!</strong>
+        <div id="timeline" class="timeline">
             </div>
-            <div class="action-card" id="opt-visita" onclick="app.selectAction('visita')">
-                <i class="fas fa-walking" style="color: var(--text-light);"></i>
-                No compró
-            </div>
-        </div>
-
-        <div id="form-venta" class="hidden">
-            <h4 style="margin-bottom: 10px;">Detalle del Pedido</h4>
-            <textarea id="txt-nota-venta" rows="3" placeholder="Ej: 5 lavandinas, 2 detergentes..."></textarea>
-        </div>
-
-        <div id="form-visita" class="hidden">
-            <h4 style="margin-bottom: 10px;">Motivo</h4>
-            <select id="sel-motivo" class="login-input" style="background: white;">
-                <option value="Stock Lleno">📦 Tiene Stock</option>
-                <option value="Sin Dinero">💸 No tiene dinero</option>
-                <option value="Cerrado">🔒 Cerrado</option>
-                <option value="Ausente">👤 Encargado no está</option>
-                <option value="Otro">📝 Otro</option>
-            </select>
-            <textarea id="txt-nota-visita" rows="2" placeholder="Observación extra (opcional)"></textarea>
-        </div>
-
-        <button class="btn btn-primary" id="btn-submit" disabled onclick="app.submitVisit()">
-            Registrar <i class="fas fa-check"></i>
-        </button>
     </div>
 
-    <script>
-        // ==========================================
-        // ⚙️ CONFIGURACIÓN Y ESTADO
-        // ==========================================
-        const API_URL = 'https://script.google.com/macros/s/AKfycbx658Gk5bxbTeuItQEBZm0zHF0mNk4q6IcZJ_x7sfTSZPvcB41UFT-FFvzrTFLR013L/exec'; 
-        
-        const state = {
-            user: JSON.parse(localStorage.getItem('ml_user')) || null,
-            clients: [],
-            currentClient: null,
-            selectedAction: null,
-            coords: null
-        };
+    <div id="view-detail" class="view">
+        <div class="detail-hero">
+            <button onclick="app.show('view-route')" style="background:none; border:none; position:absolute; top:20px; left:20px; font-size:20px; color:#64748b;"><i class="fas fa-arrow-left"></i></button>
+            <h2 id="d-name" class="hero-title">Nombre Cliente</h2>
+            <div style="color:#64748b; font-size:14px;" id="d-address">Dirección</div>
+            
+            <div class="hero-actions">
+                <a id="btn-maps" href="#" target="_blank" class="btn-circle" style="background:#4285F4"><i class="fas fa-map-marker-alt"></i></a>
+                <a id="btn-wa" href="#" target="_blank" class="btn-circle" style="background:#25D366"><i class="fab fa-whatsapp"></i></a>
+            </div>
+        </div>
 
-        // ==========================================
-        // 🧠 LÓGICA DE LA APP
-        // ==========================================
-        const app = {
-            init: () => {
-                if (state.user) {
-                    app.showView('view-dashboard');
-                    app.loadData();
-                    document.getElementById('lbl-user').innerText = state.user.usuario;
-                }
-                
-                // Obtener GPS al iniciar
-                navigator.geolocation.getCurrentPosition(pos => {
-                    state.coords = `${pos.coords.latitude},${pos.coords.longitude}`;
-                }, err => console.log('Sin GPS'));
-            },
+        <div class="action-selector">
+            <div class="opt-card" id="opt-venta" onclick="app.selectOpt('venta')">
+                <i class="fas fa-shopping-bag" style="color:var(--primary)"></i>
+                <strong>Venta</strong>
+            </div>
+            <div class="opt-card" id="opt-visita" onclick="app.selectOpt('visita')">
+                <i class="fas fa-comment-alt" style="color:#f59e0b"></i>
+                <strong>No compró</strong>
+            </div>
+        </div>
 
-            login: async () => {
-                const u = document.getElementById('user').value;
-                const p = document.getElementById('pass').value;
-                if (!u || !p) return app.toast('Completa los datos');
+        <div style="padding: 0 20px;">
+            <div id="form-venta" class="hidden">
+                <h4 style="margin:0 0 10px 0">¿Qué pidió?</h4>
+                <textarea id="note-venta" rows="4" placeholder="Ej: 5 lavandinas, 2 detergentes..."></textarea>
+            </div>
+            
+            <div id="form-visita" class="hidden">
+                <h4 style="margin:0 0 10px 0">Motivo</h4>
+                <select id="sel-motivo" class="inp" style="background:white;">
+                    <option value="Stock Lleno">📦 Tiene Stock</option>
+                    <option value="Sin Dinero">💸 No tiene dinero</option>
+                    <option value="Cerrado">🔒 Cerrado</option>
+                    <option value="Ausente">👤 Ausente</option>
+                </select>
+                <textarea id="note-visita" rows="2" placeholder="Observación adicional..."></textarea>
+            </div>
 
-                app.loader(true);
-                try {
-                    // Petición POST a tu Script
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'login', payload: { user: u, pass: p } })
-                    });
-                    const json = await res.json();
+            <button id="btn-confirm" class="btn btn-gradient hidden" style="margin-top:20px;" onclick="app.submit()">
+                CONFIRMAR
+            </button>
+        </div>
+    </div>
 
-                    if (json.status === 'success') {
-                        state.user = json.data;
-                        localStorage.setItem('ml_user', JSON.stringify(state.user));
-                        document.getElementById('lbl-user').innerText = state.user.usuario;
-                        app.showView('view-dashboard');
-                        app.loadData();
-                    } else {
-                        app.toast('❌ ' + json.message);
-                    }
-                } catch (e) {
-                    app.toast('Error de conexión');
-                    console.error(e);
-                }
-                app.loader(false);
-            },
-
-            loadData: async () => {
-                app.loader(true);
-                try {
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ 
-                            action: 'get_data_inicial', 
-                            payload: { 
-                                vendedorAsignado: state.user.vendedorAsignado, 
-                                rol: state.user.rol 
-                            } 
-                        })
-                    });
-                    const json = await res.json();
-                    
-                    if (json.status === 'success') {
-                        state.clients = json.data.clientes;
-                        app.renderList(state.clients);
-                        app.toast(`Cargados ${state.clients.length} clientes`);
-                    }
-                } catch (e) {
-                    app.toast('No se pudo actualizar lista');
-                }
-                app.loader(false);
-            },
-
-            renderList: (list) => {
-                const container = document.getElementById('client-list');
-                container.innerHTML = '';
-                
-                if (list.length === 0) {
-                    container.innerHTML = '<div style="text-align:center; padding:20px; color:#999">No hay clientes aquí.</div>';
-                    return;
-                }
-
-                list.forEach(c => {
-                    // Colores de estado
-                    let borderClass = 'status-aldia';
-                    let badgeColor = '#dcfce7'; let badgeText = '#166534'; let badgeLabel = 'AL DÍA';
-
-                    if (c.estado === 'critico') { 
-                        borderClass = 'status-critico'; badgeColor = '#fee2e2'; badgeText = '#991b1b'; badgeLabel = 'CRÍTICO'; 
-                    } else if (c.estado === 'atencion' || c.estado === 'inactivo') { // Tu script usa 'inactivo' a veces
-                        borderClass = 'status-atencion'; badgeColor = '#fef3c7'; badgeText = '#92400e'; badgeLabel = 'VISITAR';
-                    }
-
-                    const html = `
-                        <div class="client-card ${borderClass}" onclick="app.openDetail('${c.id}')">
-                            <div class="status-badge" style="background:${badgeColor}; color:${badgeText}">${badgeLabel}</div>
-                            <div class="client-name">${c.nombre}</div>
-                            <div class="client-meta"><i class="fas fa-map-marker-alt"></i> ${c.direccion || 'Sin dirección'}</div>
-                            <div class="client-meta"><i class="fas fa-history"></i> Última: ${c.ultimaFecha || '-'} (${c.diasSinCompra} días)</div>
-                        </div>
-                    `;
-                    container.insertAdjacentHTML('beforeend', html);
-                });
-            },
-
-            openDetail: (id) => {
-                state.currentClient = state.clients.find(c => c.id == id);
-                document.getElementById('detail-name').innerText = state.currentClient.nombre;
-                document.getElementById('detail-address').innerText = state.currentClient.direccion;
-                
-                // Reset form
-                app.selectAction(null);
-                document.getElementById('txt-nota-venta').value = '';
-                document.getElementById('txt-nota-visita').value = '';
-                
-                app.showView('view-detail');
-            },
-
-            selectAction: (type) => {
-                state.selectedAction = type;
-                
-                // Visual toggle
-                document.querySelectorAll('.action-card').forEach(el => el.classList.remove('selected'));
-                if (type) document.getElementById('opt-' + type).classList.add('selected');
-
-                // Mostrar formularios
-                document.getElementById('form-venta').classList.add('hidden');
-                document.getElementById('form-visita').classList.add('hidden');
-                document.getElementById('btn-submit').disabled = true;
-
-                if (type === 'venta') {
-                    document.getElementById('form-venta').classList.remove('hidden');
-                    document.getElementById('btn-submit').disabled = false;
-                } else if (type === 'visita') {
-                    document.getElementById('form-visita').classList.remove('hidden');
-                    document.getElementById('btn-submit').disabled = false;
-                }
-            },
-
-            submitVisit: async () => {
-                if (!state.selectedAction) return;
-
-                const payload = {
-                    vendedor: state.user.vendedorAsignado,
-                    clienteId: state.currentClient.id,
-                    tipo: state.selectedAction,
-                    coords: state.coords
-                };
-
-                if (state.selectedAction === 'venta') {
-                    payload.observacion = document.getElementById('txt-nota-venta').value;
-                    if (!payload.observacion) return app.toast('Escribe qué compró');
-                } else {
-                    payload.motivo = document.getElementById('sel-motivo').value;
-                    payload.observacion = document.getElementById('txt-nota-visita').value;
-                }
-
-                app.loader(true);
-                try {
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'registrar_movimiento', payload: payload })
-                    });
-                    const json = await res.json();
-                    
-                    if (json.status === 'success') {
-                        app.toast('✅ Guardado correctamente');
-                        app.showView('view-dashboard');
-                        app.loadData(); // Refrescar lista para ver cambios si los hubiera
-                    } else {
-                        app.toast('❌ Error al guardar');
-                    }
-                } catch (e) {
-                    app.toast('Error de red. Intenta de nuevo.');
-                }
-                app.loader(false);
-            },
-
-            // Utils
-            filter: (type, el) => {
-                document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
-                el.classList.add('active');
-                
-                if (type === 'todos') {
-                    app.renderList(state.clients);
-                } else {
-                    // Filtro inteligente mapeando estados
-                    let target = type;
-                    if (type === 'atencion') target = ['atencion', 'inactivo']; 
-                    else target = [type];
-                    
-                    const filtered = state.clients.filter(c => target.includes(c.estado));
-                    app.renderList(filtered);
-                }
-            },
-            showView: (id) => {
-                document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-                document.getElementById(id).classList.remove('hidden');
-            },
-            loader: (show) => {
-                const el = document.getElementById('loader');
-                show ? el.classList.remove('hidden') : el.classList.add('hidden');
-            },
-            toast: (msg) => {
-                const t = document.getElementById('toast');
-                t.innerText = msg;
-                t.style.opacity = 1;
-                setTimeout(() => t.style.opacity = 0, 3000);
-            },
-            logout: () => {
-                localStorage.removeItem('ml_user');
-                location.reload();
-            }
-        };
-
-        // Iniciar App
-        app.init();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
