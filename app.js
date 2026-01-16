@@ -277,11 +277,24 @@ const app = {
 
 const getColor = (s) => s==='critico'?'#ef4444':(s==='atencion'?'#f59e0b':'#10b981');
 
+
+
 const bot = {
     toggle: () => document.getElementById('ai-panel').classList.toggle('open'),
+    
     checkEvents: async () => {
         try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({action:'check_events', payload:{visitasTotal:state.metrics.visitas, ventasTotal:state.metrics.ventas, rachaNegativa:state.metrics.racha}})});
+            const r = await fetch(WORKER, {
+                method:'POST', 
+                body:JSON.stringify({
+                    action:'check_events', 
+                    payload:{
+                        visitasTotal:state.metrics.visitas, 
+                        ventasTotal:state.metrics.ventas, 
+                        rachaNegativa:state.metrics.racha
+                    }
+                })
+            });
             const d = await r.json();
             if(d.status==='success' && d.data.hayEvento) {
                 bot.addMsg(d.data.evento.msg, true);
@@ -289,20 +302,54 @@ const bot = {
             }
         } catch(e){}
     },
+
     send: async () => {
-        const inp = document.getElementById('chat-inp'); const txt = inp.value; if(!txt) return;
-        bot.addMsg(txt, false); inp.value='';
+        const inp = document.getElementById('chat-inp'); 
+        const txt = inp.value; 
+        if(!txt) return;
+        
+        // UI Inmediata
+        bot.addMsg(txt, false); 
+        inp.value='';
+        
         try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({action:'chat_bot', payload:{mensajeUsuario:txt, contextoCliente:state.currentClient}})});
+            // AQUÍ ESTÁ EL CAMBIO CLAVE: ENVIAMOS "vendedor"
+            const payloadChat = {
+                mensajeUsuario: txt, 
+                contextoCliente: state.currentClient,
+                vendedor: state.user.vendedorAsignado // <--- ESTO LE DICE A LA IA QUIEN SOY
+            };
+
+            const r = await fetch(WORKER, {
+                method:'POST', 
+                body:JSON.stringify({
+                    action:'chat_bot', 
+                    payload: payloadChat
+                })
+            });
             const d = await r.json();
-            if(d.status==='success') bot.addMsg(d.data.respuesta, true);
-        } catch(e){ bot.addMsg("Error IA: Revisa la conexión.", true); }
+            
+            if(d.status==='success') {
+                bot.addMsg(d.data.respuesta, true);
+            } else {
+                bot.addMsg("Hubo un error en el servidor.", true);
+            }
+        } catch(e){ 
+            bot.addMsg("Error de conexión. Intenta de nuevo.", true); 
+        }
     },
+
     addMsg: (txt, isBot) => {
         const c = document.getElementById('chat-content');
-        const d = document.createElement('div'); d.className=`msg ${isBot?'bot':'user'}`; d.innerHTML=txt;
-        c.appendChild(d); c.scrollTop=c.scrollHeight;
+        const d = document.createElement('div'); 
+        d.className=`msg ${isBot?'bot':'user'}`; 
+        // Formateo simple de negritas
+        d.innerHTML= txt.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        c.appendChild(d); 
+        c.scrollTop=c.scrollHeight;
     }
 };
+
+
 
 document.addEventListener('DOMContentLoaded', app.init);
