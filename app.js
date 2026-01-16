@@ -1,4 +1,4 @@
-// ⚠️ TU WORKER
+// ⚠️ PEGA AQUÍ TU WORKER ACTUALIZADO
 const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev'; 
 
 const state = {
@@ -6,8 +6,10 @@ const state = {
     clients: [],
     selectedZones: new Set(),
     route: [],
-    metrics: { ventas: 0, visitas: 0, rachaNegativa: 0 }, // Métricas locales para decisión rápida
     currentClient: null,
+    regMode: null, // 'venta' o 'no-compra'
+    regReason: '',
+    metrics: { visitas: 0, ventas: 0, racha: 0 },
     coords: ''
 };
 
@@ -15,11 +17,21 @@ const app = {
     init: () => {
         if(state.user) app.loadData();
         navigator.geolocation.getCurrentPosition(p => state.coords = `${p.coords.latitude},${p.coords.longitude}`);
+        
+        // --- AUTO LOGIN LOGIC ---
+        const passInput = document.getElementById('pass');
+        if(passInput) {
+            passInput.addEventListener('input', (e) => {
+                if(e.target.value.length === 4) app.login();
+            });
+        }
     },
 
     login: async () => {
         const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
+        if(p.length < 4) return; // Evitar disparos falsos
+        
         app.loader(true);
         try {
             const r = await fetch(WORKER, { method:'POST', body:JSON.stringify({ action:'login', payload:{user:u, pass:p} }) });
@@ -28,9 +40,12 @@ const app = {
                 state.user = d.data;
                 localStorage.setItem('ml_user', JSON.stringify(d.data));
                 app.loadData();
-                bot.checkEvents(); // ⚡ PRIMER CHECK AL ENTRAR
-            } else alert(d.message);
-        } catch(e) { alert('Error red'); }
+                bot.checkEvents();
+            } else {
+                alert('ACCESO DENEGADO');
+                document.getElementById('pass').value = ''; // Limpiar para reintentar rápido
+            }
+        } catch(e) { alert('SIN CONEXIÓN'); }
         app.loader(false);
     },
 
@@ -42,68 +57,117 @@ const app = {
             const d = await r.json();
             if(d.status==='success') {
                 state.clients = d.data.clientes;
-                document.getElementById('lbl-user').innerText = state.user.usuario;
+                document.getElementById('lbl-user').innerText = state.user.usuario.toUpperCase();
                 app.renderZones();
             }
-        } catch(e){console.error(e);}
+        } catch(e){ console.error(e); }
         app.loader(false);
     },
 
+    // --- LÓGICA DE AGRUPACIÓN Y DEDUPLICACIÓN ---
     renderZones: () => {
         const zones = {};
-        state.clients.forEach(c => { zones[c.localidad] = (zones[c.localidad]||0)+1; });
-        const ctn = document.getElementById('container-zonas');
-        ctn.innerHTML = '';
-        Object.keys(zones).forEach(z => {
+        const processedIDs = new Set(); // Para evitar duplicados por ID Cliente
+
+        state.clients.forEach(c => {
+            // 1. Deduplicación por ID
+            if(processedIDs.has(c.id)) return; 
+            processedIDs.add(c.id);
+
+            // 2. Normalización de Zona (Mar de Ajo = MAR DE AJO)
+            const zName = (c.localidad || 'SIN ZONA').trim().toUpperCase();
+            
+            if(!zones[zName]) zones[zName] = 0;
+            zones[zName]++;
+            
+            // Guardamos la versión normalizada en el objeto cliente en memoria para filtrar fácil después
+            c._zonaNorm = zName;
+        });
+
+        const grid = document.getElementById('grid-zonas');
+        grid.innerHTML = '';
+        Object.keys(zones).sort().forEach(z => {
             const div = document.createElement('div');
-            div.className = 'card-zona';
-            div.innerHTML = `<h3>${z}</h3><small>${zones[z]} clientes</small>`;
+            div.className = 'zone-card';
+            div.innerHTML = `<div class="zone-title">${z}</div><div class="zone-count">${zones[z]}</div>`;
             div.onclick = () => {
                 if(state.selectedZones.has(z)) { state.selectedZones.delete(z); div.classList.remove('selected'); }
                 else { state.selectedZones.add(z); div.classList.add('selected'); }
+            };
+            grid.appendChild(div);
+        });
+    },
+
+    buildRoute: () => {
+        if(state.selectedZones.size === 0) return alert('SELECCIONA UNA ZONA');
+        // Filtramos usando la zona normalizada
+        state.route = state.clients.filter(c => c._zonaNorm && state.selectedZones.has(c._zonaNorm));
+        app.renderRouteList();
+        app.show('view-route');
+    },
+
+    renderRouteList: () => {
+        const ctn = document.getElementById('route-list');
+        ctn.innerHTML = '';
+        state.route.forEach(c => {
+            const div = document.createElement('div');
+            div.className = `client-card ${c.estado}`;
+            div.innerHTML = `
+                <div>
+                    <div class="c-name">${c.nombre}</div>
+                    <div class="c-addr">${c.direccion}</div>
+                </div>
+                <div><i class="fas fa-chevron-right" style="color:#334155"></i></div>
+            `;
+            div.onclick = () => {
+                state.currentClient = c;
+                app.openModal();
             };
             ctn.appendChild(div);
         });
     },
 
-    buildRoute: () => {
-        if(state.selectedZones.size===0) return alert('Selecciona zona');
-        state.route = state.clients.filter(c => state.selectedZones.has(c.localidad));
-        app.renderRoute();
-        app.show('view-route');
+    // --- MODAL Y REGISTRO ---
+    openModal: () => {
+        document.getElementById('modal-action').classList.remove('hidden');
+        app.setMode('venta'); // Default
+        state.regReason = '';
+        document.querySelectorAll('.reason-btn').forEach(b => b.classList.remove('active'));
+    },
+    closeModal: () => document.getElementById('modal-action').classList.add('hidden'),
+
+    setMode: (m) => {
+        state.regMode = m;
+        document.getElementById('btn-mode-si').className = m === 'venta' ? 'btn btn-primary' : 'btn btn-outline';
+        document.getElementById('btn-mode-no').className = m === 'no-compra' ? 'btn btn-danger' : 'btn btn-outline'; // Rojo si es no-compra
+        
+        const panelNo = document.getElementById('panel-no-compra');
+        if(m === 'no-compra') panelNo.classList.remove('hidden');
+        else panelNo.classList.add('hidden');
     },
 
-    renderRoute: () => {
-        const ctn = document.getElementById('route-list');
-        ctn.innerHTML = '';
-        state.route.forEach(c => {
-            const div = document.createElement('div');
-            div.className = `client-item ${c.estado}`;
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between;"><strong>${c.nombre}</strong> <small>${c.estado.toUpperCase()}</small></div>
-                <div style="color:#64748b; font-size:14px;">${c.direccion}</div>`;
-            div.onclick = () => { state.currentClient = c; document.getElementById('modal-action').classList.remove('hidden'); };
-            ctn.appendChild(div);
-        });
+    setReason: (r, el) => {
+        state.regReason = r;
+        document.querySelectorAll('.reason-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
     },
-
-    saveAction: (type) => { state.lastAction = type; }, // Helper UI
 
     submit: async () => {
+        if(state.regMode === 'no-compra' && !state.regReason) return alert('SELECCIONA UN MOTIVO');
+        
         const obs = document.getElementById('obs').value;
+        app.closeModal();
         app.loader(true);
-        document.getElementById('modal-action').classList.add('hidden');
 
-        // Actualizar métricas locales
+        // Métricas locales
         state.metrics.visitas++;
-        if(state.lastAction === 'venta') {
+        if(state.regMode === 'venta') {
             state.metrics.ventas++;
-            state.metrics.rachaNegativa = 0;
+            state.metrics.racha = 0;
         } else {
-            state.metrics.rachaNegativa++;
+            state.metrics.racha++;
         }
 
-        // Enviar a backend
         fetch(WORKER, {
             method: 'POST',
             body: JSON.stringify({
@@ -111,110 +175,79 @@ const app = {
                 payload: {
                     vendedor: state.user.vendedorAsignado,
                     clienteId: state.currentClient.id,
-                    tipo: state.lastAction,
-                    motivo: state.lastAction==='visita'?'No compra':'',
+                    tipo: state.regMode === 'venta' ? 'venta' : 'visita',
+                    motivo: state.regReason,
                     observacion: obs,
                     coords: state.coords
                 }
             })
         });
 
-        // ⚡ CHECK AUTOMÁTICO DE EVENTOS POST-VISITA
-        setTimeout(() => bot.checkEvents(), 1500);
-
         document.getElementById('obs').value = '';
+        setTimeout(() => bot.checkEvents(), 1000); // Check IA
         app.loader(false);
     },
 
+    // UTILS
     show: (id) => {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     },
-    toggleTheme: () => {
-        const b = document.body;
-        b.dataset.theme = b.dataset.theme === 'enfoque' ? 'energia' : 'enfoque';
-    },
+    logout: () => { localStorage.removeItem('ml_user'); location.reload(); },
     loader: (s) => document.getElementById('loader').classList.toggle('hidden', !s)
 };
 
-// ==========================================
-// 🤖 CONTROLADOR BOT (Copiloto)
-// ==========================================
+// --- COPILOTO ---
 const bot = {
+    toggle: () => document.getElementById('ai-panel').classList.toggle('open'),
     checkEvents: async () => {
-        // Consultar al backend si hay algo que decir
         try {
             const r = await fetch(WORKER, {
                 method: 'POST',
                 body: JSON.stringify({
                     action: 'check_events',
-                    payload: {
-                        vendedor: state.user.vendedorAsignado,
-                        visitasTotal: state.metrics.visitas,
-                        ventasTotal: state.metrics.ventas,
-                        rachaNegativa: state.metrics.rachaNegativa
+                    payload: { 
+                        vendedor: state.user.vendedorAsignado, 
+                        visitasTotal: state.metrics.visitas, 
+                        ventasTotal: state.metrics.ventas 
                     }
                 })
             });
             const d = await r.json();
-            
-            // Si el backend devuelve un evento, abrimos el modal
             if(d.status === 'success' && d.data.hayEvento) {
-                bot.open(d.data.evento.msg);
+                bot.addMsg(d.data.evento.msg, true);
+                bot.toggle(); // Abrir panel si hay evento importante
             }
-        } catch(e) { console.log('Bot silencioso'); }
+        } catch(e){}
     },
-
-    open: (initialMsg) => {
-        document.getElementById('ai-overlay').classList.add('open');
-        document.getElementById('ai-modal').classList.add('open');
-        if(initialMsg) bot.addMsg('bot', initialMsg);
-    },
-
-    close: () => {
-        document.getElementById('ai-overlay').classList.remove('open');
-        document.getElementById('ai-modal').classList.remove('open');
-    },
-
-    addMsg: (role, text) => {
-        const ctn = document.getElementById('chat-content');
-        const div = document.createElement('div');
-        div.className = role === 'bot' ? 'msg-bot' : 'msg-user';
-        // Convertir saltos de línea y negritas básicas
-        div.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
-        ctn.appendChild(div);
-        ctn.scrollTop = ctn.scrollHeight;
-    },
-
-    send: (text) => {
-        bot.addMsg('user', text);
-        // Simular "Escribiendo..."
-        const status = document.getElementById('bot-status');
-        status.innerText = "Escribiendo...";
+    send: async () => {
+        const inp = document.getElementById('chat-inp');
+        const txt = inp.value;
+        if(!txt) return;
         
-        fetch(WORKER, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'chat_bot',
-                payload: {
-                    mensajeUsuario: text,
-                    contextoCliente: state.currentClient // Le mandamos quién es el cliente actual para que opine
-                }
-            })
-        })
-        .then(r => r.json())
-        .then(d => {
-            status.innerText = "Online";
-            if(d.status === 'success') bot.addMsg('bot', d.data.respuesta);
-        })
-        .catch(() => status.innerText = "Error");
-    },
-    
-    sendManual: () => {
-        const inp = document.getElementById('chat-input');
-        if(!inp.value.trim()) return;
-        bot.send(inp.value);
+        bot.addMsg(txt, false);
         inp.value = '';
+        
+        try {
+            const r = await fetch(WORKER, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'chat_bot',
+                    payload: { mensajeUsuario: txt, contextoCliente: state.currentClient }
+                })
+            });
+            const d = await r.json();
+            if(d.status==='success') bot.addMsg(d.data.respuesta, true);
+        } catch(e) { bot.addMsg("Error de conexión", true); }
+    },
+    addMsg: (txt, isBot) => {
+        const ctn = document.getElementById('chat-content');
+        const d = document.createElement('div');
+        d.className = 'ai-msg';
+        d.style.borderColor = isBot ? 'var(--primary)' : 'var(--text-sec)';
+        d.innerHTML = `<strong>${isBot ? 'IA' : 'VOS'}:</strong> ${txt}`;
+        ctn.appendChild(d);
+        ctn.scrollTop = ctn.scrollHeight;
     }
 };
 
