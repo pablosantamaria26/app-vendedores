@@ -17,11 +17,22 @@ const state = {
 
 const app = {
     init: () => {
-        if(state.user) app.loadData();
-        navigator.geolocation.watchPosition(p => {
-            state.coords = { lat: p.coords.latitude, lng: p.coords.longitude };
-            if(state.route.length > 0) app.renderRoute();
-        });
+        console.log("🚀 App Iniciada");
+        if(state.user) {
+            console.log("👤 Usuario detectado:", state.user.usuario);
+            app.loadData();
+        }
+        
+        // GPS
+        navigator.geolocation.watchPosition(
+            p => {
+                state.coords = { lat: p.coords.latitude, lng: p.coords.longitude };
+                if(state.route.length > 0) app.renderRoute();
+            },
+            err => console.warn("⚠️ GPS Error:", err)
+        );
+
+        // Auto Login Input
         const pass = document.getElementById('pass');
         if(pass) pass.addEventListener('input', e => { if(e.target.value.length===4) app.login(); });
     },
@@ -30,32 +41,61 @@ const app = {
         const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
         if(p.length<4) return;
-        app.loader(true);
+        
+        app.loader(true, "Verificando credenciales...");
         try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({action:'login', payload:{user:u, pass:p}})});
+            console.log("📡 Enviando Login a:", WORKER);
+            const r = await fetch(WORKER, {
+                method:'POST', 
+                body:JSON.stringify({action:'login', payload:{user:u, pass:p}})
+            });
             const d = await r.json();
+            console.log("📥 Respuesta Login:", d);
+
             if(d.status==='success') {
                 state.user = d.data;
                 localStorage.setItem('ml_user', JSON.stringify(d.data));
                 app.loadData();
                 bot.checkEvents();
-            } else { alert('Acceso denegado'); document.getElementById('pass').value=''; }
-        } catch(e){ alert('Error red'); }
+            } else {
+                alert('❌ Error Login: ' + d.message);
+                document.getElementById('pass').value='';
+            }
+        } catch(e){
+            console.error(e);
+            alert('❌ ERROR DE RED: ' + e.message + "\nRevisa la consola para más detalles.");
+        }
         app.loader(false);
     },
 
     loadData: async () => {
-        app.loader(true);
+        app.loader(true, "Cargando Cartera...");
         app.show('view-zonas');
         try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({action:'get_data_inicial', payload:{vendedorAsignado:state.user.vendedorAsignado}})});
+            console.log("📡 Pidiendo Datos...");
+            const r = await fetch(WORKER, {
+                method:'POST', 
+                body:JSON.stringify({
+                    action:'get_data_inicial', 
+                    payload:{vendedorAsignado:state.user.vendedorAsignado}
+                })
+            });
             const d = await r.json();
+            console.log("📥 Datos Recibidos:", d);
+
             if(d.status==='success') {
                 state.clients = d.data.clientes;
+                if(state.clients.length === 0) alert("⚠️ Atención: La lista de clientes llegó vacía. Revisa el Sheet.");
+                
                 document.getElementById('lbl-user').innerText = state.user.usuario.toUpperCase();
                 app.renderZones();
+            } else {
+                alert("❌ Error Carga: " + d.message);
             }
-        } catch(e){ console.error(e); }
+        } catch(e){ 
+            console.error(e);
+            alert("❌ Error Fatal Carga: " + e.message); 
+        }
         app.loader(false);
     },
 
@@ -70,7 +110,11 @@ const app = {
         });
         
         const g = document.getElementById('grid-zonas'); g.innerHTML='';
-        Object.keys(zones).sort().forEach(z => {
+        const keys = Object.keys(zones).sort();
+        
+        if(keys.length === 0) g.innerHTML = '<p style="color:#cbd5e1; text-align:center;">No hay zonas disponibles.</p>';
+
+        keys.forEach(z => {
             const d = document.createElement('div');
             d.className = 'client-card';
             d.style.display = 'block'; d.style.textAlign='center'; d.style.border='1px solid #334155'; d.style.padding='20px';
@@ -84,7 +128,7 @@ const app = {
     },
 
     buildRoute: () => {
-        if(state.selectedZones.size===0) return alert('Selecciona Zona');
+        if(state.selectedZones.size===0) return alert('⚠️ Selecciona al menos una zona');
         state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
         app.renderRoute();
         app.show('view-route');
@@ -93,9 +137,9 @@ const app = {
     renderRoute: () => {
         const activeRoute = state.route.filter(c => !state.visitedIds.has(c.id));
         
-        // --- VISTA LISTA ---
+        // LISTA
         const listCtn = document.getElementById('route-list-container');
-        listCtn.innerHTML = activeRoute.length===0 ? '<p style="text-align:center; padding:20px;">¡ZONA COMPLETADA! 🎉</p>' : '';
+        listCtn.innerHTML = activeRoute.length===0 ? '<p style="text-align:center; padding:20px; color:var(--success);">¡ZONA COMPLETADA! 🎉</p>' : '';
         
         activeRoute.forEach(c => {
             const distInfo = app.calcDist(c.lat, c.lng);
@@ -118,7 +162,7 @@ const app = {
             listCtn.appendChild(div);
         });
 
-        // --- VISTA FOCO (SIN WHATSAPP) ---
+        // FOCO
         const focusCtn = document.getElementById('route-focus-container');
         if(activeRoute.length > 0) {
             const c = activeRoute[0];
@@ -170,29 +214,33 @@ const app = {
         if(state.regType==='no' && !state.regReason) return alert('Elegí motivo');
         const obs = document.getElementById('obs').value;
         const monto = document.getElementById('inp-monto').value;
-        app.loader(true);
+        
+        app.loader(true, "Guardando...");
         document.getElementById('modal-action').classList.add('hidden');
         state.visitedIds.add(state.currentClient.id);
-        state.metrics.visitas++;
-        if(state.regType==='si') { state.metrics.ventas++; state.metrics.racha=0; } else state.metrics.racha++;
         
-        fetch(WORKER, {
-            method:'POST',
-            body:JSON.stringify({
-                action:'registrar_movimiento',
-                payload: {
-                    vendedor:state.user.vendedorAsignado, clienteId:state.currentClient.id,
-                    tipo: state.regType==='si'?'venta':'visita',
-                    motivo: state.regReason, observacion: obs, monto: monto,
-                    coords: `${state.coords.lat},${state.coords.lng}`
-                }
-            })
-        });
+        // Optimistic UI
         app.renderRoute();
+
+        try {
+            await fetch(WORKER, {
+                method:'POST',
+                body:JSON.stringify({
+                    action:'registrar_movimiento',
+                    payload: {
+                        vendedor:state.user.vendedorAsignado, clienteId:state.currentClient.id,
+                        tipo: state.regType==='si'?'venta':'visita',
+                        motivo: state.regReason, observacion: obs, monto: monto,
+                        coords: `${state.coords.lat},${state.coords.lng}`
+                    }
+                })
+            });
+            setTimeout(()=>bot.checkEvents(), 1500);
+        } catch(e) { console.error("Error guardando en background", e); }
+        
         document.getElementById('obs').value='';
         document.getElementById('inp-monto').value='';
         state.regReason='';
-        setTimeout(()=>bot.checkEvents(), 1500);
         app.loader(false);
     },
 
@@ -220,7 +268,11 @@ const app = {
         document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     },
-    loader: (s) => document.getElementById('loader').classList.toggle('hidden', !s)
+    loader: (s, msg) => {
+        const l = document.getElementById('loader');
+        l.classList.toggle('hidden', !s);
+        if(msg) l.querySelector('p').innerText = msg;
+    }
 };
 
 const getColor = (s) => s==='critico'?'#ef4444':(s==='atencion'?'#f59e0b':'#10b981');
