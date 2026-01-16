@@ -6,155 +6,146 @@
     <title>ML Vendedores</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
-    
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    
     <style>
-        /* --- TEMA ENFOQUE (Por defecto) --- */
+        /* TEMA BASE (Enfoque) */
         :root {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --text-main: #0f172a;
-            --text-sec: #64748b;
-            --primary: #4f46e5; /* Indigo */
-            --accent: #0ea5e9;  /* Sky Blue */
+            --bg: #f8fafc; --surface: #ffffff;
+            --primary: #4f46e5; --accent: #0ea5e9;
             --gradient: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%);
-            --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            --radius: 20px;
+            --radius: 24px;
         }
-
-        /* --- TEMA ENERGÍA (Dinámico) --- */
+        /* TEMA ENERGÍA */
         [data-theme="energia"] {
-            --bg: #fff1f2;
-            --surface: #ffffff;
-            --text-main: #4c0519;
-            --text-sec: #9f1239;
-            --primary: #e11d48; /* Rose */
-            --accent: #f59e0b;  /* Amber */
+            --bg: #fff1f2; --primary: #e11d48; --accent: #f59e0b;
             --gradient: linear-gradient(135deg, #e11d48 0%, #f59e0b 100%);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s; }
-
-        /* Vistas */
-        .view { position: absolute; inset: 0; padding: 20px; display: flex; flex-direction: column; background: var(--bg); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; overflow-y: auto; }
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: var(--bg); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .view { position: absolute; inset: 0; padding: 20px; background: var(--bg); transition: transform 0.3s; transform: translateX(100%); display: flex; flex-direction: column; z-index: 10; overflow-y: auto;}
         .view.active { transform: translateX(0); z-index: 20; }
-        
-        /* Botones */
-        .btn { border: none; padding: 16px; border-radius: 16px; font-weight: 800; font-size: 16px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .btn:active { transform: scale(0.95); }
+        .hidden { display: none !important; }
+
+        .btn { border: none; padding: 16px; border-radius: 16px; font-weight: 800; width: 100%; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-primary { background: var(--gradient); color: white; }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-float { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: var(--gradient); color: white; font-size: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 50; display: flex; align-items: center; justify-content: center; animation: float 3s ease-in-out infinite; }
-
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
 
         /* Login */
-        .login-card { background: var(--surface); padding: 40px 30px; border-radius: 30px; text-align: center; box-shadow: var(--card-shadow); width: 100%; max-width: 350px; margin: auto; }
-        .input-field { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; outline: none; background: #f8fafc; }
-        .input-field:focus { border-color: var(--primary); background: white; }
+        .login-card { background: var(--surface); padding: 40px 20px; border-radius: 30px; text-align: center; margin: auto; width: 100%; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .inp { width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; font-size: 16px; outline: none; }
+        .inp:focus { border-color: var(--primary); }
 
-        /* Zonas Grid */
-        .grid-zonas { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .card-zona { background: var(--surface); padding: 20px; border-radius: 16px; text-align: center; border: 2px solid transparent; cursor: pointer; transition: 0.2s; box-shadow: var(--card-shadow); }
-        .card-zona.selected { border-color: var(--primary); background: #f0fdf4; }
-
-        /* CLIENTE CARD (Lista) */
-        .client-item { background: var(--surface); padding: 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: var(--card-shadow); border-left: 6px solid #e2e8f0; position: relative; }
+        /* Tarjetas */
+        .card-zona { background: var(--surface); padding: 20px; border-radius: 20px; text-align: center; border: 2px solid transparent; margin-bottom: 10px; cursor: pointer; }
+        .card-zona.selected { border-color: var(--primary); background: #eef2ff; }
+        .client-item { background: var(--surface); padding: 20px; border-radius: 20px; margin-bottom: 15px; border-left: 6px solid #e2e8f0; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .client-item.critico { border-left-color: #ef4444; }
-        .client-item.atencion { border-left-color: #f59e0b; }
-        .client-item.aldia { border-left-color: #22c55e; }
 
-        /* MODO FOCO (Pantalla Completa) */
-        .focus-container { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 10px; }
-        .card-focus { background: var(--surface); padding: 30px; border-radius: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 2px solid var(--primary); animation: slideUp 0.4s; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        /* === MODAL IA (COPILOTO) === */
+        .ai-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .ai-overlay.open { opacity: 1; pointer-events: all; }
 
-        /* Chat Bot */
-        .bot-bubble { background: var(--surface); border: 2px solid var(--primary); padding: 15px; border-radius: 20px 20px 20px 0; margin-bottom: 10px; font-size: 14px; box-shadow: var(--card-shadow); animation: popIn 0.3s; }
-        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+        .ai-modal { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: var(--surface); 
+            border-radius: 30px 30px 0 0; 
+            padding: 25px; 
+            transform: translateY(100%); 
+            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+            display: flex; flex-direction: column; max-height: 85vh;
+        }
+        .ai-modal.open { transform: translateY(0); }
 
-        /* Header App */
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; }
-        .toggle-theme { background: none; border: none; font-size: 20px; cursor: pointer; }
+        .ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .ai-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        
+        .ai-content { overflow-y: auto; flex: 1; margin-bottom: 20px; }
+        .msg-bot { background: #f1f5f9; padding: 15px; border-radius: 4px 20px 20px 20px; margin-bottom: 15px; font-size: 15px; line-height: 1.5; color: #334155; }
+        .msg-user { background: var(--primary); color: white; padding: 15px; border-radius: 20px 20px 4px 20px; margin-bottom: 15px; margin-left: auto; width: fit-content; max-width: 80%; }
 
-        /* Utils */
-        .hidden { display: none !important; }
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .ai-suggestions { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 15px; scrollbar-width: none; }
+        .chip { background: white; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 50px; font-size: 13px; white-space: nowrap; color: #64748b; flex-shrink: 0; }
+        .chip:active { background: #e2e8f0; }
+
+        .ai-input-area { display: flex; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+        .ai-input { flex: 1; border: none; background: #f8fafc; padding: 12px 20px; border-radius: 50px; outline: none; font-size: 16px; }
+        .ai-send { width: 45px; height: 45px; border-radius: 50%; border: none; background: var(--primary); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 200; display: flex; justify-content: center; align-items: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s infinite linear; }
+        @keyframes spin { to {transform: rotate(360deg);} }
     </style>
 </head>
 <body data-theme="enfoque">
 
     <div id="loader" class="hidden"><div class="spinner"></div></div>
 
-    <div id="view-login" class="view active" style="z-index: 30;">
+    <div id="view-login" class="view active">
         <div class="login-card">
-            <h1 style="background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0 0 10px 0;">Mercado Limpio</h1>
-            <p style="color: var(--text-sec);">App Vendedores v2.0</p>
-            <input type="text" id="user" class="input-field" placeholder="Usuario (ej: martin)" autocapitalize="none">
-            <input type="password" id="pass" class="input-field" placeholder="Contraseña">
+            <h1 style="background:var(--gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Mercado Limpio</h1>
+            <input id="user" class="inp" placeholder="Usuario">
+            <input id="pass" class="inp" type="password" placeholder="Contraseña">
             <button class="btn btn-primary" onclick="app.login()">INGRESAR</button>
         </div>
     </div>
 
     <div id="view-zonas" class="view">
-        <div class="app-header">
-            <div>
-                <h2 style="margin:0;">Hola, <span id="lbl-user">...</span></h2>
-                <small style="color: var(--text-sec);">¿Dónde vendemos hoy?</small>
-            </div>
-            <button class="toggle-theme" onclick="app.toggleTheme()">🎨</button>
-        </div>
-        <div id="container-zonas" class="grid-zonas"></div>
-        <button class="btn btn-primary" style="margin-top: 30px;" onclick="app.prepareRoute()">
-            ARMAR RUTA 🚀
-        </button>
+        <h2 style="margin-bottom: 5px;">Hola, <span id="lbl-user">...</span></h2>
+        <p style="color: #64748b; margin-top:0;">Selecciona zonas para hoy</p>
+        <div id="container-zonas"></div>
+        <button class="btn btn-primary" style="margin-top:auto;" onclick="app.buildRoute()">ARMAR RUTA 🚀</button>
     </div>
 
     <div id="view-route" class="view">
-        <div class="app-header">
-            <button onclick="app.show('view-zonas')" style="background:none; border:none; font-size:18px;"><i class="fas fa-arrow-left"></i></button>
-            <div style="font-weight:bold;">Ruta del Día</div>
-            <button onclick="app.toggleMode()" style="background:var(--surface); padding:8px 12px; border-radius:20px; border:1px solid #e2e8f0;">
-                <i class="fas fa-eye"></i> <span id="lbl-mode">Lista</span>
-            </button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <button onclick="app.show('view-zonas')" style="background:none; border:none;"><i class="fas fa-arrow-left"></i></button>
+            <h3 style="margin:0">Ruta del Día</h3>
+            <button onclick="app.toggleTheme()" style="background:none; border:none;">🎨</button>
         </div>
-
-        <div id="route-list" style="padding-bottom: 80px;"></div>
-
-        <div id="route-focus" class="focus-container hidden">
-            <div id="focus-card" class="card-focus">
-                </div>
-        </div>
-    </div>
-
-    <button id="btn-bot" class="btn-float hidden" onclick="app.askBot()">
-        <i class="fas fa-robot"></i>
-    </button>
-
-    <div id="modal-bot" class="hidden" style="position:fixed; bottom:100px; right:30px; width:300px; z-index:60;">
-        <div class="bot-bubble">
-            <strong style="color:var(--primary)">🤖 MercadoBot:</strong>
-            <p id="bot-msg" style="margin:5px 0 0 0;">Analizando cliente...</p>
-        </div>
+        <div id="route-list"></div>
     </div>
 
     <div id="modal-action" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:50; display:flex; align-items:flex-end;">
-        <div style="background:var(--surface); width:100%; padding:30px; border-radius:30px 30px 0 0; animation: slideUp 0.3s;">
-            <h3 style="margin-top:0;">Resultado de Visita</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-                <button class="btn btn-outline" onclick="app.setAction('visita')">NO COMPRÓ</button>
-                <button class="btn btn-primary" onclick="app.setAction('venta')">¡VENTA!</button>
+        <div style="background:var(--surface); width:100%; padding:30px; border-radius:30px 30px 0 0;">
+            <h3>Resultado</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                <button class="btn btn-outline" onclick="app.saveAction('visita')">NO COMPRA</button>
+                <button class="btn btn-primary" onclick="app.saveAction('venta')">¡VENTA!</button>
             </div>
-            
-            <div id="form-details" class="hidden">
-                <textarea id="obs" class="input-field" rows="3" placeholder="Detalles..."></textarea>
-                <button class="btn btn-primary" onclick="app.submit()">CONFIRMAR Y SIGUIENTE</button>
+            <textarea id="obs" class="inp" placeholder="Observación..." rows="3"></textarea>
+            <button class="btn btn-primary" onclick="app.submit()">GUARDAR</button>
+        </div>
+    </div>
+
+    <div id="ai-overlay" class="ai-overlay" onclick="bot.close()"></div>
+    <div id="ai-modal" class="ai-modal">
+        <div class="ai-header">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div class="ai-avatar"><i class="fas fa-brain"></i></div>
+                <div>
+                    <h3 style="margin:0;">Copiloto ML</h3>
+                    <small style="color:#64748b;" id="bot-status">Online</small>
+                </div>
             </div>
+            <button onclick="bot.close()" style="background:#f1f5f9; border:none; width:36px; height:36px; border-radius:50%; font-size:18px;">&times;</button>
+        </div>
+
+        <div id="chat-content" class="ai-content">
+            </div>
+
+        <div class="ai-suggestions">
+            <div class="chip" onclick="bot.send('Qué cliente conviene atacar ahora')">🎯 Próximo Cliente</div>
+            <div class="chip" onclick="bot.send('Qué oferta aplico en precio')">💸 Oferta Precio</div>
+            <div class="chip" onclick="bot.send('Cómo cierro si pide plazo')">🤝 Manejar Plazo</div>
+            <div class="chip" onclick="bot.send('Resumen de mi performance hoy')">📊 Mi Performance</div>
+        </div>
+
+        <div class="ai-input-area">
+            <input id="chat-input" class="ai-input" placeholder="Escribe algo..." autocomplete="off">
+            <button class="ai-send" onclick="bot.sendManual()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
