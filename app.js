@@ -1,61 +1,59 @@
-// ⚠️ TU URL DE WORKER
-const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev'; 
-
+// ==========================================
+// 🔗 CONEXIÓN AL WORKER (CORAZÓN DE LA APP)
+// ==========================================
+const WORKER_URL = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/'; 
 
 const state = {
     user: JSON.parse(localStorage.getItem('ml_user')) || null,
     clients: [],
     currentClient: null,
-    regType: null,
+    regType: null, // 'pedido' o 'visita'
     regReason: ''
 };
 
-// ELEMENTOS DOM
+// Selectores cortos
 const el = (id) => document.getElementById(id);
-const views = { login: el('view-login'), main: el('view-main') };
+const toggleLoader = (s) => el('loader').classList.toggle('hidden', !s);
 
-// INICIO
-const init = () => {
+// INIT
+document.addEventListener('DOMContentLoaded', () => {
     if (state.user) {
-        switchView('main');
+        switchView('view-main');
         loadData();
     }
-    
-    // Listeners
+    // Eventos
     el('btn-login').onclick = handleLogin;
     el('search-input').oninput = (e) => renderList(e.target.value);
     el('ai-input').onkeydown = (e) => e.key === 'Enter' && handleAISend();
+});
+
+const switchView = (id) => {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    el(id).classList.add('active');
 };
 
-const switchView = (vName) => {
-    Object.values(views).forEach(v => v.classList.remove('active'));
-    views[vName].classList.add('active');
-};
-
-const toggleLoader = (show) => el('loader').classList.toggle('hidden', !show);
-
-// 1. LOGIN
+// 1. LOGIN (REAL)
 const handleLogin = async () => {
-    const u = el('login-user').value;
-    const p = el('login-pass').value;
-    if(!u || !p) return alert('Datos incompletos');
+    const u = el('login-user').value.trim();
+    const p = el('login-pass').value.trim();
+    if (!u || !p) return alert('Ingresa usuario y PIN');
 
     toggleLoader(true);
     try {
         const res = await apiCall('login', { user: u, pass: p });
         state.user = res;
         localStorage.setItem('ml_user', JSON.stringify(res));
-        switchView('main');
+        switchView('view-main');
         loadData();
-    } catch (e) { alert(e.message); }
+    } catch (e) { alert('Error: ' + e.message); }
     toggleLoader(false);
 };
 
-// 2. CARGAR DATOS
+// 2. CARGA DATOS
 const loadData = async () => {
+    el('lbl-saludo').innerText = `HOLA, ${state.user.user.toUpperCase()}`;
     toggleLoader(true);
     try {
-        el('lbl-saludo').innerText = `HOLA, ${state.user.user.toUpperCase()}`;
         const data = await apiCall('get_data', { vendedor: state.user.vendedor });
         state.clients = data;
         renderList();
@@ -63,57 +61,64 @@ const loadData = async () => {
     toggleLoader(false);
 };
 
-// 3. RENDERIZADO LISTA
+// 3. RENDER LISTA (LIMPIO)
 const renderList = (filter = '') => {
     const container = el('client-list');
     container.innerHTML = '';
-    
     const term = filter.toLowerCase();
+
     const list = state.clients.filter(c => 
         c.nombre.toLowerCase().includes(term) || 
-        c.id.includes(term) || 
-        c.localidad.toLowerCase().includes(term)
+        c.localidad.toLowerCase().includes(term) ||
+        c.id.includes(term)
     );
 
     list.forEach(c => {
         const div = document.createElement('div');
-        div.className = 'custom-card rounded-2xl p-4 relative overflow-hidden';
+        div.className = 'client-card p-4 mb-3';
         
-        // Colores según estado
+        // Estilos según estado (Semáforo)
         const colors = {
-            critico: 'bg-red-500', atencion: 'bg-orange-500', nuevo: 'bg-blue-500', aldia: 'bg-emerald-500'
+            critico: 'text-red-500 border-red-500 bg-red-500/10',
+            atencion: 'text-orange-400 border-orange-400 bg-orange-500/10',
+            aldia: 'text-emerald-500 border-emerald-500 bg-emerald-500/10',
+            nuevo: 'text-blue-500 border-blue-500 bg-blue-500/10'
         };
-        const color = colors[c.estado] || 'bg-slate-500';
+        const stClass = colors[c.estado] || colors.nuevo;
 
         div.innerHTML = `
-            <div class="absolute left-0 top-0 bottom-0 w-1 ${color}"></div>
-            <div class="flex justify-between items-start mb-1 pl-2">
-                <span class="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-0.5 rounded uppercase">#${c.id}</span>
-                <span class="text-[9px] font-extrabold ${color} text-white px-2 py-0.5 rounded uppercase">${c.estado}</span>
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">#${c.id} • ${c.localidad}</span>
+                    <h3 class="text-lg font-extrabold text-white leading-tight">${c.nombre}</h3>
+                </div>
+                <div class="px-2 py-1 rounded-md border text-[10px] font-bold uppercase ${stClass}">
+                    ${c.estado}
+                </div>
             </div>
-            <h3 class="pl-2 font-bold text-lg text-white leading-tight truncate">${c.nombre}</h3>
-            <p class="pl-2 text-xs text-slate-400 mb-3 flex items-center gap-1"><i class="fas fa-map-marker-alt text-slate-600"></i> ${c.direccion}, ${c.localidad}</p>
-            
-            <div class="pl-2 grid grid-cols-2 gap-2">
-                 <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+            <p class="text-xs text-slate-400 mb-4 flex items-center gap-1">
+                <i class="fas fa-map-marker-alt text-slate-600"></i> ${c.direccion}
+            </p>
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                <div class="text-center">
                     <p class="text-[9px] text-slate-500 uppercase font-bold">Sin Compra</p>
                     <p class="text-sm font-bold text-white">${c.dias > 900 ? 'NUNCA' : c.dias + ' días'}</p>
-                 </div>
-                 <button class="bg-slate-800 hover:bg-slate-700 text-blue-400 font-bold text-xs rounded-lg border border-slate-700" onclick="openModal('${c.id}')">
-                    REGISTRAR <i class="fas fa-arrow-right ml-1"></i>
-                 </button>
+                </div>
+                <button onclick="openModal('${c.id}')" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+                    GESTIONAR
+                </button>
             </div>
         `;
         container.appendChild(div);
     });
 };
 
-// 4. MODAL ACCIONES
+// 4. MODAL
 window.openModal = (id) => {
     state.currentClient = state.clients.find(c => c.id === id);
     el('modal-client-name').innerText = state.currentClient.nombre;
     el('modal-action').classList.remove('hidden');
-    window.setRegType(null);
+    setRegType(null);
 };
 
 window.closeModal = () => {
@@ -121,108 +126,81 @@ window.closeModal = () => {
     state.currentClient = null;
 };
 
-window.setRegType = (type) => {
-    state.regType = type;
-    
-    // UI Updates
-    el('btn-type-visita').className = `p-4 rounded-xl border font-bold transition-all ${type === 'visita' ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-slate-800 text-slate-400 bg-slate-900'}`;
-    el('btn-type-venta').className = `p-4 rounded-xl border font-bold transition-all ${type === 'venta' ? 'border-blue-500 text-blue-500 bg-blue-500/10' : 'border-slate-800 text-slate-400 bg-slate-900'}`;
+window.setRegType = (t) => {
+    state.regType = t;
+    const base = "p-4 rounded-2xl border font-bold transition-all ";
+    const activeP = "border-emerald-500 text-emerald-500 bg-emerald-500/10";
+    const activeV = "border-orange-500 text-orange-500 bg-orange-500/10";
+    const inactive = "border-slate-800 bg-slate-900 text-slate-400";
 
-    el('panel-venta').classList.toggle('hidden', type !== 'venta');
-    el('panel-visita').classList.toggle('hidden', type !== 'visita');
+    el('btn-type-pedido').className = base + (t === 'pedido' ? activeP : inactive);
+    el('btn-type-visita').className = base + (t === 'visita' ? activeV : inactive);
+    
+    el('panel-visita').classList.toggle('hidden', t !== 'visita');
 };
 
-window.setReason = (reason) => {
-    state.regReason = reason;
+window.setReason = (r) => {
+    state.regReason = r;
     document.querySelectorAll('.reason-btn').forEach(b => {
-        if(b.innerText.includes(reason)) b.classList.replace('border-slate-800', 'border-blue-500');
-        else b.classList.replace('border-blue-500', 'border-slate-800');
+        if(b.innerText.includes(r)) b.className = "reason-btn p-3 rounded-xl bg-blue-600 border border-blue-500 text-xs font-bold text-white shadow-lg";
+        else b.className = "reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300";
     });
 };
 
 window.saveAction = async () => {
     if(!state.regType) return alert('Selecciona tipo');
     
-    const payload = {
-        vendedor: state.user.vendedor,
-        clienteId: state.currentClient.id,
-        tipo: state.regType,
-        monto: el('input-monto').value,
-        motivo: state.regReason,
-        observacion: el('input-obs').value
-    };
-
     toggleLoader(true);
     try {
-        await apiCall('save_action', payload);
-        alert('Guardado correctamente');
+        await apiCall('registrar_movimiento', {
+            vendedor: state.user.vendedor,
+            clienteId: state.currentClient.id,
+            tipo: state.regType,
+            motivo: state.regReason,
+            observacion: el('input-obs').value
+        });
+        alert('Registro Exitoso');
         closeModal();
-        loadData(); // Recargar para actualizar días
-    } catch(e) { alert('Error al guardar'); }
+        loadData(); // Refrescar lista
+    } catch(e) { alert('Error: ' + e.message); }
     toggleLoader(false);
 };
 
-// 5. INTELIGENCIA ARTIFICIAL (Proxy)
-window.toggleAI = (show) => {
-    el('ai-panel').classList.toggle('translate-y-full', !show);
-    if(show) setTimeout(() => el('ai-input').focus(), 300);
-};
-
-window.askAI = (txt) => {
-    el('ai-input').value = txt;
-    handleAISend();
-};
-
+// 5. IA
+window.toggleAI = (s) => el('ai-panel').classList.toggle('translate-y-full', !s);
 window.handleAISend = async () => {
-    const txt = el('ai-input').value.trim();
-    if(!txt) return;
-
-    addMsg('user', txt);
+    const val = el('ai-input').value;
+    if(!val) return;
+    
+    addMsg('user', val);
     el('ai-input').value = '';
 
-    // Preparar contexto ligero (Top 20 clientes relevantes o filtrados)
-    const contextLite = state.clients.slice(0, 30).map(c => ({
-        n: c.nombre, d: c.dias, est: c.estado, 
-        last: c.ultimo_pedido ? c.ultimo_pedido.substring(0, 50) : 'N/A'
-    }));
-
     try {
-        addMsg('bot', '<i class="fas fa-circle-notch fa-spin"></i> Pensando...');
-        const res = await apiCall('chat_ai', { message: txt, context: contextLite });
-        el('chat-content').lastChild.remove(); // Quitar loader
+        const res = await apiCall('chat_bot', { 
+            vendedor: state.user.vendedor, 
+            message: val 
+        });
         addMsg('bot', res);
-    } catch(e) {
-        addMsg('bot', 'Error de conexión.');
-    }
+    } catch(e) { addMsg('bot', 'Error de conexión IA'); }
 };
 
-const addMsg = (role, html) => {
+const addMsg = (role, txt) => {
     const div = document.createElement('div');
-    div.className = `p-4 rounded-2xl text-sm leading-relaxed max-w-[85%] animate-slide-up ${role === 'user' ? 'bg-blue-600 text-white ml-auto rounded-br-none' : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'}`;
-    div.innerHTML = html;
+    div.className = `p-4 rounded-2xl text-sm leading-relaxed max-w-[85%] ${role === 'user' ? 'bg-blue-600 text-white ml-auto rounded-br-none' : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'}`;
+    div.innerText = txt;
     el('chat-content').appendChild(div);
     el('chat-content').scrollTop = el('chat-content').scrollHeight;
 };
 
-// UTIL: Copiar Pedido
-window.copyOrder = (btn) => {
-    const txt = btn.parentElement.innerText.replace('COPIAR', '');
-    navigator.clipboard.writeText(txt);
-    const old = btn.innerText;
-    btn.innerText = "¡COPIADO!";
-    setTimeout(() => btn.innerText = old, 2000);
-};
-
-// API HELPER
+// FETCH CENTRALIZADO AL WORKER
 async function apiCall(action, payload) {
-    const res = await fetch(API_URL, {
+    const res = await fetch(WORKER_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload })
     });
+    
     const json = await res.json();
-    if (json.status !== 'success') throw new Error(json.message);
+    if(json.status !== 'success') throw new Error(json.message || 'Error en servidor');
     return json.data;
 }
-
-// Iniciar
-init();
