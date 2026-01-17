@@ -99,45 +99,73 @@ const app = {
         });
     },
 
+    // MODIFICACIÓN EN app.js:
+
+    // 1. Reemplaza buildRoute para que sea inteligente
     buildRoute: () => {
-        if(state.selectedZones.size===0) return alert('Selecciona al menos una zona.');
-        state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
-        app.renderRoute();
-        app.show('view-route');
+        // Si ya hay zonas seleccionadas manualmente, úsalas
+        if(state.selectedZones.size > 0) {
+            state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
+            app.renderRoute();
+            app.show('view-route');
+        } else {
+            // Si no, pedimos sugerencias a la IA/Backend
+            app.getSmartRoutes();
+        }
     },
 
-    renderRoute: () => {
-        const active = state.route.filter(c => !state.visitedIds.has(c.id));
-        const listCtn = document.getElementById('route-list-container');
-        listCtn.innerHTML = active.length===0 ? '<div style="text-align:center; padding:40px; color:#94a3b8;">🎉 ¡Ruta completada!</div>' : '';
-        
-        active.forEach(c => {
-            const eta = app.calcETA(c.lat, c.lng);
-            const d = document.createElement('div'); 
-            // Usamos las nuevas clases del CSS Pro
-            d.className = `client-card ${c.estado}`; 
+    // 2. Agrega esta nueva función
+    getSmartRoutes: async () => {
+        app.loader(true);
+        try {
+            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({
+                action: 'suggest_routes', 
+                payload: { vendedor: state.user.vendedorAsignado }
+            })});
+            const d = await r.json();
             
-            d.innerHTML = `
-                <span class="cc-id">#${c.id}</span>
-                <span class="cc-name">${c.nombre}</span>
-                <span class="cc-loc"><i class="fas fa-map-marker-alt"></i> ${c.direccion || 'Sin dirección'}</span>
-                
-                <div class="cc-stats">
-                    <div class="stat-box">
-                        <span class="stat-label">Estado</span>
-                        <span class="stat-val" style="color:${c.estado==='critico'?'var(--danger)':'var(--success)'}">
-                            ${c.estado.toUpperCase()}
-                        </span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Distancia</span>
-                        <span class="stat-val">${eta.km} km</span>
-                    </div>
-                </div>
-            `;
-            d.onclick = () => { state.currentClient = c; app.openModal(); };
-            listCtn.appendChild(d);
+            if(d.status === 'success' && d.data.opciones.length > 0) {
+                app.showRouteSelectionModal(d.data.opciones);
+            } else {
+                alert("No encontré sugerencias obvias. Selecciona una zona manualmente.");
+            }
+        } catch(e) { alert("Error calculando rutas."); }
+        app.loader(false);
+    },
+
+    // 3. Modal visual para elegir ruta
+    showRouteSelectionModal: (opciones) => {
+        const modal = document.createElement('div');
+        modal.style = "position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:200; display:flex; flex-direction:column; justify-content:center; padding:20px;";
+        
+        let html = '<h2 style="color:white; text-align:center;">📅 Rutas Sugeridas</h2>';
+        
+        opciones.forEach((op, idx) => {
+            html += `
+            <div onclick="app.loadSuggestedRoute('${op.zonas.join(',')}')" 
+                 style="background:#1e293b; padding:20px; border-radius:16px; margin-bottom:15px; border:1px solid #3b82f6; cursor:pointer;">
+                <h3 style="margin:0; color:#3b82f6;">OPCIÓN ${idx+1}: ${op.titulo}</h3>
+                <p style="color:#94a3b8; margin:5px 0;">${op.descripcion}</p>
+            </div>`;
         });
+        
+        html += '<button onclick="this.parentElement.remove()" class="btn btn-outline" style="margin-top:20px;">CANCELAR</button>';
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+        
+        // Helper global para este modal temporal
+        window.app.loadSuggestedRoute = (zonasStr) => {
+            const zonas = zonasStr.split(',');
+            state.selectedZones = new Set(zonas);
+            // Marcar visualmente en grid
+            app.renderZones(); 
+            // Construir ruta
+            state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
+            app.renderRoute();
+            app.show('view-route');
+            modal.remove();
+        };
+    },
 
         // RENDER MODO ENFOQUE (Una sola tarjeta grande)
         const focusCtn = document.getElementById('route-focus-container');
