@@ -1,368 +1,228 @@
 // ⚠️ TU URL DE WORKER
 const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev'; 
 
+
 const state = {
     user: JSON.parse(localStorage.getItem('ml_user')) || null,
-    clients: [], selectedZones: new Set(), visitedIds: new Set(),
-    route: [], currentClient: null, viewMode: 'list',
-    coords: null, metrics: { visitas: 0, ventas: 0, racha: 0 },
-    regType: null, regReason: ''
+    clients: [],
+    currentClient: null,
+    regType: null,
+    regReason: ''
 };
 
-const app = {
-    init: () => {
-        if(state.user) app.loadData();
-        // GPS Watch de alta precisión
-        if('geolocation' in navigator) {
-            navigator.geolocation.watchPosition(
-                p => state.coords = `${p.coords.latitude},${p.coords.longitude}`,
-                e => console.log(e),
-                { enableHighAccuracy: true }
-            );
-        }
-        
-        // Listeners globales
-        const passInp = document.getElementById('pass');
-        if(passInp) passInp.addEventListener('input', e => { if(e.target.value.length===4) app.login(); });
-        
-        const chatInp = document.getElementById('chat-inp');
-        if(chatInp) chatInp.addEventListener('keydown', e => { if(e.key==='Enter') bot.send(); });
-    },
+// ELEMENTOS DOM
+const el = (id) => document.getElementById(id);
+const views = { login: el('view-login'), main: el('view-main') };
 
-    login: async () => {
-        const u = document.getElementById('user').value;
-        const p = document.getElementById('pass').value;
-        app.loader(true);
-        try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({action:'login', payload:{user:u, pass:p}})});
-            const d = await r.json();
-            if(d.status==='success') {
-                state.user = d.data;
-                localStorage.setItem('ml_user', JSON.stringify(d.data));
-                app.loadData();
-            } else { alert(d.message); document.getElementById('pass').value=''; }
-        } catch(e){ alert('Error de conexión'); }
-        app.loader(false);
-    },
+// INICIO
+const init = () => {
+    if (state.user) {
+        switchView('main');
+        loadData();
+    }
+    
+    // Listeners
+    el('btn-login').onclick = handleLogin;
+    el('search-input').oninput = (e) => renderList(e.target.value);
+    el('ai-input').onkeydown = (e) => e.key === 'Enter' && handleAISend();
+};
 
-    loadData: async () => {
-        app.loader(true);
-        app.show('view-zonas');
-        try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({action:'get_data_inicial', payload:{vendedorAsignado:state.user.vendedorAsignado}})});
-            const d = await r.json();
-            if(d.status==='success') {
-                state.clients = d.data.clientes;
-                if(document.getElementById('lbl-user')) document.getElementById('lbl-user').innerText = state.user.usuario.toUpperCase();
-                app.renderZones();
-                // Check de eventos del día (Estrategia)
-                setTimeout(() => bot.checkEvents(), 1000);
-            }
-        } catch(e){ console.error(e); }
-        app.loader(false);
-    },
+const switchView = (vName) => {
+    Object.values(views).forEach(v => v.classList.remove('active'));
+    views[vName].classList.add('active');
+};
 
-    renderZones: () => {
-        const zones = {}; const seen = new Set();
-        state.clients.forEach(c => {
-            if(seen.has(c.id)) return; seen.add(c.id);
-            const z = (c.localidad||'GRAL').toUpperCase().trim();
-            if(!zones[z]) zones[z]=0; zones[z]++;
-            c._zonaNorm = z;
-        });
-        
-        const g = document.getElementById('grid-zonas'); g.innerHTML='';
-        Object.keys(zones).sort().forEach(z => {
-            const d = document.createElement('div'); 
-            d.className='client-card'; 
-            d.style.textAlign='center';
-            d.style.cursor='pointer';
-            
-            d.innerHTML=`
-                <h3 style="margin:5px 0; color:white;">${z}</h3>
-                <small style="color:#94a3b8; font-weight:bold;">${zones[z]} Clientes</small>
-            `;
-            
-            d.onclick = () => { 
-                if(state.selectedZones.has(z)){
-                    state.selectedZones.delete(z); 
-                    d.style.border = '1px solid rgba(255,255,255,0.05)';
-                    d.style.background = 'var(--surface)';
-                } else {
-                    state.selectedZones.add(z); 
-                    d.style.border = '1px solid var(--primary)';
-                    d.style.background = 'rgba(59, 130, 246, 0.1)';
-                }
-            };
-            g.appendChild(d);
-        });
-    },
+const toggleLoader = (show) => el('loader').classList.toggle('hidden', !show);
 
-    // 1. RUTAS INTELIGENTES
-    buildRoute: () => {
-        // Si ya hay zonas seleccionadas manualmente, úsalas
-        if(state.selectedZones.size > 0) {
-            state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
-            app.renderRoute();
-            app.show('view-route');
-        } else {
-            // Si no, pedimos sugerencias a la IA/Backend
-            app.getSmartRoutes();
-        }
-    },
+// 1. LOGIN
+const handleLogin = async () => {
+    const u = el('login-user').value;
+    const p = el('login-pass').value;
+    if(!u || !p) return alert('Datos incompletos');
 
-    getSmartRoutes: async () => {
-        app.loader(true);
-        try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({
-                action: 'suggest_routes', 
-                payload: { vendedor: state.user.vendedorAsignado }
-            })});
-            const d = await r.json();
-            
-            if(d.status === 'success' && d.data.opciones.length > 0) {
-                app.showRouteSelectionModal(d.data.opciones);
-            } else {
-                alert("No encontré sugerencias obvias. Selecciona una zona manualmente.");
-            }
-        } catch(e) { alert("Error calculando rutas."); }
-        app.loader(false);
-    },
+    toggleLoader(true);
+    try {
+        const res = await apiCall('login', { user: u, pass: p });
+        state.user = res;
+        localStorage.setItem('ml_user', JSON.stringify(res));
+        switchView('main');
+        loadData();
+    } catch (e) { alert(e.message); }
+    toggleLoader(false);
+};
 
-    showRouteSelectionModal: (opciones) => {
-        const modal = document.createElement('div');
-        modal.style = "position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:200; display:flex; flex-direction:column; justify-content:center; padding:20px; backdrop-filter:blur(5px);";
+// 2. CARGAR DATOS
+const loadData = async () => {
+    toggleLoader(true);
+    try {
+        el('lbl-saludo').innerText = `HOLA, ${state.user.user.toUpperCase()}`;
+        const data = await apiCall('get_data', { vendedor: state.user.vendedor });
+        state.clients = data;
+        renderList();
+    } catch (e) { console.error(e); }
+    toggleLoader(false);
+};
+
+// 3. RENDERIZADO LISTA
+const renderList = (filter = '') => {
+    const container = el('client-list');
+    container.innerHTML = '';
+    
+    const term = filter.toLowerCase();
+    const list = state.clients.filter(c => 
+        c.nombre.toLowerCase().includes(term) || 
+        c.id.includes(term) || 
+        c.localidad.toLowerCase().includes(term)
+    );
+
+    list.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'custom-card rounded-2xl p-4 relative overflow-hidden';
         
-        let html = '<h2 style="color:white; text-align:center; margin-bottom:20px;">📅 Rutas Sugeridas</h2>';
-        
-        opciones.forEach((op, idx) => {
-            html += `
-            <div onclick="app.loadSuggestedRoute('${op.zonas.join(',')}')" 
-                 style="background:#1e293b; padding:20px; border-radius:16px; margin-bottom:15px; border:1px solid #3b82f6; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                <h3 style="margin:0; color:#3b82f6; font-size:18px;">OPCIÓN ${idx+1}: ${op.titulo}</h3>
-                <p style="color:#94a3b8; margin:5px 0; font-size:14px;">${op.descripcion}</p>
-            </div>`;
-        });
-        
-        html += '<button onclick="this.parentElement.remove()" class="btn btn-outline" style="margin-top:20px;">CANCELAR</button>';
-        modal.innerHTML = html;
-        document.body.appendChild(modal);
-        
-        window.app.loadSuggestedRoute = (zonasStr) => {
-            const zonas = zonasStr.split(',');
-            state.selectedZones = new Set(zonas);
-            app.renderZones(); 
-            state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
-            app.renderRoute();
-            app.show('view-route');
-            modal.remove();
+        // Colores según estado
+        const colors = {
+            critico: 'bg-red-500', atencion: 'bg-orange-500', nuevo: 'bg-blue-500', aldia: 'bg-emerald-500'
         };
-    },
+        const color = colors[c.estado] || 'bg-slate-500';
 
-    renderRoute: () => {
-        const active = state.route.filter(c => !state.visitedIds.has(c.id));
-        const listCtn = document.getElementById('route-list-container');
-        listCtn.innerHTML = active.length===0 ? '<div style="text-align:center; padding:40px; color:#94a3b8;">🎉 ¡Ruta completada!</div>' : '';
-        
-        active.forEach(c => {
-            const eta = app.calcETA(c.lat, c.lng);
-            const d = document.createElement('div'); 
-            d.className = `client-card ${c.estado}`; 
-            d.innerHTML = `
-                <span class="cc-id">#${c.id}</span>
-                <span class="cc-name">${c.nombre}</span>
-                <span class="cc-loc"><i class="fas fa-map-marker-alt"></i> ${c.direccion || 'Sin dirección'}</span>
-                <div class="cc-stats">
-                    <div class="stat-box"><span class="stat-label">Estado</span><span class="stat-val" style="color:${c.estado==='critico'?'var(--danger)':'var(--success)'}">${c.estado.toUpperCase()}</span></div>
-                    <div class="stat-box"><span class="stat-label">Distancia</span><span class="stat-val">${eta.km} km</span></div>
-                </div>
-            `;
-            d.onclick = () => { state.currentClient = c; app.openModal(); };
-            listCtn.appendChild(d);
-        });
-
-        // RENDER MODO ENFOQUE
-        const focusCtn = document.getElementById('route-focus-container');
-        if(active.length > 0) {
-            const c = active[0];
-            const eta = app.calcETA(c.lat, c.lng);
-            // Enlace corregido a Google Maps Navegación
-            const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`;
+        div.innerHTML = `
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${color}"></div>
+            <div class="flex justify-between items-start mb-1 pl-2">
+                <span class="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-0.5 rounded uppercase">#${c.id}</span>
+                <span class="text-[9px] font-extrabold ${color} text-white px-2 py-0.5 rounded uppercase">${c.estado}</span>
+            </div>
+            <h3 class="pl-2 font-bold text-lg text-white leading-tight truncate">${c.nombre}</h3>
+            <p class="pl-2 text-xs text-slate-400 mb-3 flex items-center gap-1"><i class="fas fa-map-marker-alt text-slate-600"></i> ${c.direccion}, ${c.localidad}</p>
             
-            focusCtn.innerHTML = `
-                <div class="focus-card">
-                    <small style="color:var(--text-sec); letter-spacing:2px; font-weight:bold;">PRÓXIMO DESTINO</small>
-                    <h1 style="margin:10px 0; font-size:28px;">${c.nombre}</h1>
-                    <p style="color:#cbd5e1;"><i class="fas fa-map-pin"></i> ${c.direccion}</p>
-                    <div class="focus-big-val">${eta.min} MIN</div>
-                    <small style="color:var(--text-sec);">DISTANCIA: ${eta.km} KM</small>
-                    <br><br>
-                    <button class="btn btn-primary" onclick="state.currentClient=state.route.find(x=>x.id=='${c.id}'); app.openModal()">REGISTRAR VISITA</button>
-                    <br>
-                    <a href="${mapsLink}" target="_blank" class="btn btn-outline" style="text-decoration:none;"><i class="fas fa-location-arrow"></i> IR CON GPS</a>
-                </div>
-            `;
-        } else { focusCtn.innerHTML='<h2 style="text-align:center">¡FIN DEL RECORRIDO!</h2>'; }
-    },
-
-    openModal: () => { 
-        document.getElementById('modal-action').classList.remove('hidden'); 
-        app.setRegType(null); 
-    },
-    
-    setRegType: (t) => {
-        state.regType = t;
-        document.getElementById('btn-si').className = t==='si'?'btn btn-success':'btn btn-outline';
-        document.getElementById('btn-no').className = t==='no'?'btn btn-danger':'btn btn-outline';
-        document.getElementById('panel-venta').classList.toggle('hidden', t!=='si');
-        document.getElementById('panel-no').classList.toggle('hidden', t!=='no');
-    },
-
-    setReason: (el, r) => {
-        state.regReason = r;
-        document.querySelectorAll('#panel-no .btn').forEach(b => {
-            b.className = 'btn btn-outline';
-            b.style.borderColor = '#334155';
-        });
-        el.className = 'btn btn-primary'; 
-    },
-
-    submit: async () => {
-        if(!state.regType) return alert('Selecciona si hubo venta o no.');
-        
-        app.loader(true);
-        document.getElementById('modal-action').classList.add('hidden');
-        state.visitedIds.add(state.currentClient.id);
-        app.renderRoute(); 
-        
-        const obs = document.getElementById('obs').value || '';
-        const monto = document.getElementById('inp-monto').value || 0;
-        
-        try {
-            await fetch(WORKER, {
-                method:'POST',
-                body:JSON.stringify({
-                    action:'registrar_movimiento',
-                    payload:{
-                        vendedor: state.user.vendedorAsignado, 
-                        clienteId: state.currentClient.id,
-                        tipo: state.regType==='si'?'venta':'visita',
-                        motivo: state.regReason, 
-                        observacion: obs, 
-                        monto: monto,
-                        coords: state.coords || ''
-                    }
-                })
-            });
-            document.getElementById('obs').value = '';
-            document.getElementById('inp-monto').value = '';
-        } catch(e) { console.error(e); }
-        app.loader(false);
-    },
-
-    setMode: (m) => {
-        state.viewMode = m;
-        document.getElementById('btn-list').className = m==='list'?'btn-icon-top active':'btn-icon-top';
-        document.getElementById('btn-focus').className = m==='focus'?'btn-icon-top active':'btn-icon-top';
-        document.getElementById('route-list-container').classList.toggle('hidden', m!=='list');
-        document.getElementById('route-focus-container').classList.toggle('hidden', m!=='focus');
-    },
-    
-    calcETA: (lat2, lon2) => {
-        if(!lat2 || !state.coords) return {km:'--', min:'--'};
-        const [lat1, lon1] = state.coords.split(',').map(Number);
-        if(!lat1 || !lon1) return {km:'--', min:'--'};
-        const R = 6371; 
-        const dLat = (lat2-lat1)*Math.PI/180;
-        const dLon = (lon2-lon1)*Math.PI/180;
-        const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)*Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const km = (R * c).toFixed(1);
-        const min = Math.ceil(km * 4); 
-        return {km, min};
-    },
-    
-    show: (id) => {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    },
-    loader: (s) => document.getElementById('loader').classList.toggle('hidden', !s)
+            <div class="pl-2 grid grid-cols-2 gap-2">
+                 <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                    <p class="text-[9px] text-slate-500 uppercase font-bold">Sin Compra</p>
+                    <p class="text-sm font-bold text-white">${c.dias > 900 ? 'NUNCA' : c.dias + ' días'}</p>
+                 </div>
+                 <button class="bg-slate-800 hover:bg-slate-700 text-blue-400 font-bold text-xs rounded-lg border border-slate-700" onclick="openModal('${c.id}')">
+                    REGISTRAR <i class="fas fa-arrow-right ml-1"></i>
+                 </button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
 };
 
-const bot = {
-    toggle: () => {
-        const p = document.getElementById('ai-panel');
-        p.classList.toggle('open');
-        if(p.classList.contains('open')) {
-            setTimeout(() => document.getElementById('chat-inp').focus(), 300);
-        }
-    },
+// 4. MODAL ACCIONES
+window.openModal = (id) => {
+    state.currentClient = state.clients.find(c => c.id === id);
+    el('modal-client-name').innerText = state.currentClient.nombre;
+    el('modal-action').classList.remove('hidden');
+    window.setRegType(null);
+};
+
+window.closeModal = () => {
+    el('modal-action').classList.add('hidden');
+    state.currentClient = null;
+};
+
+window.setRegType = (type) => {
+    state.regType = type;
     
-    checkEvents: async () => {
-        try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({
-                action:'check_events', 
-                payload:{ vendedor: state.user.vendedorAsignado, visitasTotal: 0 }
-            })});
-            const d = await r.json();
-            if(d.status==='success' && d.data.hayEvento) {
-                bot.addMsg(d.data.evento.msg, 'bot');
-                bot.toggle(); 
-            }
-        } catch(e){}
-    },
+    // UI Updates
+    el('btn-type-visita').className = `p-4 rounded-xl border font-bold transition-all ${type === 'visita' ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-slate-800 text-slate-400 bg-slate-900'}`;
+    el('btn-type-venta').className = `p-4 rounded-xl border font-bold transition-all ${type === 'venta' ? 'border-blue-500 text-blue-500 bg-blue-500/10' : 'border-slate-800 text-slate-400 bg-slate-900'}`;
 
-    quickMsg: (txt) => {
-        const inp = document.getElementById('chat-inp');
-        inp.value = txt;
-        bot.send();
-    },
+    el('panel-venta').classList.toggle('hidden', type !== 'venta');
+    el('panel-visita').classList.toggle('hidden', type !== 'visita');
+};
 
-    send: async () => {
-        const inp = document.getElementById('chat-inp'); 
-        const txt = inp.value.trim(); 
-        if(!txt) return;
-        
-        bot.addMsg(txt, 'user'); 
-        inp.value='';
-        
-        const loadingId = 'loading-' + Date.now();
-        bot.addMsg('<i class="fas fa-circle-notch fa-spin"></i> Pensando...', 'bot', loadingId);
+window.setReason = (reason) => {
+    state.regReason = reason;
+    document.querySelectorAll('.reason-btn').forEach(b => {
+        if(b.innerText.includes(reason)) b.classList.replace('border-slate-800', 'border-blue-500');
+        else b.classList.replace('border-blue-500', 'border-slate-800');
+    });
+};
 
-        try {
-            const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({
-                action:'chat_bot', 
-                payload:{
-                    mensajeUsuario: txt, 
-                    vendedor: state.user.vendedorAsignado
-                }
-            })});
-            const d = await r.json();
-            
-            const el = document.getElementById(loadingId);
-            if(el) el.remove();
+window.saveAction = async () => {
+    if(!state.regType) return alert('Selecciona tipo');
+    
+    const payload = {
+        vendedor: state.user.vendedor,
+        clienteId: state.currentClient.id,
+        tipo: state.regType,
+        monto: el('input-monto').value,
+        motivo: state.regReason,
+        observacion: el('input-obs').value
+    };
 
-            if(d.status==='success') {
-                bot.addMsg(d.data.respuesta, 'bot');
-            } else {
-                bot.addMsg("⚠️ Error al conectar con el cerebro.", 'bot');
-            }
-        } catch(e) {
-            const el = document.getElementById(loadingId);
-            if(el) el.remove();
-            bot.addMsg("Error de red. Intenta de nuevo.", 'bot');
-        }
-    },
+    toggleLoader(true);
+    try {
+        await apiCall('save_action', payload);
+        alert('Guardado correctamente');
+        closeModal();
+        loadData(); // Recargar para actualizar días
+    } catch(e) { alert('Error al guardar'); }
+    toggleLoader(false);
+};
 
-    addMsg: (html, role, id=null) => {
-        const c = document.getElementById('chat-content');
-        const d = document.createElement('div'); 
-        d.className = `msg ${role}`; 
-        if(id) d.id = id;
-        d.innerHTML = html;
-        c.appendChild(d); 
-        c.scrollTop = c.scrollHeight;
+// 5. INTELIGENCIA ARTIFICIAL (Proxy)
+window.toggleAI = (show) => {
+    el('ai-panel').classList.toggle('translate-y-full', !show);
+    if(show) setTimeout(() => el('ai-input').focus(), 300);
+};
+
+window.askAI = (txt) => {
+    el('ai-input').value = txt;
+    handleAISend();
+};
+
+window.handleAISend = async () => {
+    const txt = el('ai-input').value.trim();
+    if(!txt) return;
+
+    addMsg('user', txt);
+    el('ai-input').value = '';
+
+    // Preparar contexto ligero (Top 20 clientes relevantes o filtrados)
+    const contextLite = state.clients.slice(0, 30).map(c => ({
+        n: c.nombre, d: c.dias, est: c.estado, 
+        last: c.ultimo_pedido ? c.ultimo_pedido.substring(0, 50) : 'N/A'
+    }));
+
+    try {
+        addMsg('bot', '<i class="fas fa-circle-notch fa-spin"></i> Pensando...');
+        const res = await apiCall('chat_ai', { message: txt, context: contextLite });
+        el('chat-content').lastChild.remove(); // Quitar loader
+        addMsg('bot', res);
+    } catch(e) {
+        addMsg('bot', 'Error de conexión.');
     }
 };
 
-document.addEventListener('DOMContentLoaded', app.init);
+const addMsg = (role, html) => {
+    const div = document.createElement('div');
+    div.className = `p-4 rounded-2xl text-sm leading-relaxed max-w-[85%] animate-slide-up ${role === 'user' ? 'bg-blue-600 text-white ml-auto rounded-br-none' : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'}`;
+    div.innerHTML = html;
+    el('chat-content').appendChild(div);
+    el('chat-content').scrollTop = el('chat-content').scrollHeight;
+};
+
+// UTIL: Copiar Pedido
+window.copyOrder = (btn) => {
+    const txt = btn.parentElement.innerText.replace('COPIAR', '');
+    navigator.clipboard.writeText(txt);
+    const old = btn.innerText;
+    btn.innerText = "¡COPIADO!";
+    setTimeout(() => btn.innerText = old, 2000);
+};
+
+// API HELPER
+async function apiCall(action, payload) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action, payload })
+    });
+    const json = await res.json();
+    if (json.status !== 'success') throw new Error(json.message);
+    return json.data;
+}
+
+// Iniciar
+init();
