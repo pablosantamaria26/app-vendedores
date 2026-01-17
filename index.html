@@ -6,7 +6,7 @@
     <title>ML Vendedores Pro</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#020617">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -25,243 +25,291 @@
             --radius-md: 16px;
         }
 
+        /* RESET & BASE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
-            margin: 0; 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            height: 100vh; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
+            margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg); color: var(--text); 
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column; 
         }
 
-        /* Vistas con transiciones suaves */
+        /* VISTAS (Lógica de Navegación) */
         .view { 
-            position: absolute; 
-            inset: 0; 
-            padding: 20px; 
+            position: absolute; inset: 0; padding: 20px; 
             background: var(--bg); 
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
             transform: translateX(100%); 
-            display: flex; 
-            flex-direction: column; 
-            z-index: 10; 
-            overflow-y: auto; 
+            display: flex; flex-direction: column; 
+            z-index: 10; overflow-y: auto; 
         }
         .view.active { transform: translateX(0); z-index: 20; }
         .hidden { display: none !important; }
 
-        /* Botones Estilo Moderno */
+        /* BOTONES MODERNOS */
         .btn { 
-            border: none; padding: 18px; border-radius: var(--radius-md); 
-            font-weight: 700; cursor: pointer; display: flex; 
-            align-items: center; justify-content: center; gap: 10px; 
-            transition: all 0.2s;
+            border: none; padding: 16px; border-radius: var(--radius-md); 
+            font-weight: 700; font-size: 15px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; gap: 8px; 
+            transition: all 0.2s; width: 100%; text-transform: uppercase; letter-spacing: 0.5px;
         }
+        .btn:active { transform: scale(0.98); }
+        
         .btn-primary { 
-            background: linear-gradient(135deg, var(--primary), #1d4ed8); 
-            color: white; box-shadow: 0 4px 15px var(--primary-glow);
+            background: linear-gradient(135deg, var(--primary), #2563eb); 
+            color: white; box-shadow: 0 4px 20px var(--primary-glow); 
         }
-        .btn-primary:active { transform: scale(0.97); }
+        .btn-outline { 
+            background: transparent; border: 2px solid #334155; color: var(--text-sec); 
+        }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
 
-        /* Tarjetas de Clientes Mejoradas */
+        .btn-icon-top { 
+            width: 44px; height: 44px; background: var(--card-bg); 
+            border: 1px solid #334155; border-radius: 12px; color: var(--text-sec); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 18px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-icon-top.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* INPUTS ESTILIZADOS */
+        .inp-modern {
+            width: 100%; background: var(--card-bg); border: 1px solid #334155;
+            color: white; padding: 16px; border-radius: var(--radius-md);
+            font-size: 16px; outline: none; margin-bottom: 12px; text-align: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .inp-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
+
+        /* TARJETAS CLIENTE (Para lista generada por JS) */
         .client-card { 
-            background: var(--surface); 
-            border-radius: var(--radius-lg); 
-            margin-bottom: 16px; 
-            padding: 20px; 
-            border: 1px solid rgba(255,255,255,0.05);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: var(--card-bg); border-radius: var(--radius-lg); 
+            margin-bottom: 16px; padding: 20px; 
+            border: 1px solid rgba(255,255,255,0.05); position: relative; 
+            overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
+            transition: transform 0.2s;
         }
-        .client-card::before {
-            content: ''; position: absolute; left: 0; top: 20%; bottom: 20%; width: 4px; border-radius: 0 4px 4px 0;
-        }
+        .client-card:active { transform: scale(0.99); }
+        
+        /* Indicadores de Estado (Borde izquierdo) */
+        .client-card::before { content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 4px; border-radius: 0 4px 4px 0; }
         .client-card.critico::before { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
         .client-card.atencion::before { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
         .client-card.aldia::before { background: var(--success); box-shadow: 0 0 10px var(--success); }
         
-        .cc-id { font-family: 'JetBrains Mono'; color: var(--primary); font-size: 13px; font-weight: bold; }
-        .cc-name { font-weight: 800; font-size: 19px; display: block; margin: 4px 0; letter-spacing: -0.5px; }
-        .cc-loc { font-size: 13px; color: var(--text-sec); display: flex; align-items: center; gap: 5px; }
-        .cc-stats { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; 
-            margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-label { font-size: 10px; color: var(--text-sec); text-transform: uppercase; }
-        .stat-val { font-weight: 700; font-size: 14px; }
+        /* Elementos internos de tarjeta (usados por app.js render) */
+        .cc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .cc-icon { width: 20px; text-align: center; color: var(--primary); opacity: 0.8; }
+        .cc-name { font-weight: 800; font-size: 18px; color: var(--text); letter-spacing: -0.5px; }
+        .cc-text { font-size: 14px; color: var(--text-sec); }
+        .cc-badge { margin-left: auto; font-size: 10px; padding: 4px 8px; background: rgba(255,255,255,0.08); border-radius: 6px; text-transform: uppercase; font-weight: 700; }
 
-        /* Panel IA Reversionado */
+        /* MODO ENFOQUE */
+        .focus-container { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 10px 0; }
+        .focus-card { 
+            background: var(--card-bg); padding: 30px 20px; border-radius: 32px; 
+            text-align: center; border: 1px solid var(--primary); 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative;
+        }
+        .focus-big-val { font-size: 32px; color: var(--accent); font-weight: 800; margin: 15px 0; font-family: 'JetBrains Mono'; }
+
+        /* PANEL IA (Chat) */
         .ai-panel { 
-            position: fixed; bottom: 0; left: 0; right: 0; 
-            height: 90vh; background: #0f172a; 
-            border-radius: 32px 32px 0 0; 
-            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
-            z-index: 100; display: flex; flex-direction: column;
-            box-shadow: 0 -20px 40px rgba(0,0,0,0.6);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            position: fixed; bottom: 0; left: 0; right: 0; height: 92vh; 
+            background: #0f172a; border-radius: 32px 32px 0 0; 
+            transform: translateY(105%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            z-index: 100; display: flex; flex-direction: column; 
+            box-shadow: 0 -20px 80px rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.1); 
         }
         .ai-panel.open { transform: translateY(0); }
         
         .chat-scroll { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
         
-        .msg { padding: 16px; border-radius: 20px; margin-bottom: 16px; font-size: 15px; line-height: 1.6; max-width: 85%; }
-        .msg.bot { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.05); align-self: flex-start; }
-        .msg.user { background: var(--primary); color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 4px; }
+        .msg { padding: 16px; border-radius: 20px; margin-bottom: 16px; font-size: 15px; line-height: 1.5; max-width: 85%; position: relative; }
+        .msg.bot { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.05); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg.user { background: var(--primary); color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+
+        /* Order Card (HTML inyectado por Backend) */
+        .order-card { background: #020617; border-radius: 16px; padding: 16px; margin-top: 10px; border: 1px dashed var(--accent); }
+        .copy-btn { width: 100%; margin-top: 12px; background: #334155; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; }
         
-        /* Sugerencias Dinámicas (Chips) */
-        .chat-chips { display: flex; gap: 8px; padding: 0 20px 10px; overflow-x: auto; white-space: nowrap; }
-        .chip { background: var(--card-bg); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+        /* Chips Sugerencias */
+        .chat-chips { display: flex; gap: 8px; padding: 0 20px 15px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        .chip { background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); color: var(--text-sec); cursor: pointer; transition: 0.2s; }
+        .chip:active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Order Card - Lo que pide el vendedor para copiar */
-        .order-card { 
-            background: #020617; border-radius: 16px; padding: 20px; 
-            margin-top: 10px; border: 1px solid var(--primary); 
-            box-shadow: 0 0 20px rgba(59,130,246,0.2);
-        }
-        .order-header { border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 10px; font-weight: 800; color: var(--primary); }
-        .order-body { font-family: 'JetBrains Mono'; font-size: 13px; color: #cbd5e1; line-height: 1.4; }
-        .copy-btn { 
-            width: 100%; margin-top: 15px; background: #3b82f6; color: white; border: none; 
-            padding: 12px; border-radius: 12px; font-weight: 800; cursor: pointer;
-        }
+        .chat-input-area { padding: 15px; background: #0f172a; display: flex; gap: 10px; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); }
+        #chat-inp { flex: 1; padding: 14px 20px; border-radius: 30px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; font-size: 16px; }
 
-        .chat-input-area { 
-            padding: 20px; background: #0f172a; 
-            display: flex; gap: 10px; align-items: center; 
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        #chat-inp { 
-            flex: 1; padding: 16px 20px; border-radius: 28px; 
-            border: 1px solid #334155; background: #1e293b; color: white; outline: none; 
-        }
+        /* LOADER */
+        #loader { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s infinite linear; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Vista Zonas -->
-    <div id="view-zonas" class="view active">
-        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+    <div id="loader" class="hidden">
+        <div class="spinner"></div>
+        <p style="margin-top:20px; font-weight:700; letter-spacing:2px; font-size:12px; color:var(--text-sec);">CARGANDO...</p>
+    </div>
+
+    <div id="view-login" class="view active">
+        <div style="margin:auto; width:100%; max-width:320px; text-align:center;">
+            <div style="margin-bottom:40px;">
+                <h1 style="font-size:36px; margin:0; letter-spacing:-1px;">MERCADO<span style="color:var(--primary)">LIMPIO</span></h1>
+                <p style="color:var(--text-sec); margin:5px 0;">SISTEMA COMERCIAL PRO</p>
+            </div>
+            <input id="user" class="inp-modern" placeholder="USUARIO" autocomplete="off">
+            <input id="pass" type="tel" class="inp-modern" style="font-size:24px; letter-spacing:4px;" placeholder="••••" maxlength="4">
+            <br><br>
+            <button class="btn btn-primary" onclick="app.login()">INGRESAR <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div id="view-zonas" class="view">
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <div>
-                <span style="color:var(--text-sec); font-size:14px;">Bienvenido 👋</span>
+                <span style="color:var(--text-sec); font-size:13px; font-weight:600;">HOLA, <span id="lbl-user">CAMPEÓN</span> 👋</span>
                 <h2 style="margin:0; font-weight:800; font-size:28px;">Mis Zonas</h2>
             </div>
-            <button class="btn-icon-top" style="font-size: 24px; background:none; border:none; color:var(--primary)" onclick="bot.toggle()">🤖</button>
+            <button class="btn-icon-top" style="border-color:var(--accent); color:var(--accent); background:rgba(251, 191, 36, 0.1);" onclick="bot.toggle()">
+                🤖
+            </button>
         </header>
 
-        <div id="grid-zonas" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <!-- Dinámico -->
-        </div>
+        <div id="grid-zonas" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; padding-bottom:20px;">
+            </div>
 
-        <button class="btn btn-primary" style="margin-top:auto;" onclick="app.buildRoute()">
-            GENERAR RUTA DEL DÍA <i class="fas fa-arrow-right"></i>
-        </button>
+        <div style="margin-top:auto; padding-top:20px;">
+            <button class="btn btn-primary" onclick="app.buildRoute()">
+                GENERAR RUTA DEL DÍA <i class="fas fa-route"></i>
+            </button>
+        </div>
     </div>
 
-    <!-- Vista Ruta -->
     <div id="view-route" class="view">
-        <div style="display:flex; gap:15px; margin-bottom:20px; align-items:center;">
-            <button onclick="app.show('view-zonas')" style="background:none; border:none; color:white; font-size:20px;"><i class="fas fa-chevron-left"></i></button>
-            <h2 style="flex:1; margin:0; font-size:20px; text-align:center;">Mi Ruta</h2>
-            <div style="display:flex; background:var(--surface); padding:4px; border-radius:12px;">
-                <button id="btn-list" class="btn-icon-top" style="padding:8px 12px; border-radius:8px;" onclick="app.setMode('list')"><i class="fas fa-list"></i></button>
-                <button id="btn-focus" class="btn-icon-top" style="padding:8px 12px; border-radius:8px;" onclick="app.setMode('focus')"><i class="fas fa-bullseye"></i></button>
+        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:center;">
+            <button onclick="app.show('view-zonas')" class="btn-icon-top"><i class="fas fa-chevron-left"></i></button>
+            <h2 style="flex:1; margin:0; font-size:20px; text-align:center;">Ruta Activa</h2>
+            <div style="display:flex; background:var(--card-bg); padding:4px; border-radius:14px; border:1px solid #334155;">
+                <button id="btn-list" class="btn-icon-top" style="width:36px; height:36px; border:none;" onclick="app.setMode('list')"><i class="fas fa-list"></i></button>
+                <button id="btn-focus" class="btn-icon-top" style="width:36px; height:36px; border:none;" onclick="app.setMode('focus')"><i class="fas fa-square"></i></button>
             </div>
         </div>
 
-        <div id="route-list-container">
-            <!-- Ejemplo de como se verá una tarjeta -->
-            <div class="client-card critico">
-                <span class="cc-id">#123</span>
-                <span class="cc-name">Almacén de Don Pepe</span>
-                <span class="cc-loc"><i class="fas fa-map-marker-alt"></i> Burzaco, Buenos Aires</span>
-                <div class="cc-stats">
-                    <div class="stat-box">
-                        <span class="stat-label">Inactivo hace</span>
-                        <span class="stat-val" style="color:var(--danger)">32 días</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-label">Potencial</span>
-                        <span class="stat-val">Alto</span>
-                    </div>
-                </div>
+        <div id="route-list-container"></div>
+        <div id="route-focus-container" class="focus-container hidden"></div>
+        
+        <button onclick="bot.toggle()" style="position:fixed; bottom:20px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--accent); border:none; color:#000; font-size:24px; box-shadow:0 10px 20px rgba(0,0,0,0.3); z-index:90;">🤖</button>
+    </div>
+
+    <div id="modal-action" class="hidden" style="position:fixed; inset:0; background:rgba(2, 6, 23, 0.95); z-index:50; display:flex; align-items:flex-end; backdrop-filter:blur(5px);">
+        <div style="background:var(--surface); width:100%; padding:25px; border-radius:32px 32px 0 0; border-top:1px solid rgba(255,255,255,0.1); box-shadow:0 -10px 40px rgba(0,0,0,0.5);">
+            <div style="width:40px; height:4px; background:#334155; margin:0 auto 20px; border-radius:2px;"></div>
+            
+            <h3 style="margin:0 0 20px; color:var(--text);">Registrar Visita</h3>
+            
+            <div style="display:flex; gap:12px; margin-bottom:20px;">
+                <button id="btn-no" class="btn btn-outline" style="flex:1" onclick="app.setRegType('no')">NO VENTA</button>
+                <button id="btn-si" class="btn btn-primary" style="flex:1" onclick="app.setRegType('si')">VENTA $$</button>
             </div>
+            
+            <div id="panel-venta" class="hidden">
+                <input id="inp-monto" type="number" class="inp-modern" placeholder="$ MONTO TOTAL" style="font-size:20px; font-weight:bold;">
+            </div>
+            
+            <div id="panel-no" class="hidden" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                <button class="btn btn-outline" style="padding:12px;" onclick="app.setReason(this, 'Stock')">📦 Tiene Stock</button>
+                <button class="btn btn-outline" style="padding:12px;" onclick="app.setReason(this, 'Dinero')">💸 No tiene $$</button>
+                <button class="btn btn-outline" style="padding:12px;" onclick="app.setReason(this, 'Cerrado')">🔒 Cerrado</button>
+                <button class="btn btn-outline" style="padding:12px;" onclick="app.setReason(this, 'Precio')">💰 Muy Caro</button>
+            </div>
+            
+            <textarea id="obs" class="inp-modern" rows="2" placeholder="Observaciones..." style="text-align:left; resize:none;"></textarea>
+            
+            <button class="btn btn-primary" onclick="app.submit()">GUARDAR REGISTRO</button>
         </div>
     </div>
 
-    <!-- Panel de IA "Mercado Limpio" -->
     <div id="ai-panel" class="ai-panel">
         <div style="width:40px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:12px auto; flex-shrink:0;"></div>
         
-        <div style="padding:0 20px 20px; display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; font-weight:800; color:var(--primary)">Asistente IA</h3>
-            <button onclick="bot.toggle()" style="background:var(--card-bg); border:none; color:white; width:32px; height:32px; border-radius:50%; flex-shrink:0;">×</button>
+        <div style="padding:0 20px 15px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:10px; height:10px; background:var(--success); border-radius:50%; box-shadow:0 0 10px var(--success);"></div>
+                <h3 style="margin:0; font-weight:800; color:var(--text);">Mercado Limpio IA</h3>
+            </div>
+            <button onclick="bot.toggle()" style="background:rgba(255,255,255,0.1); border:none; color:white; width:30px; height:30px; border-radius:50%; font-size:18px;">×</button>
         </div>
 
         <div id="chat-content" class="chat-scroll">
             <div class="msg bot">
-                ¡Hola! Soy tu asistente de Mercado Limpio. ¿A qué cliente vamos a recuperar hoy?
+                👋 Hola! Soy tu copiloto. ¿A qué clientes recuperamos hoy?
             </div>
         </div>
 
         <div class="chat-chips">
-            <div class="chip" onclick="bot.quickMsg('¿Cuáles son mis clientes críticos?')">⚠️ Críticos</div>
-            <div class="chip" onclick="bot.quickMsg('Dame la ruta de hoy por localidad')">📍 Ruta óptima</div>
-            <div class="chip" onclick="bot.quickMsg('¿A quién no le vendo hace un mes?')">⏱️ > 30 días</div>
+            <div class="chip" onclick="bot.quickMsg('¿Cuáles son mis críticos?')">⚠️ Críticos hoy</div>
+            <div class="chip" onclick="bot.quickMsg('Dame la ruta de [Localidad]')">📍 Armar Ruta</div>
+            <div class="chip" onclick="bot.quickMsg('¿Qué le ofrezco al cliente?')">💰 Estrategia</div>
         </div>
 
         <div class="chat-input-area">
-            <input id="chat-inp" placeholder="Pregúntame lo que quieras...">
-            <button onclick="bot.send()" style="background:var(--primary); color:white; border:none; width:48px; height:48px; border-radius:50%; font-size:18px;">
+            <input id="chat-inp" placeholder="Escribí o usá el micrófono..." autocomplete="off">
+            <button onclick="bot.send()" style="background:var(--primary); color:white; border:none; width:50px; height:50px; border-radius:50%; font-size:18px; box-shadow:0 4px 15px var(--primary-glow);">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </div>
 
-    <!-- (Se mantienen los otros modales de registro de la misma forma pero aplicando los estilos de .btn y .view) -->
-
+    <script src="app.js"></script>
     <script>
-        // Objeto Bot para manejar la UI dinámicamente
+        // Lógica de UI extra para el Bot (complementa app.js)
         const bot = {
             isOpen: false,
             toggle() {
                 this.isOpen = !this.isOpen;
                 document.getElementById('ai-panel').classList.toggle('open', this.isOpen);
+                if(this.isOpen) document.getElementById('chat-inp').focus();
             },
             send() {
                 const inp = document.getElementById('chat-inp');
                 if (!inp.value.trim()) return;
-                this.addMsg(inp.value, 'user');
-                // Aquí llamarías a la función apiAsistenteChat de tu app.js
-                console.log("Enviando a IA:", inp.value);
-                inp.value = '';
+                // app.js debe tener un listener o podemos llamar a bot.send del app.js si es global
+                // Para asegurar compatibilidad, inyectamos al DOM del chat user visualmente y dejamos que app.js maneje la lógica si está escuchando
+                // PERO, como app.js define 'const bot', vamos a asumir que este objeto extiende o se mezcla.
+                // MEJOR ESTRATEGIA: Dejar que app.js maneje el envio real. Aquí solo UI triggers.
+                
+                // Disparamos evento ENTER simulado para que app.js lo capture
+                const event = new KeyboardEvent('keydown', { key: 'Enter' });
+                inp.dispatchEvent(event);
             },
             quickMsg(txt) {
-                document.getElementById('chat-inp').value = txt;
-                this.send();
-            },
-            addMsg(text, role) {
-                const container = document.getElementById('chat-content');
-                const div = document.createElement('div');
-                div.className = `msg ${role}`;
-                div.innerHTML = text; // Permite HTML para las order-cards
-                container.appendChild(div);
-                container.scrollTop = container.scrollHeight;
+                const inp = document.getElementById('chat-inp');
+                inp.value = txt;
+                // Simular envío
+                // Accedemos al objeto bot definido en app.js si es global, si no, usamos el truco del evento
+                // Dado que app.js se carga después, sobreescribirá este objeto 'bot'. 
+                // Así que usamos un truco:
+                if(window.bot && window.bot.send) { // Si app.js ya cargó
+                    window.bot.send(); 
+                } else {
+                    alert("Espera a que cargue la App...");
+                }
             }
         };
 
         function copyOrder(btn) {
-            const text = btn.parentElement.querySelector('.order-body').innerText;
+            // Copia el texto del pedido (hermano anterior al botón)
+            const text = btn.previousElementSibling.innerText || btn.parentElement.innerText;
             navigator.clipboard.writeText(text);
-            const oldText = btn.innerText;
-            btn.innerText = "¡COPIADO!";
+            const originalText = btn.innerText;
+            btn.innerText = "¡COPIADO! ✅";
             btn.style.background = "#10b981";
             setTimeout(() => {
-                btn.innerText = oldText;
-                btn.style.background = "#3b82f6";
+                btn.innerText = originalText;
+                btn.style.background = "#334155";
             }, 2000);
         }
     </script>
