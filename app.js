@@ -74,7 +74,6 @@ const app = {
         const g = document.getElementById('grid-zonas'); g.innerHTML='';
         Object.keys(zones).sort().forEach(z => {
             const d = document.createElement('div'); 
-            // Estilo de tarjeta de zona
             d.className='client-card'; 
             d.style.textAlign='center';
             d.style.cursor='pointer';
@@ -99,9 +98,7 @@ const app = {
         });
     },
 
-    // MODIFICACIÓN EN app.js:
-
-    // 1. Reemplaza buildRoute para que sea inteligente
+    // 1. RUTAS INTELIGENTES
     buildRoute: () => {
         // Si ya hay zonas seleccionadas manualmente, úsalas
         if(state.selectedZones.size > 0) {
@@ -114,7 +111,6 @@ const app = {
         }
     },
 
-    // 2. Agrega esta nueva función
     getSmartRoutes: async () => {
         app.loader(true);
         try {
@@ -133,19 +129,18 @@ const app = {
         app.loader(false);
     },
 
-    // 3. Modal visual para elegir ruta
     showRouteSelectionModal: (opciones) => {
         const modal = document.createElement('div');
-        modal.style = "position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:200; display:flex; flex-direction:column; justify-content:center; padding:20px;";
+        modal.style = "position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:200; display:flex; flex-direction:column; justify-content:center; padding:20px; backdrop-filter:blur(5px);";
         
-        let html = '<h2 style="color:white; text-align:center;">📅 Rutas Sugeridas</h2>';
+        let html = '<h2 style="color:white; text-align:center; margin-bottom:20px;">📅 Rutas Sugeridas</h2>';
         
         opciones.forEach((op, idx) => {
             html += `
             <div onclick="app.loadSuggestedRoute('${op.zonas.join(',')}')" 
-                 style="background:#1e293b; padding:20px; border-radius:16px; margin-bottom:15px; border:1px solid #3b82f6; cursor:pointer;">
-                <h3 style="margin:0; color:#3b82f6;">OPCIÓN ${idx+1}: ${op.titulo}</h3>
-                <p style="color:#94a3b8; margin:5px 0;">${op.descripcion}</p>
+                 style="background:#1e293b; padding:20px; border-radius:16px; margin-bottom:15px; border:1px solid #3b82f6; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <h3 style="margin:0; color:#3b82f6; font-size:18px;">OPCIÓN ${idx+1}: ${op.titulo}</h3>
+                <p style="color:#94a3b8; margin:5px 0; font-size:14px;">${op.descripcion}</p>
             </div>`;
         });
         
@@ -153,13 +148,10 @@ const app = {
         modal.innerHTML = html;
         document.body.appendChild(modal);
         
-        // Helper global para este modal temporal
         window.app.loadSuggestedRoute = (zonasStr) => {
             const zonas = zonasStr.split(',');
             state.selectedZones = new Set(zonas);
-            // Marcar visualmente en grid
             app.renderZones(); 
-            // Construir ruta
             state.route = state.clients.filter(c => state.selectedZones.has(c._zonaNorm) && !state.visitedIds.has(c.id));
             app.renderRoute();
             app.show('view-route');
@@ -167,12 +159,34 @@ const app = {
         };
     },
 
-        // RENDER MODO ENFOQUE (Una sola tarjeta grande)
+    renderRoute: () => {
+        const active = state.route.filter(c => !state.visitedIds.has(c.id));
+        const listCtn = document.getElementById('route-list-container');
+        listCtn.innerHTML = active.length===0 ? '<div style="text-align:center; padding:40px; color:#94a3b8;">🎉 ¡Ruta completada!</div>' : '';
+        
+        active.forEach(c => {
+            const eta = app.calcETA(c.lat, c.lng);
+            const d = document.createElement('div'); 
+            d.className = `client-card ${c.estado}`; 
+            d.innerHTML = `
+                <span class="cc-id">#${c.id}</span>
+                <span class="cc-name">${c.nombre}</span>
+                <span class="cc-loc"><i class="fas fa-map-marker-alt"></i> ${c.direccion || 'Sin dirección'}</span>
+                <div class="cc-stats">
+                    <div class="stat-box"><span class="stat-label">Estado</span><span class="stat-val" style="color:${c.estado==='critico'?'var(--danger)':'var(--success)'}">${c.estado.toUpperCase()}</span></div>
+                    <div class="stat-box"><span class="stat-label">Distancia</span><span class="stat-val">${eta.km} km</span></div>
+                </div>
+            `;
+            d.onclick = () => { state.currentClient = c; app.openModal(); };
+            listCtn.appendChild(d);
+        });
+
+        // RENDER MODO ENFOQUE
         const focusCtn = document.getElementById('route-focus-container');
         if(active.length > 0) {
             const c = active[0];
             const eta = app.calcETA(c.lat, c.lng);
-            // Enlace real a Google Maps Navegación
+            // Enlace corregido a Google Maps Navegación
             const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}`;
             
             focusCtn.innerHTML = `
@@ -180,18 +194,12 @@ const app = {
                     <small style="color:var(--text-sec); letter-spacing:2px; font-weight:bold;">PRÓXIMO DESTINO</small>
                     <h1 style="margin:10px 0; font-size:28px;">${c.nombre}</h1>
                     <p style="color:#cbd5e1;"><i class="fas fa-map-pin"></i> ${c.direccion}</p>
-                    
                     <div class="focus-big-val">${eta.min} MIN</div>
                     <small style="color:var(--text-sec);">DISTANCIA: ${eta.km} KM</small>
-                    
                     <br><br>
-                    <button class="btn btn-primary" onclick="state.currentClient=state.route.find(x=>x.id=='${c.id}'); app.openModal()">
-                        REGISTRAR VISITA
-                    </button>
+                    <button class="btn btn-primary" onclick="state.currentClient=state.route.find(x=>x.id=='${c.id}'); app.openModal()">REGISTRAR VISITA</button>
                     <br>
-                    <a href="${mapsLink}" target="_blank" class="btn btn-outline" style="text-decoration:none;">
-                        <i class="fas fa-location-arrow"></i> IR CON GPS
-                    </a>
+                    <a href="${mapsLink}" target="_blank" class="btn btn-outline" style="text-decoration:none;"><i class="fas fa-location-arrow"></i> IR CON GPS</a>
                 </div>
             `;
         } else { focusCtn.innerHTML='<h2 style="text-align:center">¡FIN DEL RECORRIDO!</h2>'; }
@@ -204,10 +212,8 @@ const app = {
     
     setRegType: (t) => {
         state.regType = t;
-        // Ajuste de clases para botones modernos
         document.getElementById('btn-si').className = t==='si'?'btn btn-success':'btn btn-outline';
         document.getElementById('btn-no').className = t==='no'?'btn btn-danger':'btn btn-outline';
-        
         document.getElementById('panel-venta').classList.toggle('hidden', t!=='si');
         document.getElementById('panel-no').classList.toggle('hidden', t!=='no');
     },
@@ -218,7 +224,7 @@ const app = {
             b.className = 'btn btn-outline';
             b.style.borderColor = '#334155';
         });
-        el.className = 'btn btn-primary'; // Marca selección
+        el.className = 'btn btn-primary'; 
     },
 
     submit: async () => {
@@ -227,7 +233,7 @@ const app = {
         app.loader(true);
         document.getElementById('modal-action').classList.add('hidden');
         state.visitedIds.add(state.currentClient.id);
-        app.renderRoute(); // Actualización optimista
+        app.renderRoute(); 
         
         const obs = document.getElementById('obs').value || '';
         const monto = document.getElementById('inp-monto').value || 0;
@@ -248,15 +254,12 @@ const app = {
                     }
                 })
             });
-            // Limpieza
             document.getElementById('obs').value = '';
             document.getElementById('inp-monto').value = '';
         } catch(e) { console.error(e); }
-        
         app.loader(false);
     },
 
-    // UTILS
     setMode: (m) => {
         state.viewMode = m;
         document.getElementById('btn-list').className = m==='list'?'btn-icon-top active':'btn-icon-top';
@@ -269,14 +272,13 @@ const app = {
         if(!lat2 || !state.coords) return {km:'--', min:'--'};
         const [lat1, lon1] = state.coords.split(',').map(Number);
         if(!lat1 || !lon1) return {km:'--', min:'--'};
-        
         const R = 6371; 
         const dLat = (lat2-lat1)*Math.PI/180;
         const dLon = (lon2-lon1)*Math.PI/180;
         const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)*Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         const km = (R * c).toFixed(1);
-        const min = Math.ceil(km * 4); // Ajustado a tráfico urbano real (4 min por km)
+        const min = Math.ceil(km * 4); 
         return {km, min};
     },
     
@@ -287,7 +289,6 @@ const app = {
     loader: (s) => document.getElementById('loader').classList.toggle('hidden', !s)
 };
 
-// LÓGICA DEL BOT (Sincronizada con el HTML)
 const bot = {
     toggle: () => {
         const p = document.getElementById('ai-panel');
@@ -298,7 +299,6 @@ const bot = {
     },
     
     checkEvents: async () => {
-        // Busca estrategia del día al inicio
         try {
             const r = await fetch(WORKER, {method:'POST', body:JSON.stringify({
                 action:'check_events', 
@@ -307,7 +307,7 @@ const bot = {
             const d = await r.json();
             if(d.status==='success' && d.data.hayEvento) {
                 bot.addMsg(d.data.evento.msg, 'bot');
-                bot.toggle(); // Abrir bot automáticamente si hay estrategia
+                bot.toggle(); 
             }
         } catch(e){}
     },
@@ -326,7 +326,6 @@ const bot = {
         bot.addMsg(txt, 'user'); 
         inp.value='';
         
-        // Loader simulado en chat
         const loadingId = 'loading-' + Date.now();
         bot.addMsg('<i class="fas fa-circle-notch fa-spin"></i> Pensando...', 'bot', loadingId);
 
@@ -340,7 +339,6 @@ const bot = {
             })});
             const d = await r.json();
             
-            // Borrar loader
             const el = document.getElementById(loadingId);
             if(el) el.remove();
 
