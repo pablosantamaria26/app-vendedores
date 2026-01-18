@@ -291,16 +291,92 @@ window.handleAISend = async () => {
 };
 
 const addMsg = (role, txt) => {
+  const chat = el('chat-content');
   const div = document.createElement('div');
-  div.className = `p-4 rounded-2xl text-sm leading-relaxed max-w-[85%] ${
-    role === 'user'
+
+  const isUser = role === 'user';
+  div.className = `p-4 rounded-2xl text-sm leading-relaxed max-w-[85%] chat-bubble ${
+    isUser
       ? 'bg-blue-600 text-white ml-auto rounded-br-none'
       : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'
   }`;
-  div.innerText = String(txt || '');
-  el('chat-content').appendChild(div);
-  el('chat-content').scrollTop = el('chat-content').scrollHeight;
+
+  const text = String(txt || '');
+
+  // Texto principal
+  const p = document.createElement('div');
+  p.innerText = text;
+  div.appendChild(p);
+
+  // Solo para BOT: herramientas (copiar)
+  if (!isUser) {
+    const tools = document.createElement('div');
+    tools.className = 'chat-tools';
+
+    const btnCopy = document.createElement('button');
+    btnCopy.className = 'mini-btn primary';
+    btnCopy.innerText = 'COPIAR';
+    btnCopy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        window.ML_toast?.('Copiado');
+      } catch (e) {
+        alert('No se pudo copiar. Tu navegador bloqueó el portapapeles.');
+      }
+    };
+    tools.appendChild(btnCopy);
+
+    // “COPIAR PEDIDO” (heurística simple)
+    // Si la IA armó una lista de cosas a llevar / pedido / items, lo tratamos como pedido.
+    const looksLikePedido =
+      /(\*LLEVAR\*|\bLLEVAR\b|pedido|items|lista|unidades|bultos|producto)/i.test(text) ||
+      (text.split('\n').filter(l => l.trim().startsWith('- ')).length >= 3);
+
+    if (looksLikePedido) {
+      const btnCopyPedido = document.createElement('button');
+      btnCopyPedido.className = 'mini-btn ok';
+      btnCopyPedido.innerText = 'COPIAR PEDIDO';
+      btnCopyPedido.onclick = async () => {
+        // Copia solo líneas tipo lista si existen; sino copia todo
+        const lines = text.split('\n');
+        const bullets = lines.filter(l => l.trim().startsWith('- '));
+        const payload = bullets.length ? bullets.join('\n') : text;
+
+        try {
+          await navigator.clipboard.writeText(payload);
+          window.ML_toast?.('Pedido copiado');
+        } catch (e) {
+          alert('No se pudo copiar. Tu navegador bloqueó el portapapeles.');
+        }
+      };
+      tools.appendChild(btnCopyPedido);
+    }
+
+    div.appendChild(tools);
+
+    // Guardar último bot para botón “copiar último”
+    window.__ML_LAST_BOT__ = text;
+  }
+
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+
+  // Botón header “copiar último”
+  const btnHeaderCopy = document.getElementById('btn-copy-last');
+  if (btnHeaderCopy) {
+    btnHeaderCopy.onclick = async () => {
+      const last = window.__ML_LAST_BOT__ || '';
+      if (!last) return window.ML_toast?.('Nada para copiar');
+      try {
+        await navigator.clipboard.writeText(last);
+        window.ML_toast?.('Copiado');
+      } catch (e) {
+        alert('No se pudo copiar. Tu navegador bloqueó el portapapeles.');
+      }
+    };
+  }
 };
+
 
 // ==========================================
 // FETCH CENTRALIZADO AL WORKER
