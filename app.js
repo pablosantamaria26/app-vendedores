@@ -501,3 +501,40 @@ async function apiCall(action, payload) {
   if (json.status !== 'success') throw new Error(json.message);
   return json.data;
 }
+// --- GEOLOCALIZACIÓN Y DISTANCIA ---
+function initGeo() {
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        // Si ya hay lista renderizada, actualizar distancias
+        if(state.route.activeClients.length > 0) renderRouteList();
+      },
+      (err) => console.warn('Geo error:', err),
+      { enableHighAccuracy: true }
+    );
+  }
+}
+
+// Fórmula de Haversine para distancia en KM
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  if(!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371; // Radio tierra km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distancia en km
+}
+
+function getTravelTime(km) {
+  if (!km) return '';
+  const speed = 25; // Velocidad promedio en ciudad (km/h)
+  const hours = km / speed;
+  const mins = Math.round(hours * 60);
+  return mins > 60 
+    ? `${Math.floor(mins/60)}h ${mins%60}m` 
+    : `${mins} min`;
+}
