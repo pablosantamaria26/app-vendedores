@@ -1,124 +1,264 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ML Logística</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* BASE DARK THEME */
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; overflow: hidden; height: 100vh; }
-        
-        /* VISTAS */
-        .view { position: absolute; inset: 0; display: none; flex-direction: column; background: #0f172a; opacity: 0; transition: opacity 0.3s; }
-        .view.active { display: flex; opacity: 1; z-index: 10; }
-        
-        /* TARJETAS CLIENTE */
-        .client-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; position: relative; overflow: hidden; transition: transform 0.1s; }
-        .client-card:active { transform: scale(0.98); background: #334155; }
-        
-        /* SCROLL */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* ANIMACIONES */
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ML Logística</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    /* BASE DARK THEME */
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    /* VISTAS */
+    .view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      background: #0f172a;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .view.active { display: flex; opacity: 1; z-index: 10; }
+
+    /* TARJETAS CLIENTE */
+    .client-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.1s;
+    }
+    .client-card:active { transform: scale(0.98); background: #334155; }
+
+    /* SCROLL */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+
+    /* ANIMACIONES */
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+    /* CHAT */
+    .chat-bubble { white-space: pre-wrap; }
+    .chat-tools { display: flex; gap: 8px; margin-top: 10px; }
+    .mini-btn {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.65);
+      color: #e2e8f0;
+    }
+    .mini-btn:active { transform: scale(0.97); }
+    .mini-btn.primary { border-color: rgba(37, 99, 235, 0.6); color: #bfdbfe; }
+    .mini-btn.ok { border-color: rgba(16, 185, 129, 0.55); color: #a7f3d0; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 9999;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(2, 6, 23, 0.92);
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #toast.show { opacity: 1; }
+  </style>
 </head>
+
 <body>
 
-    <div id="loader" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center hidden">
-        <div class="w-12 h-12 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-        <p class="text-xs font-bold tracking-widest text-slate-500 uppercase">Conectando...</p>
+  <!-- Toast -->
+  <div id="toast">Copiado</div>
+
+  <!-- Loader -->
+  <div id="loader" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center hidden">
+    <div class="w-12 h-12 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+    <p class="text-xs font-bold tracking-widest text-slate-500 uppercase">Conectando...</p>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="view-login" class="view active items-center justify-center p-6">
+    <div class="w-full max-w-sm text-center">
+      <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">
+        MERCADO<span class="text-blue-500">LIMPIO</span>
+      </h1>
+      <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-10">Logística & Ventas</p>
+
+      <div class="space-y-4">
+        <input id="login-user" type="text" placeholder="USUARIO"
+          class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center text-white placeholder-slate-600 focus:border-blue-500 outline-none uppercase font-bold transition-all" />
+        <input id="login-pass" type="tel" placeholder="PIN" maxlength="6"
+          class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center text-white placeholder-slate-600 focus:border-blue-500 outline-none font-bold tracking-[5px] transition-all" />
+        <button id="btn-login"
+          class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+          INGRESAR
+        </button>
+
+        <p class="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-6">
+          Tip: buscá por nombre, localidad o #ID
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="view-main" class="view">
+    <header class="p-4 flex justify-between items-center bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20">
+      <div>
+        <p id="lbl-saludo" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bienvenido</p>
+        <h2 class="text-xl font-bold text-white">Mi Ruta</h2>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Logout para pruebas -->
+        <button id="btn-logout" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center shadow-lg active:scale-90" title="Salir">
+          <i class="fas fa-arrow-right-from-bracket"></i>
+        </button>
+
+        <button onclick="toggleAI(true)" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-blue-400 flex items-center justify-center shadow-lg active:scale-90" title="Abrir IA">
+          <i class="fas fa-robot"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-24">
+      <div class="sticky top-0 z-10">
+        <div class="relative">
+          <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input id="search-input" type="text" placeholder="Buscar cliente, zona, ID..."
+            class="w-full bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white focus:border-blue-500 outline-none shadow-xl" />
+        </div>
+      </div>
+
+      <div id="client-list" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- MODAL ACTION -->
+  <div id="modal-action" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden flex items-end">
+    <div class="w-full bg-slate-950 rounded-t-[32px] p-6 border-t border-slate-800 animate-slide-up shadow-2xl">
+      <div class="w-12 h-1.5 bg-slate-800 mx-auto rounded-full mb-6"></div>
+
+      <div class="mb-6">
+        <p class="text-xs text-slate-500 font-bold uppercase">Cliente seleccionado</p>
+        <h3 id="modal-client-name" class="text-xl font-extrabold text-white truncate">Nombre Cliente</h3>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <button onclick="setRegType('visita')" id="btn-type-visita"
+          class="p-4 rounded-2xl border border-slate-800 bg-slate-900 font-bold text-slate-400">
+          NO PEDIDO
+        </button>
+        <button onclick="setRegType('pedido')" id="btn-type-pedido"
+          class="p-4 rounded-2xl border border-slate-800 bg-slate-900 font-bold text-slate-400">
+          TOME PEDIDO
+        </button>
+      </div>
+
+      <div id="panel-visita" class="hidden mb-6">
+        <p class="text-xs text-slate-500 mb-2 font-bold uppercase">Motivo</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="setReason('Stock')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">📦 Tiene Stock</button>
+          <button onclick="setReason('Dinero')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">💸 Sin Plata</button>
+          <button onclick="setReason('Cerrado')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">🔒 Cerrado</button>
+          <button onclick="setReason('Precio')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">💰 Muy Caro</button>
+        </div>
+      </div>
+
+      <textarea id="input-obs" placeholder="Observaciones del pedido o visita..."
+        class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 h-24 text-white text-sm focus:border-blue-500 outline-none resize-none"></textarea>
+
+      <div class="flex gap-3">
+        <button onclick="closeModal()" class="flex-1 p-4 rounded-2xl bg-slate-900 text-slate-400 font-bold border border-slate-800">
+          CANCELAR
+        </button>
+        <button onclick="saveAction()" class="flex-[2] p-4 rounded-2xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-transform">
+          GUARDAR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IA PANEL -->
+  <div id="ai-panel" class="fixed inset-0 z-[60] bg-slate-950 translate-y-full transition-transform duration-300 flex flex-col">
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+      <div class="flex flex-col">
+        <h3 class="font-extrabold text-white ml-2">Asistente IA</h3>
+        <p class="text-[10px] font-bold text-slate-400 uppercase ml-2 tracking-wider">Plan diario • Recomendaciones • Productos</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Copiar último mensaje del bot -->
+        <button id="btn-copy-last"
+          class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-emerald-300 flex items-center justify-center active:scale-90"
+          title="Copiar último mensaje del bot">
+          <i class="fas fa-copy"></i>
+        </button>
+
+        <button onclick="toggleAI(false)" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center active:scale-90" title="Cerrar">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
 
-    <div id="view-login" class="view active items-center justify-center p-6">
-        <div class="w-full max-w-sm text-center">
-            <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
-            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-10">Logística & Ventas</p>
-            
-            <div class="space-y-4">
-                <input id="login-user" type="text" placeholder="USUARIO" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center text-white placeholder-slate-600 focus:border-blue-500 outline-none uppercase font-bold transition-all">
-                <input id="login-pass" type="tel" placeholder="PIN" maxlength="4" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center text-white placeholder-slate-600 focus:border-blue-500 outline-none font-bold tracking-[5px] transition-all">
-                <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-900/20 active:scale-95 transition-all">INGRESAR</button>
-            </div>
-        </div>
+    <div id="chat-content" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar"></div>
+
+    <div class="p-4 bg-slate-900 border-t border-slate-800 flex gap-2">
+      <input id="ai-input" type="text" placeholder="Pregunta algo..."
+        class="flex-1 bg-slate-800 border border-slate-700 rounded-full px-5 py-3 text-white focus:outline-none focus:border-blue-500" />
+      <button onclick="handleAISend()" class="w-12 h-12 bg-blue-600 rounded-full text-white shadow-lg active:scale-95 transition-transform">
+        <i class="fas fa-paper-plane"></i>
+      </button>
     </div>
+  </div>
 
-    <div id="view-main" class="view">
-        <header class="p-4 flex justify-between items-center bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20">
-            <div>
-                <p id="lbl-saludo" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bienvenido</p>
-                <h2 class="text-xl font-bold text-white">Mi Ruta</h2>
-            </div>
-            <button onclick="toggleAI(true)" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 text-blue-400 flex items-center justify-center shadow-lg active:scale-90">
-                <i class="fas fa-robot"></i>
-            </button>
-        </header>
+  <!-- Scripts -->
+  <script src="app.js"></script>
 
-        <div class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-24">
-            <div class="sticky top-0 z-10">
-                <div class="relative">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                    <input id="search-input" type="text" placeholder="Buscar cliente, zona, ID..." class="w-full bg-slate-800/90 backdrop-blur border border-slate-700 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white focus:border-blue-500 outline-none shadow-xl">
-                </div>
-            </div>
+  <!-- Helpers UI mínimos, no pisa tu app.js -->
+  <script>
+    // Toast simple
+    window.ML_toast = function (txt) {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.textContent = txt || 'Listo';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1200);
+    };
 
-            <div id="client-list" class="space-y-3"></div>
-        </div>
-    </div>
-
-    <div id="modal-action" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden flex items-end">
-        <div class="w-full bg-slate-950 rounded-t-[32px] p-6 border-t border-slate-800 animate-slide-up shadow-2xl">
-            <div class="w-12 h-1.5 bg-slate-800 mx-auto rounded-full mb-6"></div>
-            
-            <div class="mb-6">
-                <p class="text-xs text-slate-500 font-bold uppercase">Cliente seleccionado</p>
-                <h3 id="modal-client-name" class="text-xl font-extrabold text-white truncate">Nombre Cliente</h3>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-6">
-                <button onclick="setRegType('visita')" id="btn-type-visita" class="p-4 rounded-2xl border border-slate-800 bg-slate-900 font-bold text-slate-400">
-                    NO PEDIDO
-                </button>
-                <button onclick="setRegType('pedido')" id="btn-type-pedido" class="p-4 rounded-2xl border border-slate-800 bg-slate-900 font-bold text-slate-400">
-                    TOME PEDIDO
-                </button>
-            </div>
-
-            <div id="panel-visita" class="hidden mb-6">
-                <p class="text-xs text-slate-500 mb-2 font-bold uppercase">Motivo</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="setReason('Stock')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">📦 Tiene Stock</button>
-                    <button onclick="setReason('Dinero')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">💸 Sin Plata</button>
-                    <button onclick="setReason('Cerrado')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">🔒 Cerrado</button>
-                    <button onclick="setReason('Precio')" class="reason-btn p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300">💰 Muy Caro</button>
-                </div>
-            </div>
-
-            <textarea id="input-obs" placeholder="Observaciones del pedido o visita..." class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 h-24 text-white text-sm focus:border-blue-500 outline-none resize-none"></textarea>
-
-            <div class="flex gap-3">
-                <button onclick="closeModal()" class="flex-1 p-4 rounded-2xl bg-slate-900 text-slate-400 font-bold border border-slate-800">CANCELAR</button>
-                <button onclick="saveAction()" class="flex-[2] p-4 rounded-2xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/20 active:scale-95 transition-transform">GUARDAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="ai-panel" class="fixed inset-0 z-[60] bg-slate-950 translate-y-full transition-transform duration-300 flex flex-col">
-        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-            <h3 class="font-bold text-white ml-2">Asistente IA</h3>
-            <button onclick="toggleAI(false)" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400"><i class="fas fa-times"></i></button>
-        </div>
-        <div id="chat-content" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
-        <div class="p-4 bg-slate-900 border-t border-slate-800 flex gap-2">
-            <input id="ai-input" type="text" placeholder="Pregunta algo..." class="flex-1 bg-slate-800 border border-slate-700 rounded-full px-5 py-3 text-white focus:outline-none focus:border-blue-500">
-            <button onclick="handleAISend()" class="w-12 h-12 bg-blue-600 rounded-full text-white shadow-lg"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+    // Logout
+    document.addEventListener('DOMContentLoaded', () => {
+      const b = document.getElementById('btn-logout');
+      if (b) {
+        b.onclick = () => {
+          localStorage.removeItem('ml_user');
+          location.reload();
+        };
+      }
+    });
+  </script>
 </body>
 </html>
