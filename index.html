@@ -1,612 +1,274 @@
-// ==========================================
-// BACKEND MERCADO LIMPIO - VERSIÓN DEFINITIVA (INTEGRAL)
-// ==========================================
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mercado Limpio Smart Pro</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons (Pro Icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-// ===== CONFIGURACIÓN CENTRAL =====
-const ID_MATRIZ = '1ZwO_E94WfhKOgRO99fqW_-bM6WyVhvYNCvjfUb33JWI'; // Tu ID real
-const TZ = 'America/Argentina/Buenos_Aires';
-const GEMINI_API_KEY = PropertiesService.getScriptProperties().getProperty('GEMINI_KEY');
-const IA_MODEL_NAME = 'models/gemini-2.5-flash'; 
-const IA_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+    <style>
+        :root { --font-main: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: var(--font-main); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+        
+        /* Utils */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .animate-pulse-ring { animation: pulse-ring 2s infinite; }
 
-const SH = {
-  CLIENTES: 'BaseClientes',
-  FORM: 'Respuestas de formulario 1',
-  BITACORA: 'Bitacora',
-  CHATLOG: 'IA_ChatLog',
-  FACTS: 'IA_Facts',
-  PROFILE: 'IA_Profile',
-  PATRON: 'IA_PatronZonas'
-};
-
-// ==========================================
-// 1️⃣ ROUTER & ENTRY POINT
-// ==========================================
-
-function doPost(e) {
-  try {
-    const req = JSON.parse(e.postData.contents);
-    const data = router(req);
-    return response_({ status: 'success', data });
-  } catch (err) {
-    return response_({ status: 'error', message: err.toString() });
+        /* Transitions */
+        .view-section {
+            display: none; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .view-section.active {
+            display: flex; opacity: 1;
+        }
+        
+        /* Progress Ring */
+        .progress-circle { transition: stroke-dashoffset 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
   }
 }
-
-function response_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function router(req) {
-  // Estandarizar acción
-  const action = String(req.action || '').trim();
-  const p = req.payload;
-
-  switch (action) {
-    // --- AUTENTICACIÓN ---
-    case 'login': 
-      return apiLogin(p);
-
-    // --- CARGA INICIAL INTELIGENTE (RECOMENDADO PARA APP) ---
-    // Carga clientes, zonas y sugerencia IA en una sola llamada rápida
-    case 'get_app_data': 
-      return apiGetAppDataCompleta(p);
-
-    // --- CLIENTES Y ZONAS (TUS NUEVOS PEDIDOS) ---
-    case 'get_clientes': 
-      return apiGetClientes(p); // Versión optimizada
-
-    case 'get_zonas': 
-      return apiGetZonas(p); // ✅ NUEVO: Agrupa por localidad normalizada
-
-    case 'get_clientes_por_zonas': 
-      return apiGetClientesPorZonas(p); // ✅ NUEVO: Filtra por selección
-
-    case 'get_cliente': 
-      return apiGetCliente(p);
-
-    case 'registrar_movimiento': 
-      return apiRegistrar(p);
-
-    // --- IA / GEMINI / SECRETARIO ---
-    case 'chatbot':
-    case 'chat_bot': // Soporte para ambos nombres
-      return api_chatBot(p);
-
-    case 'guia_del_dia':
-      return api_getGuiaDelDia(p);
-
-    // --- MANTENIMIENTO ---
-    case 'ping':
-      return { ok: true, ts: new Date().toISOString() };
-
-    default:
-      throw new Error('Acción desconocida: ' + action);
-  }
-}
-
-// ==========================================
-// 2️⃣ CORE: OPTIMIZACIÓN DE VELOCIDAD
-// ==========================================
-
-// ⚡ LECTURA BATCH: La clave de la velocidad.
-// Lee todas las ventas UNA vez y crea un mapa en memoria.
-function getMapaUltimasCompras_(ss) {
-  const sh = ss.getSheetByName(SH.FORM);
-  if (!sh) return {};
-  
-  // Leemos columnas A (Fecha), B (Entrega), C (ClienteID)
-  // Asumiendo estructura: A=Marca temporal, B=Entrega, C=Cliente ID
-  const data = sh.getRange("A2:C").getValues(); 
-  const mapa = {}; // { clienteId: fechaObjeto }
-
-  data.forEach(r => {
-    const fecha = r[0]; 
-    const id = String(r[2]).trim();
-    if (!id || !fecha) return;
-    
-    // Convertir a fecha si es string
-    const fechaObj = (fecha instanceof Date) ? fecha : new Date(fecha);
-    
-    // Guardamos la fecha más reciente
-    if (!mapa[id] || fechaObj > mapa[id]) {
-      mapa[id] = fechaObj;
-    }
-  });
-  return mapa;
-}
-
-// ==========================================
-// 3️⃣ API FUNCTIONS (Lógica de Negocio)
-// ==========================================
-
-function apiLogin(p) {
-  const USERS = {
-    'martin': { pass: '1234', vendedor: 'MARTIN' },
-    'ramiro': { pass: '1234', vendedor: 'RAMIRO' },
-    'admin':  { pass: 'admin', vendedor: 'TODOS' }
-  };
-  const u = String(p.user || '').toLowerCase().trim();
-  const pass = String(p.pass || '');
-
-  if (!USERS[u] || USERS[u].pass !== pass) throw new Error('Usuario incorrecto');
-  return { user: u, vendedor: USERS[u].vendedor };
-}
-
-// ⚡ SUPER CARGA: Devuelve todo lo necesario para que la App arranque al instante
-function apiGetAppDataCompleta(p) {
-  const vendedor = String(p.vendedor || '').toUpperCase();
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  
-  // 1. Mapa de ventas (Rápido)
-  const mapCompras = getMapaUltimasCompras_(ss);
-  
-  // 2. Clientes crudos
-  const clientes = getClientesOptimizado_(ss, vendedor, mapCompras);
-  
-  // 3. IA: Guía del día (Patrones)
-  const guia = api_getGuiaDelDia_Internal_(ss, vendedor);
-
-  // 4. Zonas agrupadas (Calculadas en memoria para no leer sheet de nuevo)
-  const zonas = agruparClientesEnZonas_(clientes);
-
-  return {
-    clientes: clientes,
-    zonas: zonas,
-    sugerencia_ia: guia,
-    fecha_servidor: Utilities.formatDate(new Date(), TZ, "dd/MM/yyyy")
-  };
-}
-
-// Recuperar Clientes (Optimizado)
-function apiGetClientes(p) {
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  const mapCompras = getMapaUltimasCompras_(ss);
-  return getClientesOptimizado_(ss, p.vendedor, mapCompras);
-}
-
-// Función interna optimizada para leer clientes
-function getClientesOptimizado_(ss, vendedor, mapCompras) {
-  const sh = ss.getSheetByName(SH.CLIENTES);
-  const data = sh.getDataRange().getValues();
-  const head = data.shift().map(h => String(h).toLowerCase().trim()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-  
-  // Helper para buscar columnas con sinónimos
-  const idx = (aliases) => {
-    if (!Array.isArray(aliases)) aliases = [aliases];
-    for (const a of aliases) {
-      const i = head.findIndex(h => h.includes(a));
-      if (i >= 0) return i;
-    }
-    return -1;
-  };
-
-  // Índices flexibles
-  const iId = idx(['numero', 'id', 'codigo']);
-  const iNom = idx(['nombre']);
-  const iApe = idx(['apellido']); // Nueva columna
-  const iDir = idx(['direccion', 'domicilio', 'calle', 'ubicacion']);
-  const iLoc = idx(['localidad', 'zona', 'ciudad']);
-  const iVend = idx(['vendedor']);
-  const iLat = idx(['lat', 'latitud']);
-  const iLng = idx(['lng', 'lon', 'longitud']);
-  
-  const hoy = new Date();
-  const res = [];
-  
-  data.forEach(r => {
-    const vend = iVend >= 0 ? String(r[iVend]).toUpperCase() : '';
-    if (vendedor !== 'TODOS' && vend !== vendedor) return;
-    
-    const id = iId >= 0 ? String(r[iId]).trim() : '';
-    if (!id) return;
-    
-    // Unir Nombre + Apellido
-    let nombreFull = iNom >= 0 ? String(r[iNom]) : '';
-    if (iApe >= 0) nombreFull += ' ' + String(r[iApe]);
-    nombreFull = nombreFull.trim() || 'Cliente Sin Nombre';
-
-    // Dirección segura
-    const direccion = iDir >= 0 ? String(r[iDir]) : '';
-
-    // Coordenadas (si existen)
-    const lat = iLat >= 0 ? r[iLat] : null;
-    const lng = iLng >= 0 ? r[iLng] : null;
-    
-    // Días sin compra
-    let dias = 999;
-    if (mapCompras[id]) {
-      dias = Math.floor((hoy - mapCompras[id]) / 86400000);
-    }
-    
-    // Normalización de zona
-    const locRaw = iLoc >= 0 ? String(r[iLoc]) : 'General';
-    const locNorm = normalizarLocalidad_(locRaw);
-    
-    res.push({
-      id: id,
-      nombre: nombreFull,
-      direccion: direccion,
-      localidad: locRaw,
-      localidad_key: locNorm,
-      dias_sin_comprar: dias,
-      lat: lat,
-      lng: lng
-    });
-  });
-  
-  return res;
-}
-
-
-// ✅ NUEVO: Obtener Zonas Agrupadas
-function apiGetZonas(p) {
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  const mapCompras = getMapaUltimasCompras_(ss);
-  const clientes = getClientesOptimizado_(ss, p.vendedor, mapCompras);
-  return agruparClientesEnZonas_(clientes);
-}
-
-// Helper para agrupar
-function agruparClientesEnZonas_(clientes) {
-  const zonas = {}; // { "BANFIELD": { count: 10, alerta: false ... } }
-  
-  clientes.forEach(c => {
-    const k = c.localidad_key;
-    if (!zonas[k]) {
-      zonas[k] = { nombre: k, total_clientes: 0, criticos: 0 };
-    }
-    zonas[k].total_clientes++;
-    if (c.dias_sin_comprar > 60) zonas[k].criticos++;
-  });
-  
-  // Convertir objeto a array
-  return Object.values(zonas).sort((a,b) => b.total_clientes - a.total_clientes);
-}
-
-// ✅ NUEVO: Clientes filtrados por zonas seleccionadas
-function apiGetClientesPorZonas(p) {
-  const vendedor = String(p.vendedor || '').toUpperCase();
-  const zonasSolicitadas = p.zonas || []; // Array de strings normalizados
-  
-  if (!zonasSolicitadas.length) return [];
-  
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  const mapCompras = getMapaUltimasCompras_(ss);
-  const todos = getClientesOptimizado_(ss, vendedor, mapCompras);
-  
-  // Filtrar
-  return todos.filter(c => zonasSolicitadas.includes(c.localidad_key));
-}
-
-function apiRegistrar(p) {
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  const sh = ss.getSheetByName(SH.BITACORA);
-  sh.appendRow([new Date(), p.vendedor, p.clienteId, p.tipo, p.motivo, p.observacion]);
-  return true;
-}
-
-// Helper: Ficha completa (para detalle)
-function apiGetCliente(p) {
-  // Mantenemos tu lógica original aquí si quieres detalle fino
-  const id = String(p.clienteId);
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  // ... lógica de búsqueda puntual ...
-  // Por brevedad y performance, recomiendo usar los datos que ya bajó la app en get_app_data
-  // pero si necesitas historial de visitas, lees Bitácora aquí.
-  return { id: id, msg: "Detalle obtenido" }; 
-}
-
-// ==========================================
-// 4️⃣ UTILS: NORMALIZACIÓN DE TEXTO
-// ==========================================
-function normalizarLocalidad_(texto) {
-  let s = String(texto || '').toUpperCase().trim();
-  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Quitar tildes
-  // Unificar zonas
-  const basura = [' OESTE', ' ESTE', ' SUR', ' NORTE', ' CENTRO', ' PARTE', ' ALTO', ' BAJO', ' I', ' II', ' III'];
-  basura.forEach(b => {
-    if (s.endsWith(b)) s = s.replace(b, '');
-  });
-  return s.trim();
-}
-
-// =====================================================
-// 5️⃣ IA & PATRONES (TU CÓDIGO ORIGINAL PRESERVADO)
-// =====================================================
-
-// --- CHATBOT PRINCIPAL ---
-function api_chatBot(payload) {
-  const vendedor = String((payload && payload.vendedor) || '').toUpperCase().trim();
-  const mensaje = String((payload && (payload.mensaje || payload.message)) || '').trim();
-  const modo = String((payload && payload.modo) || 'general').toLowerCase().trim();
-
-  if (!vendedor) throw new Error('Falta vendedor');
-  if (!GEMINI_API_KEY) return { respuesta: '❌ Error: Falta GEMINI_KEY' };
-  
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  
-  // 1. Datos IA
-  const guia = api_getGuiaDelDia_Internal_(ss, vendedor); // Usa versión interna optimizada
-  const ultimosMovimientos = IA_getUltimosPedidosDetallados_(ss, vendedor, 15); 
-  const profile = IA_getVendedorProfile_(ss, vendedor);
-  const ahora = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd (EEE)");
-  
-  // 2. Prompt
-  const prompt = IA_buildPrompt_Secretary_(vendedor, ahora, profile, guia, ultimosMovimientos, mensaje);
-  
-  // 3. Gemini Call
-  const resultadoIA = IA_fetchGeminiJSONRobusto_(prompt);
-  
-  let respuestaTexto = "";
-  if (resultadoIA.ok) {
-     try {
-       const json = JSON.parse(resultadoIA.text);
-       respuestaTexto = IA_formatResponseSecretary_(json);
-     } catch(e) {
-       respuestaTexto = "⚠️ Error parseo IA: " + e.message;
-     }
-  } else {
-     respuestaTexto = "❌ Error IA: " + resultadoIA.text;
-  }
-
-  // 4. Log
-  IA_logChat_(ss, vendedor, modo, mensaje, respuestaTexto);
-  return { respuesta: respuestaTexto };
-}
-
-// --- LOGICA DE PATRONES (ADAPTADA PARA USAR SS ABIERTO) ---
-
-function api_getGuiaDelDia(payload) {
-  const ss = SpreadsheetApp.openById(ID_MATRIZ);
-  return api_getGuiaDelDia_Internal_(ss, payload.vendedor);
-}
-
-function api_getGuiaDelDia_Internal_(ss, vendedor) {
-  const hoy = new Date();
-  const mapaClientes = PZ_buildClientesMap_(ss);
-  
-  // Hechos
-  const pedidosTomadosHoy = PZ_getPedidosTomadosEnFecha_(ss, vendedor, hoy, mapaClientes);
-  const entregasHoy = PZ_getEntregasEnFecha_(ss, vendedor, hoy, mapaClientes);
-  
-  // Futuro
-  const fechaMas2 = new Date(hoy.getTime() + 2 * 86400000);
-  const entregasEn2Dias = PZ_getEntregasEnFecha_(ss, vendedor, fechaMas2, mapaClientes);
-  
-  // Sugerencias
-  const sugerencias = PZ_sugerirZonas_(ss, vendedor, hoy, pedidosTomadosHoy, entregasHoy, entregasEn2Dias);
-  
-  return {
-    fechaHoy: Utilities.formatDate(hoy, TZ, 'yyyy-MM-dd'),
-    diaSemanaHoy: PZ_diaSemanaES_(hoy),
-    vendedor,
-    sugerencias
-  };
-}
-
-// ... AQUÍ PEGA TODAS TUS FUNCIONES PZ_...
-// (PZ_recalcularPatronZonasSemanal, PZ_sugerirZonas_, PZ_getPatronTop_, etc.)
-// Para ahorrar espacio en el chat, asumo que mantienes TUS funciones PZ_ intactas abajo.
-// SOLO ASEGÚRATE DE QUE USEN LA CONSTANTE `ID_MATRIZ` DE ARRIBA O RECIBAN `ss` COMO ARGUMENTO.
-
-// ==========================================
-// 6️⃣ HELPERS IA (TU CODIGO IA ORIGINAL)
-// ==========================================
-
-function IA_fetchGeminiJSONRobusto_(prompt) {
-  // Tu lógica de fetch robusto...
-  const url = `${IA_API_BASE}/${IA_MODEL_NAME}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-  const payloadReq = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: "application/json" }
-  };
-  try {
-    const res = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify(payloadReq), muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) return { ok: false, text: "Error HTTP: " + res.getContentText() };
-    const jsonBody = JSON.parse(res.getContentText());
-    const raw = jsonBody.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    const clean = raw.replace(/```json/g,'').replace(/```/g,'').trim();
-    return { ok: true, text: clean };
-  } catch (e) {
-    return { ok: false, text: e.message };
-  }
-}
-
-function IA_buildPrompt_Secretary_(vendedor, ahora, profile, guia, historial, preguntaUsuario) {
-  // Tu prompt exacto...
-  // Solo asegúrate de que 'guia' tenga la estructura correcta que devuelve api_getGuiaDelDia_Internal_
-  const zonasPatron = guia.sugerencias.zonasHoy_recomendadas_porPatronPedido || [];
-  const fmtZona = (arr) => (arr && arr.length) ? arr.slice(0,6).map(z => `${z.localidad}(${z.conteo})`).join(', ') : 'Ninguna';
-  
-  // ... resto de tu prompt ...
-  return `ROL: Eres el SECRETARIO DE VENTAS... (Mismo prompt tuyo) ... PREGUNTA: "${preguntaUsuario}"`;
-}
-
-function IA_formatResponseSecretary_(json) {
-  let out = (json.mensaje_corto || "Hola") + "\n";
-  if (json.zonas_recomendadas) out += "\n📍 *ZONAS:*\n" + json.zonas_recomendadas.map(z=>`- ${z.loc}: ${z.motivo}`).join("\n");
-  if (json.alertas_logistica) out += "\n🚚 *LOGISTICA:*\n" + json.alertas_logistica.join("\n");
-  return out;
-}
-
-function IA_getUltimosPedidosDetallados_(ss, vendedor, limit) {
-  // Misma lógica tuya, es segura
-  const sh = ss.getSheetByName(SH.FORM);
-  if (!sh) return [];
-  const data = sh.getDataRange().getValues();
-  const mapa = PZ_buildClientesMap_(ss); // Reutilizamos tu helper PZ
-  const out = [];
-  const vendKey = vendedor.toUpperCase();
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (out.length >= limit) break;
-    const r = data[i];
-    if (String(r[3]).toUpperCase() === vendKey) {
-      const idCli = String(r[2]).trim();
-      const cli = mapa[idCli] || {};
-      out.push({ fecha: r[0], cliente: cli.nombre, localidad: cli.localidad, productos: r[4] });
-    }
-  }
-  return out;
-}
-
-function IA_getVendedorProfile_(ss, vendedor) {
-  const sh = ss.getSheetByName(SH.PROFILE);
-  if (!sh) return { nivel: 'Estandar' };
-  const data = sh.getDataRange().getValues();
-  const row = data.find(r => String(r[0]).toUpperCase() === vendedor);
-  return row ? { nivel: row[1], foco: row[2] } : { nivel: 'Estandar' };
-}
-
-function IA_logChat_(ss, v, m, p, r) {
-   try { ss.getSheetByName(SH.CHATLOG).appendRow([new Date(), v, m, p, r]); } catch(e){}
-}
-
-// ==========================================
-// 7️⃣ MANTENIMIENTO PZ (Tus funciones PZ_ originales)
-// ==========================================
-// ==========================================
-// 7️⃣ BLOQUE DE FUNCIONES PZ (PEGAR AL FINAL DE CODE.GS)
-// ==========================================
-
-function PZ_buildClientesMap_(ss) {
-  const sh = ss.getSheetByName(SH.CLIENTES);
-  if (!sh) return {};
-
-  const data = sh.getDataRange().getValues();
-  if (data.length < 2) return {};
-
-  const head = data[0].map(h => String(h).toLowerCase().trim()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-
-  const idx = (aliases) => {
-    for (const a of aliases) {
-      const i = head.findIndex(h => h.includes(a));
-      if (i >= 0) return i;
-    }
-    return -1;
-  };
-
-  const iId = idx(['numero', 'id', 'codigo']);
-  const iLoc = idx(['localidad', 'zona']);
-  const iNom = idx(['nombre']);
-  const iVend = idx(['vendedor']);
-
-  const map = {};
-  for (let i = 1; i < data.length; i++) {
-    const r = data[i];
-    const id = iId >= 0 ? String(r[iId] || '').trim() : '';
-    if (!id) continue;
-
-    map[id] = {
-      id,
-      nombre: iNom >= 0 ? String(r[iNom]) : '',
-      localidad: iLoc >= 0 ? String(r[iLoc]) : '',
-      vendedor: iVend >= 0 ? PZ_normVendedor_(String(r[iVend])) : ''
-    };
-  }
-  return map;
-}
-
-function PZ_getPedidosTomadosEnFecha_(ss, vendedor, fechaObj, mapaClientes) {
-  const sh = ss.getSheetByName(SH.FORM);
-  if (!sh) return [];
-  const data = sh.getDataRange().getValues().slice(1);
-  const targetKey = Utilities.formatDate(fechaObj, TZ, 'yyyy-MM-dd');
-  const vendKey = PZ_normVendedor_(vendedor);
-
-  const out = [];
-  data.forEach(r => {
-    const marca = PZ_toDate_(r[0]); 
-    const v = PZ_normVendedor_(String(r[3]));
-    if (v !== vendKey || !marca) return;
-    
-    if (Utilities.formatDate(marca, TZ, 'yyyy-MM-dd') === targetKey) {
-       const id = String(r[2]).trim();
-       const cli = mapaClientes[id] || {};
-       out.push({ localidad: PZ_normLocalidad_(cli.localidad) });
-    }
-  });
-  return out;
-}
-
-function PZ_getEntregasEnFecha_(ss, vendedor, fechaObj, mapaClientes) {
-  const sh = ss.getSheetByName(SH.FORM);
-  if (!sh) return [];
-  const data = sh.getDataRange().getValues().slice(1);
-  const targetKey = Utilities.formatDate(fechaObj, TZ, 'yyyy-MM-dd');
-  const vendKey = PZ_normVendedor_(vendedor);
-
-  const out = [];
-  data.forEach(r => {
-    const fe = PZ_toDate_(r[1]); // Fecha entrega col B
-    const v = PZ_normVendedor_(String(r[3]));
-    if (v !== vendKey || !fe) return;
-
-    if (Utilities.formatDate(fe, TZ, 'yyyy-MM-dd') === targetKey) {
-       const id = String(r[2]).trim();
-       const cli = mapaClientes[id] || {};
-       out.push({ localidad: PZ_normLocalidad_(cli.localidad) });
-    }
-  });
-  return out;
-}
-
-function PZ_sugerirZonas_(ss, vendedor, hoy, pedidos, entregasHoy, entregas2) {
-  const diaHoy = PZ_diaSemanaES_(hoy);
-  const hechosPedido = PZ_contarPorLocalidad_(pedidos);
-  const hechosEntrega = PZ_contarPorLocalidad_(entregasHoy);
-  const hechosEntrega2 = PZ_contarPorLocalidad_(entregas2);
-  
-  // Patrón histórico (Top 8)
-  const patronPedido = PZ_getPatronTop_(ss, 'PEDIDO', vendedor, diaHoy, 8);
-  
-  return {
-    rutas_sugeridas: patronPedido.map(p => p.localidad),
-    zonasHoy_recomendadas_porPatronPedido: patronPedido,
-    zonasHoy_reales_porPedidosTomados: PZ_mapConteoToList_(hechosPedido),
-    alertas_entrega: Object.keys(hechosEntrega),
-    alertas_futuras: Object.keys(hechosEntrega2),
-    entregasHoy_reales: PZ_mapConteoToList_(hechosEntrega),
-    entregasEn2Dias_reales: PZ_mapConteoToList_(hechosEntrega2)
-  };
-}
-
-function PZ_getPatronTop_(ss, tipoPatron, vendedor, diaSemana, topN) {
-  const sh = ss.getSheetByName(SH.PATRON); // Asegúrate que SH.PATRON esté definido en const SH al inicio
-  if (!sh) return [];
-  const data = sh.getDataRange().getValues().slice(1);
-  
-  const vKey = PZ_normVendedor_(vendedor);
-  const tKey = String(tipoPatron).toUpperCase().trim();
-  const dKey = String(diaSemana).trim();
-
-  return data
-    .filter(r => String(r[0]).toUpperCase().trim() === tKey && 
-                 PZ_normVendedor_(String(r[1])) === vKey && 
-                 String(r[2]).trim() === dKey)
-    .map(r => ({ localidad: r[3], conteo: Number(r[4]) }))
-    .sort((a,b) => b.conteo - a.conteo)
-    .slice(0, topN);
-}
-
-// --- UTILS PZ ---
-function PZ_normVendedor_(v) {
-  let x = String(v || '').toUpperCase().trim();
-  if (x === 'LUCAS') x = 'RAMIRO';
-  return x;
-}
-function PZ_normLocalidad_(s) {
-  let x = String(s || '').trim().toLowerCase();
-  x = x.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  return x.charAt(0).toUpperCase() + x.slice(1);
-}
-function PZ_diaSemanaES_(d) { return ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][d.getDay()]; }
-function PZ_toDate_(v) { return v instanceof Date ? v : new Date(v); }
-function PZ_contarPorLocalidad_(arr) { 
-  const c = {}; 
-  (arr||[]).forEach(i => { const l = PZ_normLocalidad_(i.localidad); c[l] = (c[l]||0)+1; });
-  return c; 
-}
-function PZ_mapConteoToList_(o) { return Object.keys(o).map(k => ({ localidad: k, conteo: o[k] })); }
+</script>
+</head>
+
+<body class="bg-slate-950 text-white h-screen w-screen overflow-hidden selection:bg-blue-500 selection:text-white transition-colors duration-500">
+
+    <!-- LOADER -->
+    <div id="loader" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center hidden">
+        <div class="relative w-20 h-20">
+            <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin"></div>
+            <i data-lucide="loader-2" class="absolute inset-0 m-auto text-blue-500 animate-spin w-8 h-8"></i>
+        </div>
+        <p class="mt-6 text-xs font-bold tracking-[0.3em] text-blue-400 animate-pulse uppercase">Sincronizando</p>
+    </div>
+
+    <!-- VIEW: LOGIN -->
+    <section id="view-login" class="view-section flex-col items-center justify-center h-full p-8 relative z-10">
+        <!-- Ambient Background -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+            <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[100px]"></div>
+            <div class="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-cyan-600/10 rounded-full blur-[100px]"></div>
+        </div>
+
+        <div class="w-full max-w-sm text-center">
+            <div class="mb-12 relative group">
+                <div class="w-24 h-24 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-3xl mx-auto shadow-2xl shadow-blue-500/30 flex items-center justify-center mb-8 rotate-3 transition-transform duration-500 group-hover:rotate-6">
+                    <i data-lucide="box" class="w-10 h-10 text-white stroke-[1.5]"></i>
+                </div>
+                <h1 class="text-4xl font-extrabold tracking-tight">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
+                <p class="text-sm font-medium opacity-50 mt-2 tracking-wide">Logística Inteligente V10 Pro</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div class="relative group">
+                    <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5 transition-colors group-focus-within:text-blue-500"></i>
+                    <input id="login-user" type="text" placeholder="USUARIO" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 font-bold outline-none focus:border-blue-500 focus:bg-white/10 transition-all uppercase placeholder:normal-case placeholder:text-slate-600">
+                </div>
+                <div class="relative group">
+                    <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5 transition-colors group-focus-within:text-blue-500"></i>
+                    <input id="login-pass" type="password" inputmode="numeric" placeholder="PIN DE ACCESO" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 font-bold outline-none focus:border-blue-500 focus:bg-white/10 transition-all tracking-widest placeholder:tracking-normal placeholder:text-slate-600">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-6">
+                    INGRESAR <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- VIEW: DASHBOARD -->
+    <section id="view-dashboard" class="view-section flex-col h-full relative">
+        <header id="dash-header" class="pt-12 pb-6 px-6 flex justify-between items-end sticky top-0 z-20 backdrop-blur-md border-b border-transparent transition-colors duration-300">
+            <div>
+                <p id="lbl-user" class="text-xs font-bold uppercase tracking-widest mb-1 opacity-80">Hola...</p>
+                <h1 class="text-3xl font-black leading-none tracking-tight">Mis Zonas</h1>
+                <p id="lbl-date" class="text-xs font-medium mt-1 uppercase opacity-60">Cargando...</p>
+            </div>
+            <button onclick="cycleTheme()" class="w-10 h-10 rounded-full border border-current opacity-30 hover:opacity-100 flex items-center justify-center active:rotate-180 transition-all">
+                <i data-lucide="palette" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-32 no-scrollbar pt-4">
+            <!-- AI Banner -->
+            <div id="ai-banner" class="hidden mb-8 animate-fade-in-up">
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 text-white p-5">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="sparkles" class="w-20 h-20"></i></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="bg-white/20 p-1.5 rounded-lg"><i data-lucide="sparkles" class="w-4 h-4 text-yellow-300 animate-pulse"></i></div>
+                            <span class="text-xs font-bold uppercase tracking-wider">Sugerencia IA</span>
+                        </div>
+                        <p id="ai-suggestion-text" class="text-sm font-medium leading-relaxed opacity-90 mb-4"></p>
+                        <button onclick="acceptIARoute()" class="w-full bg-white text-blue-700 font-extrabold py-3 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md">
+                            ACEPTAR RUTA <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-4 mt-2">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] opacity-60">Todas las Zonas</p>
+                <span id="zone-count" class="text-[10px] px-2 py-1 rounded-md border border-current opacity-40 font-bold">0 Disp.</span>
+            </div>
+
+            <div id="zones-grid" class="grid grid-cols-2 gap-3"></div>
+        </div>
+
+        <div id="btn-start-container" class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent z-30 pointer-events-none translate-y-24 transition-transform duration-300">
+            <button id="btn-start-route" onclick="startRoute()" class="pointer-events-auto w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="map" class="w-5 h-5"></i> <span id="btn-start-label">INICIAR RUTA</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- VIEW: ROUTE -->
+    <section id="view-route" class="view-section flex-col h-full relative">
+        <div id="route-header" class="pt-10 px-4 pb-4 flex items-center justify-between z-30 border-b border-transparent backdrop-blur-sm transition-colors duration-300">
+            <button onclick="switchView('view-dashboard')" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="flex flex-col items-center">
+                <div class="flex items-center gap-3">
+                    <div class="relative w-9 h-9">
+                        <svg class="w-full h-full -rotate-90">
+                            <circle cx="18" cy="18" r="16" fill="transparent" stroke="currentColor" stroke-width="3" class="opacity-10"></circle>
+                            <circle id="progress-circle" cx="18" cy="18" r="16" fill="transparent" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="100.5" class="progress-circle"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-black leading-none uppercase">Ruta Activa</h2>
+                        <p id="route-stats" class="text-[10px] font-bold opacity-60 mt-0.5">0 / 0 Completados</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="toggleViewMode()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+                <i data-lucide="maximize-2" class="w-4 h-4 opacity-70"></i>
+            </button>
+        </div>
+
+        <div id="route-list" class="flex-1 overflow-y-auto px-4 pt-4 pb-32 no-scrollbar"></div>
+        
+        <div id="empty-state" class="hidden flex-col items-center justify-center h-full p-8 text-center">
+            <div class="w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-emerald-500/20 ring-4 ring-emerald-500/10">
+                <i data-lucide="check" class="w-10 h-10 text-emerald-500"></i>
+            </div>
+            <h2 class="text-3xl font-black mb-2">¡Ruta Completada!</h2>
+            <p class="opacity-60 mb-8">Has visitado a todos los clientes.</p>
+            <button onclick="switchView('view-dashboard')" class="px-8 py-4 rounded-2xl font-bold border border-white/10 bg-white/5 active:scale-95 transition-transform">
+                Volver al Inicio
+            </button>
+        </div>
+    </section>
+
+    <!-- MODAL -->
+    <div id="modal-options" class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-6 animate-fade-in-up">
+        <div class="bg-slate-900 border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+            
+            <div class="flex justify-between items-start mb-6 relative z-10">
+                <div>
+                    <h3 id="modal-title" class="text-xl font-bold text-white leading-tight">Cliente</h3>
+                    <p class="text-xs opacity-50 uppercase font-bold tracking-widest mt-1">Registrar Visita</p>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/50">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="saveVisit('Stock')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
+                    <div class="text-blue-400 mb-1"><i data-lucide="package" class="w-4 h-4"></i></div> TIENE STOCK
+                </button>
+                <button onclick="saveVisit('Dinero')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
+                    <div class="text-blue-400 mb-1"><i data-lucide="dollar-sign" class="w-4 h-4"></i></div> SIN DINERO
+                </button>
+                <button onclick="saveVisit('Cerrado')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
+                    <div class="text-blue-400 mb-1"><i data-lucide="lock" class="w-4 h-4"></i></div> CERRADO
+                </button>
+                <button onclick="saveVisit('Precio')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
+                    <div class="text-blue-400 mb-1"><i data-lucide="trending-up" class="w-4 h-4"></i></div> PRECIO ALTO
+                </button>
+            </div>
+
+            <textarea id="input-visit-obs" placeholder="Nota o recordatorio..." class="w-full h-24 bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:border-blue-500 outline-none resize-none mb-4 text-white placeholder:text-white/20"></textarea>
+
+            <button onclick="saveVisit('Nota General')" class="w-full bg-white text-slate-900 font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform hover:bg-gray-100">
+                GUARDAR NOTA
+            </button>
+        </div>
+    </div>
+
+    <!-- AI PANEL -->
+    <div id="ai-panel" class="fixed inset-0 z-[70] bg-slate-900 translate-y-full transition-transform duration-300 flex flex-col">
+        <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white leading-none">Mercado Limpio IA</h3>
+                    <p class="text-[10px] opacity-50 uppercase tracking-widest mt-1 text-white">Tu Copiloto de Ventas</p>
+                </div>
+            </div>
+            <button onclick="toggleAI(false)" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center active:bg-white/10">
+                <i data-lucide="chevron-down" class="w-5 h-5 text-white opacity-70"></i>
+            </button>
+        </div>
+
+        <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar bg-black/20">
+            <div class="bg-white/5 border border-white/5 text-slate-200 p-4 rounded-2xl rounded-tl-none text-sm leading-relaxed max-w-[85%]">
+                Hola 👋. Tengo acceso a tu historial, stock y patrones de zona. ¿En qué te ayudo hoy?
+            </div>
+        </div>
+
+        <div class="p-4 bg-slate-900 border-t border-white/10 pb-8 safe-area-bottom">
+            <div class="relative">
+                <input id="ai-input" type="text" placeholder="Ej: ¿Qué le ofrezco al cliente #102?" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-4 pr-14 text-sm focus:border-blue-500 outline-none shadow-inner text-white placeholder:text-white/30">
+                <button onclick="handleAISend()" class="absolute right-2 top-2 bottom-2 w-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI FLOATING BUTTON -->
+    <button onclick="toggleAI(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-full shadow-lg shadow-indigo-500/40 flex items-center justify-center text-white z-40 active:scale-90 transition-transform hidden" id="fab-ai">
+        <i data-lucide="sparkles" class="w-6 h-6"></i>
+    </button>
+
+    <script src="app.js"></script>
+</body>
+</html>
