@@ -12,6 +12,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         :root { --font-main: 'Plus Jakarta Sans', sans-serif; }
@@ -39,16 +41,14 @@
         .view-section {
             display: none; opacity: 0; transition: opacity 0.3s ease;
         }
-        /* Clase auxiliar para mostrar vistas via JS tradicional si es necesario, 
-           aunque tu app.js usa .hidden/remove('hidden') */
-        .view-section.active {
+        .view-section.active { /* Clase auxiliar por si acaso */
             display: flex; opacity: 1;
         }
         
         /* Progress Ring */
         .progress-circle { transition: stroke-dashoffset 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
-        
-        /* Fix Input Chat Selectable */
+
+        /* Input Chat Fix */
         #ai-input { -webkit-user-select: text; user-select: text; }
     </style>
 </head>
@@ -90,6 +90,7 @@
                     <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5 transition-colors group-focus-within:text-blue-500"></i>
                     <input id="login-pass" type="password" inputmode="numeric" placeholder="PIN DE ACCESO" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 font-bold outline-none focus:border-blue-500 focus:bg-white/10 transition-all tracking-widest placeholder:tracking-normal placeholder:text-slate-600 text-white">
                 </div>
+                
                 <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-6">
                     INGRESAR <i data-lucide="arrow-right" class="w-5 h-5"></i>
                 </button>
@@ -104,13 +105,13 @@
                 <h1 class="text-3xl font-black leading-none tracking-tight">Mis Zonas</h1>
                 <p id="header-date" class="text-xs font-medium mt-1 uppercase opacity-60">Cargando...</p>
             </div>
-            <button id="btn-theme-toggle" class="w-10 h-10 rounded-full border border-current opacity-30 hover:opacity-100 flex items-center justify-center active:rotate-180 transition-all">
+            <button id="btn-theme-toggle" class="w-10 h-10 rounded-full border border-current opacity-30 hover:opacity-100 flex items-center justify-center active:rotate-180 transition-all text-white">
                 <i data-lucide="palette" class="w-5 h-5"></i>
             </button>
         </header>
 
         <div class="flex-1 overflow-y-auto px-6 pb-32 no-scrollbar pt-4">
-            <div id="ia-suggestion-box" class="hidden animate-fade-in-up mb-8">
+            <div id="ia-suggestion-box" class="hidden mb-8 animate-fade-in-up">
                 </div>
 
             <div class="flex items-center justify-between mb-4 mt-2">
@@ -130,7 +131,7 @@
 
     <section id="view-route" class="view-section hidden flex-col h-full relative absolute inset-0 bg-slate-950">
         <div id="route-header" class="pt-10 px-4 pb-4 flex items-center justify-between z-30 border-b border-transparent backdrop-blur-sm transition-colors duration-300">
-            <button onclick="switchView('view-dashboard')" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+            <button onclick="switchView('view-dashboard')" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform text-white">
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
             </button>
             
@@ -150,13 +151,12 @@
                 </div>
             </div>
             
-            <button id="fab-focus-mode" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+            <button id="fab-focus-mode" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform text-white">
                 <i data-lucide="maximize-2" class="w-4 h-4 opacity-70"></i>
             </button>
         </div>
 
         <div id="route-container" class="flex-1 overflow-y-auto px-4 pt-4 pb-32 no-scrollbar"></div>
-        
     </section>
 
     <div id="modal-options" class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-6 animate-fade-in-up">
@@ -175,16 +175,16 @@
 
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <button onclick="saveVisit('Stock')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
-                    <div class="text-blue-400 mb-1"><i data-lucide="package" class="w-4 h-4"></i></div> TIENE STOCK
+                    <div class="text-blue-400 mb-1"><i class="fas fa-box"></i></div> TIENE STOCK
                 </button>
                 <button onclick="saveVisit('Dinero')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
-                    <div class="text-blue-400 mb-1"><i data-lucide="dollar-sign" class="w-4 h-4"></i></div> SIN DINERO
+                    <div class="text-blue-400 mb-1"><i class="fas fa-dollar-sign"></i></div> SIN DINERO
                 </button>
                 <button onclick="saveVisit('Cerrado')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
-                    <div class="text-blue-400 mb-1"><i data-lucide="lock" class="w-4 h-4"></i></div> CERRADO
+                    <div class="text-blue-400 mb-1"><i class="fas fa-lock"></i></div> CERRADO
                 </button>
                 <button onclick="saveVisit('Precio')" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-xs font-bold text-white text-left active:scale-95 transition-all">
-                    <div class="text-blue-400 mb-1"><i data-lucide="trending-up" class="w-4 h-4"></i></div> PRECIO ALTO
+                    <div class="text-blue-400 mb-1"><i class="fas fa-chart-line"></i></div> PRECIO ALTO
                 </button>
             </div>
 
@@ -236,19 +236,15 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Inicializar iconos
+            // Inicializar Iconos Lucide
             if (window.lucide) {
                 lucide.createIcons();
+                // Observador para iconos dinámicos
+                const observer = new MutationObserver(() => lucide.createIcons());
+                observer.observe(document.body, { childList: true, subtree: true });
             }
-            
-            // Re-inicializar iconos cada vez que se actualiza el DOM dinámicamente
-            // (Un pequeño hack para asegurar que los iconos nuevos en listas funcionen)
-            const observer = new MutationObserver(() => {
-                if (window.lucide) lucide.createIcons();
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-            
-            // Helpers visuales
+
+            // Helpers UI globales
             window.toggleAI = function(show) {
                 const panel = document.getElementById('ai-panel');
                 const input = document.getElementById('ai-input');
