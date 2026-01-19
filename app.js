@@ -48,17 +48,36 @@ window.addEventListener('unhandledrejection', (e) => {
 console.log('APP.JS CARGADO OK');
 
 // ==========================================
-// 1️⃣ INICIALIZACIÓN
+// 1️⃣ INICIALIZACIÓN (FIXED - evita freeze por Lucide + MutationObserver)
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Iconos Lucide
+  // ✅ Iconos Lucide (blindado: evita loop infinito por mutaciones del DOM)
   if (window.lucide) {
     try {
-      lucide.createIcons();
-      const observer = new MutationObserver(() => {
-        try { lucide.createIcons(); } catch (_) {}
-      });
+      // Ejecuta createIcons como máximo 1 vez por frame
+      const safeCreateIcons = (() => {
+        let scheduled = false;
+        return () => {
+          if (scheduled) return;
+          scheduled = true;
+          requestAnimationFrame(() => {
+            scheduled = false;
+            try { lucide.createIcons(); } catch (_) {}
+          });
+        };
+      })();
+
+      // Primera pasada
+      safeCreateIcons();
+
+      // Observer con debounce (no llama createIcons directo)
+      const observer = new MutationObserver(() => safeCreateIcons());
       observer.observe(document.body, { childList: true, subtree: true });
+
+      // Extra: por si Tailwind/Lucide tardan en cargar o hay render tardío
+      setTimeout(safeCreateIcons, 50);
+      setTimeout(safeCreateIcons, 250);
+      setTimeout(safeCreateIcons, 800);
     } catch (_) {}
   }
 
@@ -90,6 +109,7 @@ function initApp() {
   window.switchView('view-dashboard');
   loadAppData();
 }
+
 
 // ==========================================
 // 2️⃣ API (con headers correctos)
