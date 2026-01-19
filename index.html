@@ -19,36 +19,23 @@
         :root { --font-main: 'Plus Jakarta Sans', sans-serif; }
         body { font-family: var(--font-main); -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
         
-        /* Utils */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Animations */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
-        .animate-pulse-ring { animation: pulse-ring 2s infinite; }
-
-        /* Transitions */
-        .view-section {
-            display: none; opacity: 0; transition: opacity 0.3s ease;
-        }
-        .view-section.active { /* Clase auxiliar por si acaso */
-            display: flex; opacity: 1;
-        }
+        /* Transiciones de vistas */
+        .view-section { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .view-section.active { display: flex; opacity: 1; }
         
-        /* Progress Ring */
+        /* Círculo de progreso */
         .progress-circle { transition: stroke-dashoffset 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
-
-        /* Input Chat Fix */
+        
+        /* Fix Input Chat */
         #ai-input { -webkit-user-select: text; user-select: text; }
     </style>
 </head>
@@ -66,7 +53,7 @@
         <p class="mt-6 text-xs font-bold tracking-[0.3em] text-blue-400 animate-pulse uppercase">Sincronizando</p>
     </div>
 
-    <section id="view-login" class="view-section hidden flex-col items-center justify-center h-full p-8 relative z-10 absolute inset-0 bg-slate-950">
+    <section id="view-login" class="view-section active flex-col items-center justify-center h-full p-8 relative z-10 absolute inset-0 bg-slate-950">
         <div class="absolute inset-0 overflow-hidden pointer-events-none -z-10">
             <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[100px]"></div>
             <div class="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-cyan-600/10 rounded-full blur-[100px]"></div>
@@ -90,7 +77,6 @@
                     <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-5 h-5 transition-colors group-focus-within:text-blue-500"></i>
                     <input id="login-pass" type="password" inputmode="numeric" placeholder="PIN DE ACCESO" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 font-bold outline-none focus:border-blue-500 focus:bg-white/10 transition-all tracking-widest placeholder:tracking-normal placeholder:text-slate-600 text-white">
                 </div>
-                
                 <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-600/20 transition-all flex items-center justify-center gap-2 mt-6">
                     INGRESAR <i data-lucide="arrow-right" class="w-5 h-5"></i>
                 </button>
@@ -111,8 +97,7 @@
         </header>
 
         <div class="flex-1 overflow-y-auto px-6 pb-32 no-scrollbar pt-4">
-            <div id="ia-suggestion-box" class="hidden mb-8 animate-fade-in-up">
-                </div>
+            <div id="ia-suggestion-box" class="hidden mb-8 animate-fade-in-up"></div>
 
             <div class="flex items-center justify-between mb-4 mt-2">
                 <p class="text-xs font-bold uppercase tracking-[0.2em] opacity-60">Todas las Zonas</p>
@@ -233,29 +218,5 @@
     </button>
 
     <script src="app.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Inicializar Iconos Lucide
-            if (window.lucide) {
-                lucide.createIcons();
-                // Observador para iconos dinámicos
-                const observer = new MutationObserver(() => lucide.createIcons());
-                observer.observe(document.body, { childList: true, subtree: true });
-            }
-
-            // Helpers UI globales
-            window.toggleAI = function(show) {
-                const panel = document.getElementById('ai-panel');
-                const input = document.getElementById('ai-input');
-                if(show) {
-                    panel.classList.remove('translate-y-full');
-                    setTimeout(() => input.focus(), 300);
-                } else {
-                    panel.classList.add('translate-y-full');
-                }
-            };
-        });
-    </script>
 </body>
 </html>
