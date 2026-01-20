@@ -37,9 +37,18 @@
         .toast.success { background: #064e3b; border-left: 4px solid #34d399; }
 
         /* Chat Burbujas */
-        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.9rem; line-height: 1.4; position: relative; word-wrap: break-word; }
+        .chat-bubble { max-width: 90%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.9rem; line-height: 1.4; position: relative; word-wrap: break-word; }
         .chat-user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .chat-bot { background: #374151; color: #e5e7eb; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #4b5563; }
+
+        /* Ticket de Pedido en Chat */
+        .ticket-container { background: #f3f4f6; color: #1f2937; padding: 15px; border-radius: 12px; font-family: 'Courier New', monospace; margin-top: 10px; border: 2px dashed #d1d5db; position: relative; }
+        .ticket-header { text-align: center; border-bottom: 2px dashed #9ca3af; padding-bottom: 10px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; }
+        .ticket-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.85rem; }
+        .ticket-total { border-top: 2px dashed #9ca3af; padding-top: 10px; margin-top: 10px; font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; }
+        .btn-copy-order { width: 100%; background: #2563eb; color: white; padding: 10px; border-radius: 8px; margin-top: 12px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); cursor: pointer; }
+        .btn-copy-order:active { transform: scale(0.95); }
+        .btn-copy-order.copied { background: #059669; }
     </style>
 </head>
 <body>
@@ -114,14 +123,14 @@
 
         <div class="flex-1 overflow-y-auto px-6 pb-32 no-scrollbar">
             <div id="ia-suggestion-box" class="hidden mb-6 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/20 p-5 rounded-2xl animate-pop relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 text-blue-500/10 text-9xl"><i class="fas fa-robot"></i></div>
+                <div class="absolute -right-4 -top-4 text-blue-500/10 text-9xl"><i class="fas fa-chart-line"></i></div>
                 <div class="relative z-10">
                     <div class="flex items-center gap-2 mb-2">
                         <i class="fas fa-sparkles text-yellow-400 text-xs"></i>
-                        <span class="text-[10px] font-bold text-blue-200 uppercase tracking-widest">IA Insight</span>
+                        <span class="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Sugerencia Inteligente</span>
                     </div>
                     <p id="ia-text" class="text-sm font-medium text-white mb-3 leading-relaxed"></p>
-                    <button id="btn-accept-ia" class="btn-press text-xs bg-white text-blue-900 px-4 py-2 rounded-lg font-bold shadow-md">Aceptar Ruta Sugerida</button>
+                    <button id="btn-accept-ia" class="btn-press text-xs bg-white text-blue-900 px-4 py-2 rounded-lg font-bold shadow-md">Aceptar Ruta</button>
                 </div>
             </div>
 
@@ -136,7 +145,7 @@
         
         <!-- FAB IA CHAT -->
         <button onclick="toggleAIChat(true)" class="btn-press fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full shadow-2xl flex items-center justify-center text-white z-30 border border-white/20">
-            <i class="fas fa-comment-dots text-xl"></i>
+            <i class="fas fa-headset text-xl"></i>
         </button>
     </section>
 
@@ -167,17 +176,17 @@
     </section>
 
     <!-- ========================================= -->
-    <!-- MODAL CHAT IA -->
+    <!-- MODAL CHAT SOPORTE -->
     <!-- ========================================= -->
     <div id="modal-ai-chat" class="fixed inset-0 z-50 bg-gray-900 translate-y-full transition-transform duration-300 flex flex-col">
         <div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center shadow-md">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-2 border-gray-700">
-                    <i class="fas fa-robot text-white"></i>
+                    <i class="fas fa-headset text-white"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-white leading-none">Asistente IA</h3>
-                    <p class="text-[10px] text-green-400 font-bold mt-1 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online</p>
+                    <h3 class="font-bold text-white leading-none">Mercado Limpio - Chat</h3>
+                    <p class="text-[10px] text-green-400 font-bold mt-1 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Soporte Activo</p>
                 </div>
             </div>
             <button onclick="toggleAIChat(false)" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white">
@@ -187,7 +196,7 @@
 
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 bg-gray-900">
             <div class="chat-bubble chat-bot animate-pop">
-                Hola 👋. Soy tu copiloto logístico. ¿Necesitas información sobre un cliente, stock o sugerencias de ruta?
+                Hola, soy el asistente de ventas. ¿En qué te puedo ayudar hoy con tus pedidos o rutas?
             </div>
         </div>
 
@@ -267,8 +276,6 @@
         // Limpiador de nombres para evitar formato fecha
         const cleanName = (str) => {
             if (!str) return 'Cliente';
-            // Si el string parece una fecha larga de JS, intentar cortarlo o dejarlo crudo
-            // Pero lo mejor es mostrarlo tal cual y que CSS trunque si es largo
             return String(str).trim();
         };
 
@@ -461,15 +468,13 @@
                 return;
             }
 
-            // Modo Enfoque: Solo mostrar el primero
             const listToRender = state.viewMode === 'focus' ? [pendientes[0]] : pendientes;
 
             listToRender.forEach((c, idx) => {
-                // Cálculo Distancia y Tiempo
                 let distInfo = '';
                 if (state.location && c.lat && c.lng) {
                     const km = getDistKm(state.location.lat, state.location.lng, c.lat, c.lng);
-                    const mins = Math.round((km / 25) * 60); // 25km/h promedio
+                    const mins = Math.round((km / 25) * 60);
                     distInfo = `
                         <div class="flex items-center gap-3 mt-3 bg-gray-900/50 p-2 rounded-lg border border-gray-700/50">
                             <div class="text-xs font-bold text-blue-400 flex items-center gap-1"><i class="fas fa-route"></i> ${km} km</div>
@@ -478,15 +483,12 @@
                     `;
                 }
 
-                // Estilos según modo
                 const isFocus = state.viewMode === 'focus';
                 const cardClass = isFocus 
                     ? 'h-[75vh] flex flex-col justify-between bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-700 animate-slide-in relative overflow-hidden' 
                     : 'bg-gray-800 p-5 mb-4 rounded-2xl shadow-md border border-gray-700 animate-pop relative';
 
                 const nameSize = isFocus ? 'text-3xl' : 'text-lg';
-                
-                // Semáforo días
                 const dias = c.dias_sin_comprar || 999;
                 let barColor = 'bg-green-500';
                 if(dias > 30) barColor = 'bg-yellow-500';
@@ -539,11 +541,8 @@
         };
 
         async function registerAction(id, tipo, motivo, obs) {
-            // Optimistic UI Update
             state.route.completed.add(String(id));
-            renderRoute(); // Al re-renderizar, si está en focus mode, pasa al siguiente auto
-
-            // Enviar al fondo
+            renderRoute();
             try {
                 await apiCall('registrar_movimiento', {
                     vendedor: state.user.vendedor,
@@ -568,7 +567,7 @@
         };
         window.closeModal = () => el('modal-options').classList.add('hidden');
 
-        // === IA CHAT ===
+        // === IA CHAT & DINÁMICA ===
         window.toggleAIChat = (show) => {
             const m = el('modal-ai-chat');
             if(show) { m.classList.remove('translate-y-full'); setTimeout(() => el('chat-input').focus(), 300); }
@@ -587,15 +586,71 @@
                 const res = await apiCall('chatbot', { vendedor: state.user.vendedor, mensaje: txt });
                 appendChat(res.respuesta, 'bot');
             } catch (e) {
-                appendChat('Error de conexión con IA.', 'bot');
+                appendChat('Error de conexión con soporte.', 'bot');
             }
+        };
+
+        // Detector de pedidos: Convierte texto plano con precios en un Ticket HTML
+        function detectAndFormatOrder(text) {
+            // Regex simple para detectar líneas tipo "- Item ... $Preco" o "Total: ..."
+            // Si detecta "Total:" y al menos un precio o item, asume que es un pedido
+            if (text.toLowerCase().includes('total:') || (text.includes('$') && text.includes('- '))) {
+                const lines = text.split('\n');
+                let html = '<div class="ticket-container"><div class="ticket-header">Ticket de Pedido</div>';
+                let rawOrder = ""; // Texto limpio para copiar
+
+                lines.forEach(line => {
+                    const l = line.trim();
+                    if(!l) return;
+                    rawOrder += l + "\n";
+                    
+                    if(l.toLowerCase().startsWith('total:')) {
+                        html += `<div class="ticket-total"><span>TOTAL</span> <span>${l.split(':')[1]}</span></div>`;
+                    } else if (l.startsWith('-')) {
+                        // Intenta separar item y precio si es posible
+                        const parts = l.substring(1).split('$');
+                        const item = parts[0].trim();
+                        const price = parts.length > 1 ? '$' + parts[1].trim() : '';
+                        html += `<div class="ticket-row"><span>${item}</span> <span>${price}</span></div>`;
+                    } else {
+                        html += `<div class="text-xs text-gray-500 mb-1">${l}</div>`;
+                    }
+                });
+
+                // Botón de Copiar
+                // Escapamos comillas simples para el onclick
+                const safeText = rawOrder.replace(/'/g, "\\'");
+                html += `<button onclick="copyOrderText('${safeText}', this)" class="btn-copy-order"><i class="fas fa-copy"></i> COPIAR PEDIDO</button>`;
+                html += '</div>';
+                return html;
+            }
+            return text.replace(/\n/g, '<br>');
+        }
+
+        window.copyOrderText = (text, btn) => {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> COPIADO';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => showToast('Error al copiar', 'error'));
         };
 
         function appendChat(text, role) {
             const c = el('chat-messages');
             const d = document.createElement('div');
             d.className = `chat-bubble chat-${role} animate-pop`;
-            d.innerHTML = text.replace(/\n/g, '<br>');
+            
+            // Si es bot, intentamos formatear si parece un pedido
+            if (role === 'bot') {
+                d.innerHTML = detectAndFormatOrder(text);
+            } else {
+                d.innerHTML = text.replace(/\n/g, '<br>');
+            }
+            
             c.appendChild(d);
             c.scrollTop = c.scrollHeight;
         }
