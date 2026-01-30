@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mercado Limpio V4</title>
+    <title>Mercado Limpio Ventas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -17,22 +17,31 @@
         .view-section { display: none; width: 100%; height: 100vh; flex-direction: column; }
         .view-section.active { display: flex; }
         
-        /* BOTONES Y ANIMACIONES */
+        /* ANIMACIONES */
         .btn-press:active { transform: scale(0.96); transition: 0.1s; }
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
         .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         
-        /* TOAST Y CHAT */
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 12px 20px; border-radius: 12px; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: 0.3s; }
+        /* CHAT */
         .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
         .chat-user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
-        .chat-bot { background: #1e293b; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #334155; }
+        .chat-bot { background: #1e293b; color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #334155; }
         
-        /* TICKET DE PEDIDO */
-        .ticket-container { background: #f1f5f9; color: #1e293b; padding: 12px; border-radius: 8px; margin-top: 5px; font-family: monospace; border: 2px dashed #cbd5e1; }
-        .ticket-header { text-align: center; font-weight: bold; border-bottom: 1px dashed #94a3b8; padding-bottom: 8px; margin-bottom: 8px; }
-        .btn-copy-order { width: 100%; background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-family: sans-serif; font-weight: bold; font-size: 0.85rem; margin-top: 8px; display: flex; justify-content: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        /* TYPING INDICATOR */
+        .typing-indicator { display: flex; gap: 4px; padding: 12px 16px; background: #1e293b; border-radius: 18px; width: fit-content; border: 1px solid #334155; margin-bottom: 8px; }
+        .typing-dot { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; animation: pulse-dot 1.4s infinite ease-in-out; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        /* TICKET STYLE */
+        .ticket-container { background: #f8fafc; color: #0f172a; padding: 12px; border-radius: 8px; margin-top: 5px; font-family: monospace; border: 2px dashed #cbd5e1; font-size: 0.85rem; }
+        .ticket-header { text-align: center; font-weight: bold; border-bottom: 1px dashed #94a3b8; padding-bottom: 8px; margin-bottom: 8px; text-transform: uppercase; }
+        .btn-copy-order { width: 100%; background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-family: sans-serif; font-weight: bold; font-size: 0.8rem; margin-top: 8px; display: flex; justify-content: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .btn-copy-order:active { background: #1d4ed8; }
+
+        /* TOAST */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 12px 20px; border-radius: 12px; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: 0.3s; }
     </style>
 </head>
 <body>
@@ -82,7 +91,7 @@
         </div>
         
         <button onclick="toggleAIChat(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 rounded-full shadow-2xl flex items-center justify-center z-30 btn-press text-white border-2 border-slate-800">
-            <i class="fas fa-robot text-xl"></i>
+            <i class="fas fa-headset text-xl"></i>
         </button>
     </section>
 
@@ -100,8 +109,7 @@
             </button>
         </div>
         
-        <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative">
-            </div>
+        <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative"></div>
     </section>
 
     <div id="modal-suggestions" class="fixed inset-0 z-50 bg-black/95 flex items-end sm:items-center justify-center hidden p-4 backdrop-blur-sm">
@@ -111,19 +119,14 @@
                     <i class="fas fa-map-signs text-xl"></i>
                 </div>
                 <h3 class="text-xl font-black text-white">Plan del Día</h3>
-                <p class="text-sm text-slate-400 mt-1">La IA sugiere estas zonas para hoy:</p>
+                <p class="text-sm text-slate-400 mt-1">Sugerencia basada en historial:</p>
             </div>
             
-            <div id="suggestions-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto">
-                </div>
+            <div id="suggestions-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto"></div>
             
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="el('modal-suggestions').classList.add('hidden')" class="btn-press py-3 rounded-xl font-bold text-slate-400 bg-slate-800">
-                    Omitir
-                </button>
-                <button onclick="applySuggestions()" class="btn-press py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30">
-                    Comenzar Ruta
-                </button>
+                <button onclick="el('modal-suggestions').classList.add('hidden')" class="btn-press py-3 rounded-xl font-bold text-slate-400 bg-slate-800">Omitir</button>
+                <button onclick="applySuggestions()" class="btn-press py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30">Aceptar Ruta</button>
             </div>
         </div>
     </div>
@@ -132,9 +135,9 @@
         <div class="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shadow-md">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white border-2 border-slate-700">
-                    <i class="fas fa-robot"></i>
+                    <i class="fas fa-headset"></i>
                 </div>
-                <h3 class="font-bold text-white">Mercado Limpio IA</h3>
+                <h3 class="font-bold text-white">Soporte Ventas</h3>
             </div>
             <button onclick="toggleAIChat(false)" class="w-10 h-10 text-slate-400 hover:text-white">
                 <i class="fas fa-chevron-down"></i>
@@ -142,8 +145,10 @@
         </div>
         
         <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 bg-slate-950">
-            <div class="chat-bubble chat-bot">Hola. ¿En qué te ayudo hoy? (Ej: "Pedido cliente 10373" o "Sugerir ruta")</div>
+            <div class="chat-bubble chat-bot">Hola. Estoy para ayudarte con pedidos o rutas.</div>
         </div>
+
+        <div id="typing" class="hidden px-4"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>
         
         <div class="p-4 bg-slate-800 border-t border-slate-700 pb-8 flex gap-2">
             <input id="chat-in" type="text" placeholder="Escribe aquí..." class="flex-1 bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-1 ring-indigo-500 text-white placeholder-slate-500">
@@ -155,22 +160,23 @@
 
     <div id="modal-reg" class="fixed inset-0 z-[60] bg-black/90 hidden flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-700 animate-pop shadow-2xl">
-            <h3 id="reg-title" class="text-xl font-black mb-4 text-white">CLIENTE</h3>
+            <h3 id="reg-title" class="text-xl font-black mb-1 text-white">CLIENTE</h3>
+            <div id="reg-info" class="text-xs text-slate-400 mb-4 font-mono border-b border-slate-700 pb-2">Calculando...</div>
             
             <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="saveVis('Stock')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                <button onclick="selectReason('Stock', this)" class="reason-btn btn-press bg-slate-700 p-4 rounded-xl text-left border border-transparent transition-all">
                     <i class="fas fa-box text-blue-400 block mb-2 text-xl"></i>
                     <span class="text-xs font-bold uppercase text-slate-200">Tiene Stock</span>
                 </button>
-                <button onclick="saveVis('Dinero')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                <button onclick="selectReason('Dinero', this)" class="reason-btn btn-press bg-slate-700 p-4 rounded-xl text-left border border-transparent transition-all">
                     <i class="fas fa-wallet text-red-400 block mb-2 text-xl"></i>
                     <span class="text-xs font-bold uppercase text-slate-200">Sin Dinero</span>
                 </button>
-                <button onclick="saveVis('Cerrado')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                <button onclick="selectReason('Cerrado', this)" class="reason-btn btn-press bg-slate-700 p-4 rounded-xl text-left border border-transparent transition-all">
                     <i class="fas fa-store-slash text-yellow-400 block mb-2 text-xl"></i>
                     <span class="text-xs font-bold uppercase text-slate-200">Cerrado</span>
                 </button>
-                <button onclick="saveVis('Volver')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                <button onclick="selectReason('Volver', this)" class="reason-btn btn-press bg-slate-700 p-4 rounded-xl text-left border border-transparent transition-all">
                     <i class="fas fa-clock text-purple-400 block mb-2 text-xl"></i>
                     <span class="text-xs font-bold uppercase text-slate-200">Volver</span>
                 </button>
@@ -180,27 +186,19 @@
             
             <div class="flex gap-2">
                 <button onclick="el('modal-reg').classList.add('hidden')" class="flex-1 py-3 bg-slate-700 rounded-xl font-bold text-slate-300">Cancelar</button>
-                <button onclick="saveVis('Nota')" class="flex-1 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200">Guardar</button>
+                <button onclick="commitSave()" class="flex-1 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200">GUARDAR</button>
             </div>
         </div>
     </div>
 
     <script>
-        // === CONFIG ===
         const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
-        const state = { user: JSON.parse(localStorage.getItem('ml_user')), db: {}, route: {active:[], done:new Set()}, sel: new Set(), mode: 'list', cliId: null };
+        const state = { user: JSON.parse(localStorage.getItem('ml_user')), db: {}, route: {active:[], done:new Set()}, sel: new Set(), mode: 'list', cliId: null, tempReason: null };
         const el = id => document.getElementById(id);
+        const toast = (m, t='info') => { const d=el('toast'); d.innerText=m; d.className=`toast ${t==='error'?'bg-red-600':'bg-emerald-600'} text-white`; d.style.opacity=1; d.style.top='30px'; setTimeout(()=>{d.style.opacity=0;d.style.top='20px'},2500); };
         
-        const toast = (m, t='info') => { 
-            const d=el('toast'); d.innerText=m; 
-            d.className=`toast ${t==='error'?'bg-red-600':'bg-emerald-600'} text-white`; 
-            d.style.opacity=1; d.style.top='30px'; 
-            setTimeout(()=>{d.style.opacity=0;d.style.top='20px'},2500); 
-        };
-        
-        // === API ===
         async function api(act, pl) {
-            const ctrl = new AbortController(); setTimeout(()=>ctrl.abort(), 45000); // 45s Timeout
+            const ctrl = new AbortController(); setTimeout(()=>ctrl.abort(), 45000);
             try {
                 const r = await fetch(WORKER, { method:'POST', body:JSON.stringify({action:act, payload:pl}), signal:ctrl.signal });
                 const j = await r.json();
@@ -209,17 +207,14 @@
             } catch(e) { throw e; }
         }
 
-        // === INICIO ===
         document.addEventListener('DOMContentLoaded', () => {
             if(state.user) init(); else switchView('view-login');
-            // GPS Tracker
             if(navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, {enableHighAccuracy:true, maximumAge:10000});
+            // EVENTO ENTER CHAT
+            el('chat-in').addEventListener('keydown', (e) => { if(e.key === 'Enter') sendChat(); });
         });
 
-        function switchView(id) { 
-            document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active')); 
-            el(id).classList.add('active'); 
-        }
+        function switchView(id) { document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active')); el(id).classList.add('active'); }
 
         async function handleLogin() {
             const u = el('login-user').value.trim(), p = el('login-pass').value.trim();
@@ -240,22 +235,17 @@
             try {
                 const d = await api('get_app_data', {vendedor:state.user.vendedor});
                 state.db = d;
-                renderGrid(); // Dibuja botones
-                
-                // Mostrar Modal de Sugerencias si hay datos
-                if(d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
-                    showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
-                }
-            } catch(e) { toast('Error cargando datos','error'); } finally { el('loader').classList.add('hidden'); }
+                renderGrid();
+                if(d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+            } catch(e) { toast('Error carga','error'); } finally { el('loader').classList.add('hidden'); }
         }
 
-        // === DASHBOARD GRID ===
+        // GRID DASHBOARD
         function renderGrid() {
             const g = el('zones-grid'); g.innerHTML = '';
             state.db.zonas.forEach(z => {
                 const crit = z.criticos>0;
                 const d = document.createElement('div');
-                // Estilo Grid visual
                 d.className = `p-4 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden active:scale-95 ${crit?'bg-red-900/10 border-red-500/30':'bg-slate-800 border-slate-700'}`;
                 d.onclick = () => toggleSel(z.nombre, d);
                 d.innerHTML = `
@@ -264,39 +254,32 @@
                         <span class="text-xs text-slate-400 font-mono">${z.total_clientes} Clientes</span>
                         ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-marker-alt text-slate-600"></i>'}
                     </div>
-                    <div class="sel-overlay absolute inset-0 bg-blue-600/20 border-2 border-blue-500 hidden z-10 flex items-center justify-center">
-                        <i class="fas fa-check-circle text-white text-3xl drop-shadow-md"></i>
-                    </div>
+                    <div class="sel-overlay absolute inset-0 bg-blue-600/20 border-2 border-blue-500 hidden z-10 flex items-center justify-center"><i class="fas fa-check-circle text-white text-3xl"></i></div>
                 `;
                 g.appendChild(d);
             });
         }
-
         function toggleSel(n, div) {
             const ov = div.querySelector('.sel-overlay');
             if(state.sel.has(n)) { state.sel.delete(n); ov.classList.add('hidden'); }
             else { state.sel.add(n); ov.classList.remove('hidden'); }
-            
             const c = state.sel.size;
             el('footer-dashboard').classList.toggle('hidden', c===0);
             el('btn-start-lbl').innerText = `INICIAR (${c})`;
         }
-
         function startRoute() {
             const k = Array.from(state.sel);
             if(k.length===0) return;
-            // Filtro de clientes por localidad_key
             state.route.active = state.db.clientes.filter(c=>k.includes(c.localidad_key));
-            renderRoute(); 
-            switchView('view-route');
+            renderRoute(); switchView('view-route');
         }
 
-        // === MODAL SUGERENCIAS ===
+        // SUGERENCIAS
         function showSuggestions(list) {
             const c = el('suggestions-list'); c.innerHTML='';
             list.forEach(loc => {
                 const b = document.createElement('button');
-                b.className = 'w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-left flex justify-between items-center mb-2 active:bg-slate-700 transition-colors';
+                b.className = 'w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-left flex justify-between items-center mb-2 active:bg-slate-700';
                 b.onclick = function() { 
                     this.classList.toggle('ring-2'); this.classList.toggle('ring-blue-500'); this.classList.toggle('bg-slate-700');
                     if(state.sel.has(loc)) state.sel.delete(loc); else state.sel.add(loc);
@@ -306,63 +289,40 @@
             });
             el('modal-suggestions').classList.remove('hidden');
         }
+        function applySuggestions() { if(state.sel.size > 0) startRoute(); el('modal-suggestions').classList.add('hidden'); }
 
-        function applySuggestions() {
-            if(state.sel.size > 0) startRoute();
-            el('modal-suggestions').classList.add('hidden');
-        }
-
-        // === RUTA Y ANTI-FLICKER ===
+        // RUTA
         function renderRoute() {
             const c = el('route-container'); c.innerHTML = '';
             const pends = state.route.active.filter(x => !state.route.done.has(String(x.id)));
             el('route-count').innerText = pends.length;
-            
-            if(!pends.length) { 
-                c.innerHTML='<div class="text-center mt-20"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><h3 class="text-2xl font-bold text-white">¡Ruta Finalizada!</h3></div>'; 
-                return; 
-            }
-
+            if(!pends.length) { c.innerHTML='<div class="text-center mt-20"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><h3 class="text-2xl font-bold text-white">¡Ruta Finalizada!</h3></div>'; return; }
             const list = state.mode==='focus' ? [pends[0]] : pends;
             list.forEach((cli) => {
                 const days = cli.dias_sin_comprar;
                 const col = days>60?'bg-red-500':(days>30?'bg-yellow-500':'bg-green-500');
-                
                 const div = document.createElement('div');
-                div.id = `card-${cli.id}`; // ID Único para actualizar solo distancia
-                div.className = state.mode==='focus' ? 
-                    'h-[75vh] flex flex-col justify-between bg-slate-900 p-6 rounded-3xl border border-slate-800 relative overflow-hidden shadow-xl' : 
-                    'bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-3 relative shadow-md';
-                
+                div.id = `card-${cli.id}`;
+                div.className = state.mode==='focus' ? 'h-[75vh] flex flex-col justify-between bg-slate-900 p-6 rounded-3xl border border-slate-800 relative overflow-hidden shadow-xl' : 'bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-3 relative shadow-md';
                 div.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1 ${col}"></div>
-                    <div class="flex justify-between pl-2">
-                        <span class="text-xs font-bold text-slate-500">#${cli.id}</span>
-                        <span class="text-xs bg-slate-800 px-2 rounded text-slate-300 border border-slate-700">${days}d</span>
-                    </div>
+                    <div class="flex justify-between pl-2"><span class="text-xs font-bold text-slate-500">#${cli.id}</span><span class="text-xs bg-slate-800 px-2 rounded text-slate-300 border border-slate-700">${days}d</span></div>
                     <h2 class="${state.mode==='focus'?'text-3xl':'text-lg'} font-black uppercase mt-1 leading-tight text-white pl-2">${cli.nombre}</h2>
                     <p class="text-slate-400 text-sm mt-1 truncate pl-2"><i class="fas fa-map-pin mr-1"></i>${cli.direccion}</p>
-                    
-                    <div id="dist-${cli.id}" class="text-xs font-bold text-blue-400 mt-2 h-4 pl-2" data-lat="${cli.lat}" data-lng="${cli.lng}">
-                        <span class="animate-pulse">Calculando...</span>
-                    </div>
-                    
+                    <div id="dist-${cli.id}" class="text-xs font-bold text-blue-400 mt-2 h-4 pl-2" data-lat="${cli.lat}" data-lng="${cli.lng}"><span class="animate-pulse">Calculando...</span></div>
                     <div class="grid grid-cols-4 gap-2 mt-4 pl-2">
-                        <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-95 transition-transform">Venta</button>
+                        <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95">Venta</button>
                         <button onclick="openReg('${cli.id}')" class="col-span-1 bg-slate-800 rounded-xl text-slate-300 border border-slate-700 active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
                     </div>
                 `;
                 c.appendChild(div);
             });
-            updateDistances(); // Calcular 1ra vez
+            updateDistances();
         }
 
-        // ESTA FUNCIÓN CORRIGE EL PARPADEO
         function updateDistances(pos) {
             if(!pos && !state.location) return;
             if(pos) state.location = {lat:pos.coords.latitude, lng:pos.coords.longitude};
-            
-            // Busca solo los elementos de distancia y actualiza su texto
             document.querySelectorAll('[id^="dist-"]').forEach(el => {
                 const lat = el.getAttribute('data-lat'), lng = el.getAttribute('data-lng');
                 if(lat && lng && lat!='null' && lat!='') {
@@ -372,80 +332,106 @@
             });
         }
         function getKm(lat1,lon1,lat2,lon2) {
-            const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180; 
-            const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180, a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
             return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
         }
 
-        // === ACCIONES DE REGISTRO ===
+        // ACCIONES
         async function quickSale(id) { await doReg(id,'pedido','Venta OK','Rápida'); }
-        async function saveVis(m) { if(state.cliId) await doReg(state.cliId,'visita',m,el('reg-obs').value); el('modal-reg').classList.add('hidden'); }
-        
         async function doReg(id,t,m,o) {
-            // Optimista
-            state.route.done.add(String(id)); 
-            renderRoute();
-            try { 
-                await api('registrar_movimiento',{vendedor:state.user.vendedor, clienteId:id, tipo:t, motivo:m, observacion:o}); 
-                toast('Registrado','success'); 
-            } catch(e){ toast('Guardado local (offline)','error'); }
+            state.route.done.add(String(id)); renderRoute();
+            try { await api('registrar_movimiento',{vendedor:state.user.vendedor, clienteId:id, tipo:t, motivo:m, observacion:o}); toast('Registrado','success'); }
+            catch(e){ toast('Guardado offline','error'); }
         }
-        
-        function openReg(id) { 
-            state.cliId=id; 
-            const c=state.db.clientes.find(x=>String(x.id)==id); 
-            el('reg-title').innerText=c.nombre; 
-            el('reg-obs').value=''; 
-            el('modal-reg').classList.remove('hidden'); 
-        }
-        
         function toggleViewMode() { state.mode=state.mode==='list'?'focus':'list'; renderRoute(); }
 
-        // === CHATBOT HTML (V3.1) ===
+        // MODAL REGISTRO MEJORADO
+        function openReg(id) { 
+            state.cliId = id; 
+            state.tempReason = null;
+            const c = state.db.clientes.find(x => String(x.id) == id);
+            el('reg-title').innerText = c.nombre; 
+            el('reg-obs').value = ''; 
+            
+            // INFO DE ÚLTIMA COMPRA
+            let info = "Cliente Nuevo";
+            if (c.dias_sin_comprar < 900) {
+                // Calcular fecha aproximada
+                const hoy = new Date();
+                const fecha = new Date(hoy.setDate(hoy.getDate() - c.dias_sin_comprar));
+                const fechaStr = fecha.toLocaleDateString('es-AR');
+                info = `Última compra: ${fechaStr} (${c.dias_sin_comprar} días)`;
+                
+                if(c.dias_sin_comprar > 60) {
+                   info += ` <br><span class="text-red-400 font-bold bg-red-900/30 px-2 py-1 rounded mt-1 inline-block animate-pulse">⚠️ RECUPERAR CLIENTE URGENTE</span>`;
+                }
+            }
+            el('reg-info').innerHTML = info;
+
+            // Resetear botones
+            document.querySelectorAll('.reason-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'border-blue-400');
+                b.classList.add('bg-slate-700', 'border-transparent');
+            });
+            
+            el('modal-reg').classList.remove('hidden'); 
+        }
+
+        function selectReason(reason, btn) {
+            state.tempReason = reason;
+            document.querySelectorAll('.reason-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'border-blue-400');
+                b.classList.add('bg-slate-700', 'border-transparent');
+            });
+            btn.classList.remove('bg-slate-700', 'border-transparent');
+            btn.classList.add('bg-blue-600', 'border-blue-400');
+        }
+
+        async function commitSave() {
+            if(!state.tempReason && el('reg-obs').value.trim() === '') return toast('Selecciona motivo o escribe nota', 'error');
+            const motivo = state.tempReason || 'Nota General';
+            await doReg(state.cliId, 'visita', motivo, el('reg-obs').value);
+            el('modal-reg').classList.add('hidden');
+        }
+
+        // CHAT REPARADO
         function toggleAIChat(s) { const m=el('modal-chat'); if(s) { m.classList.remove('translate-y-full'); setTimeout(()=>el('chat-in').focus(),300); } else m.classList.add('translate-y-full'); }
         
         async function sendChat() {
             const i=el('chat-in'), t=i.value.trim(); if(!t) return;
-            addMsg(t,'user'); 
-            i.value='';
+            addMsg(t,'user'); i.value='';
             
+            el('typing').classList.remove('hidden'); // Mostrar Animación
+            el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+
             try {
                 const res = await api('chatbot', {vendedor:state.user.vendedor, mensaje:t});
-                // LEER OBJETO JSON DEL BACKEND
+                // AQUÍ ESTABA EL ERROR VISUAL: INTERPRETAR EL JSON
                 const r = res.respuesta;
                 if (r && typeof r === 'object') {
                     let html = r.mensaje_corto || "Ok";
-                    if(r.html_extra) html += r.html_extra; // Agrega el Ticket/Botón
+                    if(r.html_extra) html += r.html_extra;
                     addMsg(html, 'bot', true);
                 } else {
-                    addMsg(JSON.stringify(r), 'bot'); // Fallback
+                    addMsg(JSON.stringify(r), 'bot'); 
                 }
-            } catch(e) { 
-                addMsg('Error de conexión con la IA', 'bot'); 
-            }
+            } catch(e) { addMsg('Error conexión','bot'); } 
+            finally { el('typing').classList.add('hidden'); }
         }
         
         function addMsg(h,r,isHtml=false) {
-            const d=document.createElement('div'); 
-            d.className=`chat-bubble chat-${r} animate-pop`;
+            const d=document.createElement('div'); d.className=`chat-bubble chat-${r} animate-pop`;
             if(isHtml) d.innerHTML = h; else d.innerText = h;
             const c=el('chat-msgs'); c.appendChild(d); c.scrollTop=c.scrollHeight;
         }
 
-        // Helpers Globales para el HTML inyectado por la IA
         window.acceptIARoute = (str) => {
             toggleAIChat(false);
             const list = str.split(',').map(s=>s.trim().toUpperCase());
-            state.sel = new Set(list); 
-            startRoute();
+            state.sel = new Set(list); startRoute();
         };
-        
         window.copyOrderText = (txt, btn) => {
-            navigator.clipboard.writeText(txt).then(()=>{ 
-                const o=btn.innerHTML; 
-                btn.innerHTML='<i class="fas fa-check"></i> COPIADO'; 
-                setTimeout(()=>btn.innerHTML=o,2000); 
-            });
+            navigator.clipboard.writeText(txt).then(()=>{ const o=btn.innerHTML; btn.innerHTML='<i class="fas fa-check"></i> COPIADO'; setTimeout(()=>btn.innerHTML=o,2000); });
         };
     </script>
 </body>
