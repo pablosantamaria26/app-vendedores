@@ -1,22 +1,3 @@
-Hola, **Pablo Daniel**. Veo perfectamente el error en la imagen.
-
-El problema es exactamente lo que sospechaba al ver tus archivos separados: **Conflicto de tiempos y lógica duplicada.**
-
-1. **El conflicto:** Tu `index.html` tenía un script al final que "pisaba" (sobrescribía) la lógica de `app.js`. Ese script tenía un tiempo de espera (timeout) de **15 segundos**.
-2. **La lentitud:** La IA (Gemini) + Leer las hojas de cálculo en el servidor tarda entre **20 y 30 segundos** en procesar todo.
-3. **El resultado:** Tu App "se aburre" de esperar a los 15 segundos, corta la conexión y te muestra "Error de conexión con soporte", aunque el servidor siga trabajando.
-
-Para solucionarlo y trabajar de forma **organizada** como pediste, he fusionado **TODO** (HTML + CSS + JS corregido) en un solo archivo `index.html`.
-
-**He realizado estas correcciones críticas en el código unificado:**
-
-1. **Aumenté el tiempo de espera (Timeout):** Pasé de 15 segundos a **90 segundos** en la función `apiCall`. Esto le da tiempo a la IA de pensar sin que la app corte la llamada.
-2. **Indicador "Escribiendo...":** Agregé una burbuja visual que dice "..." mientras la IA piensa, para que sepas que no se colgó.
-3. **Unificación:** Borré la lógica duplicada. Ahora el HTML depende 100% del JS integrado.
-
-Aquí tienes el código **FINAL UNIFICADO** para `index.html`. Copia y pega esto reemplazando todo tu archivo actual.
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
