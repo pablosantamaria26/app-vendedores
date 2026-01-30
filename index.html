@@ -16,13 +16,11 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Gestión de Vistas */
+        /* Vistas */
         .view-section { display: none; width: 100%; height: 100vh; flex-direction: column; }
         .view-section.active { display: flex; }
 
         input, button, textarea { font-family: inherit; outline: none; -webkit-tap-highlight-color: transparent; }
-
-        /* Efectos Táctiles */
         .btn-press:active { transform: scale(0.96); transition: transform 0.1s; }
         
         /* Animaciones */
@@ -35,7 +33,7 @@
         @keyframes pulse-dot { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
         .animate-pulse-dot { animation: pulse-dot 1.5s infinite; }
 
-        /* Toast (Notificaciones) */
+        /* Toast */
         #toast-container { position: fixed; top: 20px; left: 0; right: 0; display: flex; flex-direction: column; alignItems: center; pointer-events: none; z-index: 9999; }
         .toast { background: #333; color: white; padding: 12px 20px; border-radius: 12px; margin-top: 10px; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); pointer-events: auto; animation: popIn 0.3s; }
         .toast.error { background: #7f1d1d; border-left: 4px solid #f87171; }
@@ -46,14 +44,14 @@
         .chat-user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 4px; margin-left: auto; }
         .chat-bot { background: #374151; color: #e5e7eb; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #4b5563; }
         
-        /* Indicador de escribiendo (Typing) */
+        /* Indicador Escribiendo (Typing) */
         .typing-indicator { display: flex; gap: 4px; padding: 12px 16px; background: #374151; border-radius: 18px; width: fit-content; border-bottom-left-radius: 4px; border: 1px solid #4b5563; }
-        .typing-dot { w-2 h-2 bg-gray-400 rounded-full; width: 6px; height: 6px; background: #9ca3af; border-radius: 50%; animation: pulse-dot 1.4s infinite ease-in-out; }
+        .typing-dot { width: 6px; height: 6px; background: #9ca3af; border-radius: 50%; animation: pulse-dot 1.4s infinite ease-in-out; }
         .typing-dot:nth-child(1) { animation-delay: 0s; }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
-        /* Ticket de Pedido en Chat */
+        /* Ticket de Pedido (Estilos Visuales) */
         .ticket-container { background: #f3f4f6; color: #1f2937; padding: 15px; border-radius: 12px; font-family: 'Courier New', monospace; margin-top: 10px; border: 2px dashed #d1d5db; position: relative; }
         .ticket-header { text-align: center; border-bottom: 2px dashed #9ca3af; padding-bottom: 10px; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; }
         .ticket-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.85rem; }
@@ -67,7 +65,7 @@
 
     <div id="loader" class="fixed inset-0 z-[100] bg-gray-900/95 flex flex-col items-center justify-center hidden backdrop-blur-sm">
         <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 text-xs font-bold text-blue-400 uppercase tracking-[0.2em] animate-pulse">Procesando...</p>
+        <p class="mt-4 text-xs font-bold text-blue-400 uppercase tracking-[0.2em] animate-pulse">Conectando...</p>
     </div>
 
     <div id="toast-container"></div>
@@ -84,7 +82,7 @@
                     <i class="fas fa-cubes text-3xl text-white"></i>
                 </div>
                 <h1 class="text-4xl font-black tracking-tighter text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
-                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-2">Logística Inteligente</p>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.3em] mt-2">Logística Inteligente V3.0</p>
             </div>
 
             <div class="space-y-4 bg-gray-800/50 backdrop-blur-md p-6 rounded-3xl border border-gray-700/50 shadow-2xl">
@@ -108,8 +106,6 @@
                     <span>INGRESAR SISTEMA</span> <i class="fas fa-arrow-right text-sm"></i>
                 </button>
             </div>
-            
-            <p class="mt-8 text-[10px] font-mono text-gray-600">V2.0 Unified • Server Online</p>
         </div>
     </section>
 
@@ -182,8 +178,8 @@
                     <i class="fas fa-headset text-white"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-white leading-none">Mercado Limpio - Chat</h3>
-                    <p class="text-[10px] text-green-400 font-bold mt-1 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Soporte Activo</p>
+                    <h3 class="font-bold text-white leading-none">Mercado Limpio IA</h3>
+                    <p class="text-[10px] text-green-400 font-bold mt-1 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Conectado V3.0</p>
                 </div>
             </div>
             <button onclick="window.toggleAIChat(false)" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white">
@@ -193,9 +189,9 @@
 
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 bg-gray-900">
             <div class="chat-bubble chat-bot animate-pop">
-                Hola, soy el asistente de ventas. ¿En qué te puedo ayudar hoy con tus pedidos o rutas?
+                Hola, soy tu asistente logístico. Pídeme un cliente por ID o nombre, o pregúntame "¿Qué hago hoy?".
             </div>
-            </div>
+        </div>
 
         <div id="typing-indicator" class="hidden px-6 pb-2">
             <div class="typing-indicator">
@@ -207,7 +203,7 @@
 
         <div class="p-4 bg-gray-800 border-t border-gray-700 pb-8">
             <div class="flex gap-2 relative">
-                <input id="chat-input" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-gray-900 border border-gray-600 text-white text-sm rounded-xl px-4 py-3 focus:border-indigo-500 pr-10">
+                <input id="chat-input" type="text" placeholder="Ej: Pasame el pedido del cliente 1004..." class="flex-1 bg-gray-900 border border-gray-600 text-white text-sm rounded-xl px-4 py-3 focus:border-indigo-500 pr-10">
                 <button onclick="window.sendChatMessage()" class="btn-press absolute right-2 top-2 bottom-2 bg-indigo-600 text-white w-10 rounded-lg flex items-center justify-center shadow-lg">
                     <i class="fas fa-paper-plane text-xs"></i>
                 </button>
@@ -259,25 +255,23 @@
 
     <script>
         // === CONFIGURACIÓN ===
-        // Reemplaza esto con tu URL real del Worker si cambia
         const WORKER_URL = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
 
-        // === ESTADO GLOBAL ===
+        // === ESTADO ===
         const state = {
             user: JSON.parse(localStorage.getItem('ml_user')) || null,
             location: null,
             db: { clients: [], zones: [], ia: null },
             route: { active: [], completed: new Set() },
             selection: new Set(),
-            viewMode: 'list', // 'list' | 'focus'
+            viewMode: 'list',
             currentClientId: null
         };
 
-        // === UTILS DOM ===
+        // === UTILS ===
         const el = (id) => document.getElementById(id);
         const toggleLoader = (show) => el('loader').classList.toggle('hidden', !show);
         
-        // Limpiador de texto para HTML seguro
         const escapeHtml = (unsafe) => {
             if (!unsafe) return '';
             return String(unsafe)
@@ -288,34 +282,20 @@
                 .replace(/'/g, "&#039;");
         };
 
-        const cleanName = (str) => {
-            if (!str) return 'Cliente';
-            return String(str).trim();
-        };
+        const cleanName = (str) => String(str || 'Cliente').trim();
 
-        // Toast de Notificación
         function showToast(msg, type = 'error') {
             const cont = el('toast-container');
             const div = document.createElement('div');
             div.className = `toast ${type}`;
-            div.innerHTML = type === 'success' 
-                ? `<i class="fas fa-check-circle mr-2"></i>${msg}` 
-                : `<i class="fas fa-exclamation-circle mr-2"></i>${msg}`;
+            div.innerHTML = type === 'success' ? `<i class="fas fa-check-circle mr-2"></i>${msg}` : `<i class="fas fa-exclamation-circle mr-2"></i>${msg}`;
             cont.appendChild(div);
-            setTimeout(() => {
-                div.style.opacity = '0';
-                div.style.transform = 'translateY(-10px)';
-                setTimeout(() => div.remove(), 300);
-            }, 3000);
+            setTimeout(() => { div.style.opacity = '0'; div.style.transform = 'translateY(-10px)'; setTimeout(() => div.remove(), 300); }, 3000);
         }
 
-        // === API CALL (CON TIMEOUT AUMENTADO) ===
+        // === API CALL (Robustez V3.0) ===
         async function apiCall(action, payload) {
             const controller = new AbortController();
-            
-            // TIMEOUT CRÍTICO: 
-            // Para 'chatbot' damos 90 segundos porque Gemini tarda
-            // Para login/data damos 30 segundos
             const timeLimit = (action === 'chatbot' || action === 'chat_bot') ? 90000 : 30000;
             const timeout = setTimeout(() => controller.abort(), timeLimit);
 
@@ -326,79 +306,46 @@
                     body: JSON.stringify({ action, payload }),
                     signal: controller.signal
                 });
-
                 clearTimeout(timeout);
-                
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
-                // Intentamos parsear JSON
                 const text = await res.text();
                 let json;
-                try {
-                    json = JSON.parse(text);
-                } catch (e) {
-                    throw new Error("Respuesta inválida del servidor");
-                }
-
+                try { json = JSON.parse(text); } catch (e) { throw new Error("Error en servidor (JSON invalido)"); }
                 if (json.status !== 'success') throw new Error(json.message || 'Error desconocido');
-                
                 return json.data;
-
             } catch (err) {
                 clearTimeout(timeout);
-                if (err.name === 'AbortError') {
-                    throw new Error('El servidor tardó demasiado en responder. Intenta de nuevo.');
-                }
-                throw new Error(err.message.includes('fetch') ? 'Sin conexión a internet' : err.message);
+                throw new Error(err.name === 'AbortError' ? 'El servidor tardó demasiado (Timeout).' : (err.message.includes('fetch') ? 'Sin conexión.' : err.message));
             }
         }
 
-        // === INICIALIZACIÓN ===
+        // === STARTUP ===
         document.addEventListener('DOMContentLoaded', () => {
-            // Listeners globales
             el('btn-login')?.addEventListener('click', handleLogin);
-            
-            el('login-pass')?.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') handleLogin();
-            });
-            
-            el('chat-input')?.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') window.sendChatMessage();
-            });
+            el('login-pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+            el('chat-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') window.sendChatMessage(); });
 
-            // Geolocalización
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(
-                    p => { 
-                        state.location = { lat: p.coords.latitude, lng: p.coords.longitude };
-                        if(state.route.active.length) renderRoute(); // Actualizar distancias
-                    },
-                    e => console.log('Geo error (es normal si no hay HTTPS o permiso)', e),
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-                );
+                navigator.geolocation.watchPosition(p => { 
+                    state.location = { lat: p.coords.latitude, lng: p.coords.longitude };
+                    if(state.route.active.length) renderRoute();
+                }, e => console.log('GPS Error', e), { enableHighAccuracy: true });
             }
 
-            // Router simple
-            if (state.user) {
-                initApp();
-            } else {
-                switchView('view-login');
-            }
+            if (state.user) initApp();
+            else switchView('view-login');
         });
 
-        // === LÓGICA DE VISTAS ===
         window.switchView = (id) => {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            const target = el(id);
-            if(target) target.classList.add('active');
+            const t = el(id); if(t) t.classList.add('active');
         };
 
         // === LOGIN ===
         async function handleLogin() {
             const u = el('login-user').value.trim();
             const p = el('login-pass').value.trim();
-            if (!u || !p) return showToast('Ingrese usuario y pin', 'error');
-
+            if (!u || !p) return showToast('Ingrese datos', 'error');
             toggleLoader(true);
             try {
                 const data = await apiCall('login', { user: u, pass: p });
@@ -406,69 +353,42 @@
                 localStorage.setItem('ml_user', JSON.stringify(data));
                 showToast(`Hola ${data.user}`, 'success');
                 initApp();
-            } catch (e) {
-                showToast(e.message, 'error');
-            } finally {
-                toggleLoader(false);
-            }
+            } catch (e) { showToast(e.message, 'error'); } finally { toggleLoader(false); }
         }
-
-        window.logout = () => {
-            localStorage.removeItem('ml_user');
-            location.reload();
-        };
+        window.logout = () => { localStorage.removeItem('ml_user'); location.reload(); };
 
         // === APP CORE ===
-        function initApp() {
-            switchView('view-dashboard');
-            loadAppData();
-        }
+        function initApp() { switchView('view-dashboard'); loadAppData(); }
 
         async function loadAppData() {
             toggleLoader(true);
             try {
                 const data = await apiCall('get_app_data', { vendedor: state.user.vendedor });
-                
                 state.db.clients = data.clientes || [];
                 state.db.zones = data.zonas || [];
                 
                 renderZonesDashboard();
-                
-                // IA Sugerencia
                 if (data.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length > 0) {
                     const rutas = data.sugerencia_ia.sugerencias.rutas_sugeridas.join(', ');
                     el('ia-text').innerHTML = `Hoy te recomiendo visitar: <b>${rutas}</b>`;
                     el('btn-accept-ia').onclick = () => window.acceptIARoute(rutas);
                     el('ia-suggestion-box').classList.remove('hidden');
                 }
-
                 el('lbl-saludo').innerText = `HOLA, ${String(state.user.user).toUpperCase()}`;
-
-            } catch (e) {
-                showToast('Error cargando datos: ' + e.message);
-            } finally {
-                toggleLoader(false);
-            }
+            } catch (e) { showToast('Error datos: ' + e.message); } finally { toggleLoader(false); }
         }
 
-        // === DASHBOARD & ZONAS ===
+        // === ZONAS ===
         function renderZonesDashboard() {
-            const grid = el('zones-grid');
-            grid.innerHTML = '';
-            
+            const grid = el('zones-grid'); grid.innerHTML = '';
             state.db.zones.forEach(z => {
                 const btn = document.createElement('div');
                 const isCrit = z.criticos > 0;
                 btn.className = `p-5 rounded-2xl border cursor-pointer transition-all relative overflow-hidden group ${isCrit ? 'bg-red-900/10 border-red-500/30' : 'bg-gray-800 border-gray-700'}`;
-                
                 btn.onclick = () => toggleZoneSelection(z.nombre, btn);
-                
                 btn.innerHTML = `
                     <div class="flex justify-between items-start relative z-10">
-                        <div>
-                            <h3 class="font-bold text-lg text-white uppercase tracking-tight">${z.nombre}</h3>
-                            <p class="text-xs text-gray-400 mt-1 font-medium">${z.total_clientes} Clientes</p>
-                        </div>
+                        <div><h3 class="font-bold text-lg text-white uppercase">${z.nombre}</h3><p class="text-xs text-gray-400 mt-1">${z.total_clientes} Clientes</p></div>
                         ${isCrit ? '<div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>' : ''}
                     </div>
                     ${isCrit ? `<div class="mt-3 inline-block px-2 py-1 bg-red-500/20 rounded text-[10px] font-bold text-red-400 uppercase">⚠️ ${z.criticos} Críticos</div>` : ''}
@@ -479,47 +399,33 @@
         }
 
         function toggleZoneSelection(name, btn) {
-            if (state.selection.has(name)) {
-                state.selection.delete(name);
-                btn.classList.remove('selected');
-            } else {
-                state.selection.add(name);
-                btn.classList.add('selected');
-            }
+            if (state.selection.has(name)) { state.selection.delete(name); btn.classList.remove('selected'); } 
+            else { state.selection.add(name); btn.classList.add('selected'); }
             updateFooter();
         }
-
         function updateFooter() {
             const c = state.selection.size;
             const f = el('footer-dashboard');
-            if (c > 0) {
-                f.classList.remove('hidden');
-                el('btn-start-lbl').innerText = `INICIAR RUTA (${c})`;
-            } else {
-                f.classList.add('hidden');
-            }
+            if (c > 0) { f.classList.remove('hidden'); el('btn-start-lbl').innerText = `INICIAR RUTA (${c})`; } 
+            else { f.classList.add('hidden'); }
         }
 
         window.startRoute = () => {
             const keys = Array.from(state.selection);
-            // Filtramos clientes que coincidan con la localidad_key
             state.route.active = state.db.clients.filter(c => keys.includes(c.localidad_key));
             startRouteCommon();
         };
-
         window.acceptIARoute = (str) => {
              const keys = str.split(',').map(s => s.trim().toUpperCase());
              state.route.active = state.db.clients.filter(c => keys.some(k => (c.localidad_key||'').toUpperCase().includes(k)));
              startRouteCommon();
         };
-
         function startRouteCommon() {
-            if(!state.route.active.length) return showToast('No hay clientes en esta selección');
-            renderRoute();
-            switchView('view-route');
+            if(!state.route.active.length) return showToast('No hay clientes');
+            renderRoute(); switchView('view-route');
         }
 
-        // === RUTA (LISTA & FOCUS) ===
+        // === RUTA ===
         window.toggleViewMode = () => {
             state.viewMode = state.viewMode === 'list' ? 'focus' : 'list';
             el('icon-view-mode').className = state.viewMode === 'list' ? 'fas fa-crop-alt' : 'fas fa-list';
@@ -527,22 +433,16 @@
         };
 
         function renderRoute() {
-            const container = el('route-container');
-            container.innerHTML = '';
-            
+            const container = el('route-container'); container.innerHTML = '';
             const pendientes = state.route.active.filter(c => !state.route.completed.has(String(c.id)));
             el('route-count').innerText = `${pendientes.length} PENDIENTES`;
 
             if (pendientes.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-center mt-20 animate-pop">
-                        <div class="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mb-4 border border-green-500/20">
-                            <i class="fas fa-flag-checkered text-4xl text-green-500"></i>
-                        </div>
-                        <h3 class="text-2xl font-black text-white">¡Ruta Terminada!</h3>
-                        <p class="text-gray-400 mt-2 text-sm">Buen trabajo hoy.</p>
-                        <button onclick="window.switchView('view-dashboard')" class="mt-8 text-blue-400 font-bold bg-blue-500/10 px-6 py-3 rounded-xl hover:bg-blue-500/20">Volver al Inicio</button>
-                    </div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center mt-20 animate-pop">
+                    <div class="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mb-4"><i class="fas fa-flag-checkered text-4xl text-green-500"></i></div>
+                    <h3 class="text-2xl font-black text-white">¡Ruta Terminada!</h3>
+                    <button onclick="window.switchView('view-dashboard')" class="mt-8 text-blue-400 font-bold bg-blue-500/10 px-6 py-3 rounded-xl">Volver al Inicio</button>
+                </div>`;
                 return;
             }
 
@@ -552,61 +452,33 @@
                 let distInfo = '';
                 if (state.location && c.lat && c.lng) {
                     const km = getDistKm(state.location.lat, state.location.lng, c.lat, c.lng);
-                    const mins = Math.round((km / 25) * 60); // 25km/h promedio
-                    distInfo = `
-                        <div class="flex items-center gap-3 mt-3 bg-gray-900/50 p-2 rounded-lg border border-gray-700/50">
-                            <div class="text-xs font-bold text-blue-400 flex items-center gap-1"><i class="fas fa-route"></i> ${km} km</div>
-                            <div class="text-xs font-bold text-yellow-400 flex items-center gap-1"><i class="fas fa-clock"></i> ~${mins} min</div>
-                        </div>
-                    `;
+                    const mins = Math.round((km / 25) * 60);
+                    distInfo = `<div class="flex items-center gap-3 mt-3 bg-gray-900/50 p-2 rounded-lg"><div class="text-xs font-bold text-blue-400"><i class="fas fa-route"></i> ${km} km</div><div class="text-xs font-bold text-yellow-400"><i class="fas fa-clock"></i> ~${mins} m</div></div>`;
                 }
-
                 const isFocus = state.viewMode === 'focus';
-                const cardClass = isFocus 
-                    ? 'h-[75vh] flex flex-col justify-between bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-700 animate-slide-in relative overflow-hidden' 
-                    : 'bg-gray-800 p-5 mb-4 rounded-2xl shadow-md border border-gray-700 animate-pop relative';
-
-                const nameSize = isFocus ? 'text-3xl' : 'text-lg';
                 const dias = c.dias_sin_comprar || 999;
-                let barColor = 'bg-green-500';
-                if(dias > 30) barColor = 'bg-yellow-500';
-                if(dias > 60) barColor = 'bg-red-500';
+                let barColor = dias > 60 ? 'bg-red-500' : (dias > 30 ? 'bg-yellow-500' : 'bg-green-500');
 
                 const html = `
                     <div class="absolute top-0 left-0 bottom-0 w-1 ${barColor}"></div>
-                    ${isFocus ? `<div class="absolute -right-6 -top-6 text-[120px] font-black text-white/5 pointer-events-none">${state.route.active.indexOf(c) + 1}</div>` : ''}
-                    
+                    ${isFocus ? `<div class="absolute -right-6 -top-6 text-[120px] font-black text-white/5 pointer-events-none">${state.route.active.indexOf(c)+1}</div>` : ''}
                     <div>
-                        <div class="flex justify-between items-start">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-900/50 px-2 py-1 rounded inline-block mb-2">#${c.id} • ${c.localidad}</span>
-                            <span class="text-xs font-bold text-gray-300 bg-gray-700 px-2 py-1 rounded">${dias} Días</span>
-                        </div>
-                        <h2 class="${nameSize} font-black text-white leading-tight uppercase mt-1">${cleanName(c.nombre)}</h2>
-                        <div class="flex items-center gap-2 mt-2 text-gray-400 text-sm">
-                            <i class="fas fa-map-pin text-gray-500"></i>
-                            <span class="truncate">${c.direccion || 'Sin dirección'}</span>
-                        </div>
+                        <div class="flex justify-between items-start"><span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-900/50 px-2 py-1 rounded inline-block mb-2">#${c.id} • ${c.localidad}</span><span class="text-xs font-bold text-gray-300 bg-gray-700 px-2 py-1 rounded">${dias} Días</span></div>
+                        <h2 class="${isFocus ? 'text-3xl' : 'text-lg'} font-black text-white leading-tight uppercase mt-1">${cleanName(c.nombre)}</h2>
+                        <div class="flex items-center gap-2 mt-2 text-gray-400 text-sm"><i class="fas fa-map-pin text-gray-500"></i><span class="truncate">${c.direccion || 'Sin dirección'}</span></div>
                         ${distInfo}
                     </div>
-
                     <div class="${isFocus ? 'grid grid-cols-1 gap-4 mt-6' : 'grid grid-cols-5 gap-2 mt-5'}">
-                        <button onclick="window.quickSale('${c.id}')" class="btn-press ${isFocus ? 'py-6 text-xl' : 'col-span-4 py-3 text-sm'} bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2">
-                            <i class="fas fa-check-circle"></i> VENTA EXITOSA
-                        </button>
-                        <button onclick="window.openModal('${c.id}')" class="btn-press ${isFocus ? 'py-4 bg-gray-700' : 'col-span-1 py-3 bg-gray-700'} text-white font-bold rounded-xl flex items-center justify-center hover:bg-gray-600 border border-gray-600">
-                             ${isFocus ? '<span class="mr-2 text-sm">OTRA NOVEDAD</span>' : ''} <i class="fas fa-edit"></i>
-                        </button>
+                        <button onclick="window.quickSale('${c.id}')" class="btn-press ${isFocus ? 'py-6 text-xl' : 'col-span-4 py-3 text-sm'} bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> VENTA EXITOSA</button>
+                        <button onclick="window.openModal('${c.id}')" class="btn-press ${isFocus ? 'py-4 bg-gray-700' : 'col-span-1 py-3 bg-gray-700'} text-white font-bold rounded-xl flex items-center justify-center hover:bg-gray-600 border border-gray-600"><i class="fas fa-edit"></i></button>
                     </div>
                 `;
-
                 const card = document.createElement('div');
-                card.className = cardClass;
+                card.className = isFocus ? 'h-[75vh] flex flex-col justify-between bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-700 animate-slide-in relative overflow-hidden' : 'bg-gray-800 p-5 mb-4 rounded-2xl shadow-md border border-gray-700 animate-pop relative';
                 card.innerHTML = html;
                 container.appendChild(card);
             });
         }
-
-        // === DISTANCIA ===
         function getDistKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2-lat1)*Math.PI/180;
@@ -615,40 +487,16 @@
             return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
         }
 
-        // === ACCIONES DE REGISTRO ===
-        window.quickSale = async (id) => {
-            await registerAction(id, 'pedido', 'Venta exitosa', 'Rápida');
-        };
-
-        window.saveVisit = async (motivo) => {
-            if (!state.currentClientId) return;
-            const obs = el('visit-obs').value;
-            await registerAction(state.currentClientId, 'visita', motivo, obs);
-            window.closeModal();
-        };
+        // === ACTIONS ===
+        window.quickSale = async (id) => await registerAction(id, 'pedido', 'Venta exitosa', 'Rápida');
+        window.saveVisit = async (motivo) => { if (!state.currentClientId) return; await registerAction(state.currentClientId, 'visita', motivo, el('visit-obs').value); window.closeModal(); };
 
         async function registerAction(id, tipo, motivo, obs) {
-            // Optimista UI: Marcar como completado inmediatamente
-            state.route.completed.add(String(id));
-            renderRoute();
-            
-            try {
-                await apiCall('registrar_movimiento', {
-                    vendedor: state.user.vendedor,
-                    clienteId: id,
-                    tipo: tipo,
-                    motivo: motivo,
-                    observacion: obs
-                });
-                showToast(`${motivo} registrado`, 'success');
-            } catch (e) {
-                showToast('Guardado offline (Ocurrió error de red)', 'error');
-                console.error(e);
-                // NOTA: Aquí podrías implementar lógica de cola offline real si quisieras
-            }
+            state.route.completed.add(String(id)); renderRoute();
+            try { await apiCall('registrar_movimiento', { vendedor: state.user.vendedor, clienteId: id, tipo: tipo, motivo: motivo, observacion: obs }); showToast(`${motivo} registrado`, 'success'); }
+            catch (e) { showToast('Guardado offline', 'error'); }
         }
 
-        // === MODALES ===
         window.openModal = (id) => {
             state.currentClientId = id;
             const cli = state.db.clients.find(c => String(c.id) === String(id));
@@ -658,83 +506,58 @@
         };
         window.closeModal = () => el('modal-options').classList.add('hidden');
 
-        // === CHATBOT LÓGICA (FIXED) ===
-        window.toggleAIChat = (show) => {
-            const m = el('modal-ai-chat');
-            if(show) { 
-                m.classList.remove('translate-y-full'); 
-                setTimeout(() => el('chat-input').focus(), 300); 
-            } else { 
-                m.classList.add('translate-y-full'); 
-            }
-        };
+        // === CHATBOT UI V3.0 (TICKET SUPPORT) ===
+        window.toggleAIChat = (show) => { const m = el('modal-ai-chat'); if(show){m.classList.remove('translate-y-full'); setTimeout(()=>el('chat-input').focus(),300);}else{m.classList.add('translate-y-full');} };
 
         window.sendChatMessage = async () => {
             const inp = el('chat-input');
             const txt = inp.value.trim();
             if(!txt) return;
-            
             appendChat(txt, 'user');
             inp.value = '';
-
-            // Mostrar "Escribiendo..."
             el('typing-indicator').classList.remove('hidden');
-            const chatBox = el('chat-messages');
-            chatBox.scrollTop = chatBox.scrollHeight;
-
+            el('chat-messages').scrollTop = el('chat-messages').scrollHeight;
+            
             try {
                 const res = await apiCall('chatbot', { vendedor: state.user.vendedor, mensaje: txt });
                 appendChat(res.respuesta, 'bot');
-            } catch (e) {
-                appendChat('⚠️ La IA tardó demasiado o no hay conexión. Intenta de nuevo.', 'bot');
-            } finally {
-                el('typing-indicator').classList.add('hidden');
-            }
+            } catch (e) { appendChat('⚠️ Error de conexión o tiempo de espera.', 'bot'); } 
+            finally { el('typing-indicator').classList.add('hidden'); }
         };
 
         function appendChat(text, role) {
             const c = el('chat-messages');
             const d = document.createElement('div');
             d.className = `chat-bubble chat-${role} animate-pop`;
-            
             if (role === 'bot') {
-                d.innerHTML = detectAndFormatOrder(text);
+                // V3.0: Si el backend manda HTML (ticket o botones), usarlo directo
+                if (text.includes('ticket-container') || text.includes('btn-copy-order') || text.includes('<button')) {
+                    d.innerHTML = text; 
+                } else {
+                    d.innerHTML = detectAndFormatOrder(text);
+                }
             } else {
                 d.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
             }
-            
             c.appendChild(d);
             c.scrollTop = c.scrollHeight;
         }
 
-        // Formateador de Pedidos en Chat
         function detectAndFormatOrder(text) {
-            // Si detecta "Total:" o estructura de lista con precios
             if (text.toLowerCase().includes('total:') || (text.includes('$') && text.includes('- '))) {
                 const lines = text.split('\n');
                 let html = '<div class="ticket-container"><div class="ticket-header">Ticket de Pedido</div>';
-                let rawOrder = ""; 
-
-                lines.forEach(line => {
-                    const l = line.trim();
-                    if(!l) return;
-                    rawOrder += l + "\n";
-                    
-                    if(l.toLowerCase().startsWith('total:')) {
-                        html += `<div class="ticket-total"><span>TOTAL</span> <span>${escapeHtml(l.split(':')[1])}</span></div>`;
-                    } else if (l.startsWith('-')) {
-                        const parts = l.substring(1).split('$');
-                        const item = parts[0].trim();
-                        const price = parts.length > 1 ? '$' + parts[1].trim() : '';
-                        html += `<div class="ticket-row"><span>${escapeHtml(item)}</span> <span>${escapeHtml(price)}</span></div>`;
-                    } else {
-                        html += `<div class="text-xs text-gray-500 mb-1">${escapeHtml(l)}</div>`;
-                    }
+                let raw = ""; 
+                lines.forEach(l => {
+                    const line = l.trim(); if(!line) return; raw += line + "\n";
+                    if(line.toLowerCase().startsWith('total:')) html += `<div class="ticket-total"><span>TOTAL</span> <span>${escapeHtml(line.split(':')[1])}</span></div>`;
+                    else if (line.startsWith('-')) {
+                        const parts = line.substring(1).split('$');
+                        html += `<div class="ticket-row"><span>${escapeHtml(parts[0])}</span> <span>${parts[1] ? '$'+parts[1] : ''}</span></div>`;
+                    } else html += `<div class="text-xs text-gray-500 mb-1">${escapeHtml(line)}</div>`;
                 });
-
-                const safeText = rawOrder.replace(/'/g, "\\'");
-                html += `<button onclick="window.copyOrderText('${safeText}', this)" class="btn-copy-order"><i class="fas fa-copy"></i> COPIAR PEDIDO</button>`;
-                html += '</div>';
+                const safe = raw.replace(/'/g, "\\'");
+                html += `<button onclick="window.copyOrderText('${safe}', this)" class="btn-copy-order"><i class="fas fa-copy"></i> COPIAR PEDIDO</button></div>`;
                 return html;
             }
             return escapeHtml(text).replace(/\n/g, '<br>');
@@ -742,18 +565,10 @@
 
         window.copyOrderText = (text, btn) => {
             navigator.clipboard.writeText(text).then(() => {
-                const originalContent = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> COPIADO';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    btn.innerHTML = originalContent;
-                    btn.classList.remove('copied');
-                }, 2000);
-            }).catch(err => showToast('Error al copiar', 'error'));
+                const prev = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i> COPIADO'; btn.classList.add('copied');
+                setTimeout(() => { btn.innerHTML = prev; btn.classList.remove('copied'); }, 2000);
+            });
         };
-
     </script>
 </body>
 </html>
-
-```
