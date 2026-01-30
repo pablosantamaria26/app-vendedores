@@ -1,249 +1,198 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es" class="dark"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mercado Limpio V5</title>
+    <title>Mercado Limpio App</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
+            darkMode: 'class', // Activación manual del modo oscuro
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        slate: { 850: '#1e293b', 950: '#020617' }, // Tonos personalizados
-                        brand: { 500: '#3b82f6', 600: '#2563eb' }
-                    },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                        dark: { bg: '#0f172a', card: '#1e293b', text: '#f8fafc' },
+                        light: { bg: '#f1f5f9', card: '#ffffff', text: '#1e293b' }
+                    }
                 }
             }
         }
     </script>
 
     <style>
-        /* ESTILOS GLOBALES */
-        body { background: linear-gradient(to bottom, #f1f5f9, #cbd5e1); color: #0f172a; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+        /* ESTILOS BASE */
+        body { overflow: hidden; -webkit-tap-highlight-color: transparent; transition: background-color 0.3s, color 0.3s; }
         
-        /* MODO OSCURO ELEGANTE (Sobreescribe body si prefieres oscuro por defecto, aquí uso un gris suave profesional) */
-        .app-container { background-color: #f8fafc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        
-        /* GESTIÓN DE VISTAS */
-        .view-section { display: none; width: 100%; height: 100%; flex-direction: column; }
-        .view-section.active { display: flex; animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* UTILIDADES */
+        /* SCROLLBAR */
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .btn-press:active { transform: scale(0.97); transition: 0.1s; }
-        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         
-        /* CHAT */
-        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .chat-user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
-        .chat-bot { background: #ffffff; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #e2e8f0; }
+        /* ANIMACIONES */
+        .btn-press:active { transform: scale(0.96); transition: 0.1s; }
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+        .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         
-        /* TICKET */
-        .ticket-container { background: #fff; color: #334155; padding: 15px; border-radius: 10px; margin-top: 5px; font-family: 'Courier New', monospace; border: 1px solid #e2e8f0; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .ticket-header { text-align: center; font-weight: bold; border-bottom: 2px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-copy-order { width: 100%; background: #0f172a; color: white; padding: 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.8rem; margin-top: 10px; display: flex; justify-content: center; gap: 6px; cursor: pointer; }
-        
+        /* VISTAS */
+        .view-section { display: none; height: 100vh; flex-direction: column; }
+        .view-section.active { display: flex; }
+
+        /* CHAT BUBBLES - ADAPTATIVOS */
+        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
+        /* Modo Claro */
+        html:not(.dark) .chat-user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
+        html:not(.dark) .chat-bot { background: #ffffff; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* Modo Oscuro */
+        html.dark .chat-user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
+        html.dark .chat-bot { background: #334155; color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #475569; }
+
+        /* TICKET ESTILO */
+        .ticket-box { font-family: monospace; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 0.85rem; border: 2px dashed; }
+        html:not(.dark) .ticket-box { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
+        html.dark .ticket-box { background: #0f172a; color: #cbd5e1; border-color: #475569; }
+
         /* TOAST */
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 12px 24px; border-radius: 50px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2); pointer-events: none; opacity: 0; transition: 0.3s; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800">
+<body class="bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
 
-    <div id="loader" class="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
-        <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 text-xs font-bold text-blue-600 tracking-widest animate-pulse">CARGANDO SISTEMA...</p>
+    <div id="loader" class="fixed inset-0 z-[100] bg-black/80 flex flex-col items-center justify-center hidden backdrop-blur-sm">
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-xs font-bold text-blue-400 tracking-widest animate-pulse">CARGANDO...</p>
     </div>
 
-    <div id="toast" class="toast bg-slate-800 text-white"></div>
+    <div id="toast" class="toast bg-slate-800 text-white border border-slate-600"></div>
 
-    <div class="app-container">
-        
-        <section id="view-login" class="view-section active justify-center p-8 bg-slate-900 text-white relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2"></div>
-            <div class="absolute bottom-0 left-0 w-64 h-64 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2"></div>
-
-            <div class="w-full max-w-sm text-center mx-auto z-10">
-                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center mb-8 shadow-2xl shadow-blue-500/20 rotate-3">
-                    <i class="fas fa-cubes text-3xl text-white"></i>
-                </div>
-                <h1 class="text-3xl font-black mb-2 tracking-tight">MERCADO<span class="text-blue-400">LIMPIO</span></h1>
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Logística & Ventas</p>
-                
-                <div class="space-y-4">
-                    <div class="relative">
-                        <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input id="login-user" type="text" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-4 pl-12 pr-4 text-center font-bold uppercase placeholder-slate-500 focus:ring-2 ring-blue-500 outline-none transition-all" placeholder="USUARIO">
-                    </div>
-                    <div class="relative">
-                        <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-4 pl-12 pr-4 text-center font-bold placeholder-slate-500 focus:ring-2 ring-blue-500 outline-none transition-all" placeholder="PIN">
-                    </div>
-                </div>
-                
-                <button onclick="handleLogin()" class="btn-press w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white mt-8 flex items-center justify-center gap-2">
-                    INGRESAR <i class="fas fa-arrow-right"></i>
-                </button>
+    <section id="view-login" class="view-section active justify-center p-8 bg-slate-900 relative">
+        <div class="w-full max-w-sm text-center mx-auto z-10">
+            <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-blue-500/30 rotate-3">
+                <i class="fas fa-box text-3xl text-white"></i>
             </div>
-        </section>
+            <h1 class="text-3xl font-black mb-2 text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Ventas & Logística</p>
+            
+            <input id="login-user" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="USUARIO">
+            <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center font-bold placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="PIN">
+            
+            <button onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
+        </div>
+    </section>
 
-        <section id="view-dashboard" class="view-section bg-slate-50">
-            <div class="px-6 pt-10 pb-4 bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm flex justify-between items-end">
-                <div>
-                    <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Bienvenido</p>
-                    <h2 class="text-2xl font-black text-slate-800 leading-none">HOLA, <span id="lbl-saludo">...</span></h2>
-                </div>
-                <button onclick="logout()" class="w-9 h-9 bg-slate-100 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 border border-slate-200 flex items-center justify-center transition-colors">
+    <section id="view-dashboard" class="view-section bg-slate-50 dark:bg-slate-950">
+        <div class="px-6 pt-10 pb-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 flex justify-between items-end">
+            <div>
+                <p class="text-[10px] text-blue-500 font-bold uppercase mb-1">Bienvenido</p>
+                <h2 class="text-2xl font-black leading-none">HOLA, <span id="lbl-saludo">...</span></h2>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                    <i class="fas fa-adjust"></i>
+                </button>
+                <button onclick="logout()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-red-500 flex items-center justify-center border border-slate-200 dark:border-slate-700">
                     <i class="fas fa-power-off text-xs"></i>
                 </button>
             </div>
-            
-            <div class="flex-1 overflow-y-auto p-4 pb-28 no-scrollbar">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Zonas Disponibles</p>
-                <div id="zones-grid" class="grid grid-cols-2 gap-3"></div>
-            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 pb-24 no-scrollbar">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Zonas Disponibles</p>
+            <div id="zones-grid" class="grid grid-cols-2 gap-3"></div>
+        </div>
 
-            <div id="footer-dashboard" class="p-4 bg-white border-t border-slate-200 fixed bottom-0 w-full hidden z-20 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
-                <button onclick="startRoute()" class="btn-press w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg flex justify-center items-center gap-3">
-                    <i class="fas fa-map-location-dot"></i> <span id="btn-start-lbl">INICIAR RECORRIDO</span>
-                </button>
-            </div>
-            
-            <button onclick="toggleAIChat(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-xl shadow-blue-500/30 flex items-center justify-center z-30 btn-press text-white border-2 border-white">
-                <i class="fas fa-headset text-xl"></i>
+        <div id="footer-dashboard" class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 fixed bottom-0 w-full hidden z-20">
+            <button onclick="startRoute()" class="btn-press w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2">
+                <i class="fas fa-location-arrow"></i> <span id="btn-start-lbl">INICIAR</span>
             </button>
-        </section>
+        </div>
+        
+        <button onclick="toggleAIChat(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 rounded-full shadow-xl flex items-center justify-center z-30 btn-press text-white border-2 border-white dark:border-slate-700">
+            <i class="fas fa-headset text-xl"></i>
+        </button>
+    </section>
 
-        <section id="view-route" class="view-section bg-slate-100">
-            <div class="px-4 py-3 bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm flex justify-between items-center h-16">
-                <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-50 rounded-xl text-slate-500 hover:bg-slate-100 border border-slate-200">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <div class="flex flex-col items-center">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pendientes</span>
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                        <span id="route-count" class="text-lg font-black text-slate-800">0</span>
-                    </div>
-                </div>
-                <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 rounded-xl text-blue-600 hover:bg-blue-50 border border-slate-200">
-                    <i id="icon-view-mode" class="fas fa-list-ul"></i>
-                </button>
+    <section id="view-route" class="view-section bg-slate-100 dark:bg-slate-950">
+        <div class="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 flex justify-between items-center shadow-sm h-16">
+            <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span id="route-count" class="text-sm font-bold">0</span>
             </div>
-            
-            <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex justify-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
-                <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Al día</div>
-                <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> +30 Días</div>
-                <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> +60 Días</div>
-            </div>
+            <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-blue-500 border border-slate-200 dark:border-slate-700">
+                <i id="icon-view-mode" class="fas fa-list"></i>
+            </button>
+        </div>
 
-            <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative space-y-3"></div>
-        </section>
+        <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
+            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Al día</div>
+            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> +30 Días</div>
+            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> +60 Días</div>
+        </div>
+        
+        <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative space-y-3"></div>
+    </section>
 
-    </div>
-
-    <div id="modal-suggestions" class="fixed inset-0 z-50 bg-slate-900/60 flex items-end sm:items-center justify-center hidden p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
+    <div id="modal-suggestions" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden p-4 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
             <div class="text-center mb-6">
-                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-route text-xl"></i>
-                </div>
-                <h3 class="text-xl font-black text-slate-800">Plan Sugerido</h3>
-                <p class="text-sm text-slate-500 mt-1">Selecciona las zonas para hoy:</p>
+                <h3 class="text-xl font-black dark:text-white">Plan Sugerido</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">Selecciona las zonas para hoy:</p>
             </div>
-            
-            <div id="suggestions-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto pr-1">
-                </div>
-            
+            <div id="suggestions-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto"></div>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="el('modal-suggestions').classList.add('hidden')" class="btn-press py-3.5 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">Omitir</button>
-                <button onclick="applySuggestions()" class="btn-press py-3.5 rounded-xl font-bold bg-blue-600 text-white shadow-lg shadow-blue-500/30">Confirmar</button>
+                <button onclick="el('modal-suggestions').classList.add('hidden')" class="btn-press py-3 rounded-xl font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300">Omitir</button>
+                <button onclick="applySuggestions()" class="btn-press py-3 rounded-xl font-bold bg-blue-600 text-white">Confirmar</button>
             </div>
         </div>
     </div>
 
     <div id="modal-chat" class="fixed inset-0 z-50 bg-black/50 hidden flex flex-col justify-end sm:justify-center items-center backdrop-blur-sm">
-        <div id="chat-panel" class="bg-slate-50 w-full sm:max-w-md h-[85vh] sm:h-[600px] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col transform translate-y-full transition-transform duration-300">
-            
-            <div class="p-4 bg-white border-b border-slate-200 flex justify-between items-center rounded-t-3xl">
+        <div id="chat-panel" class="bg-slate-50 dark:bg-slate-950 w-full sm:max-w-md h-[80vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col transform translate-y-full transition-transform duration-300">
+            <div class="p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center rounded-t-3xl">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
-                        <i class="fas fa-robot text-sm"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-800 text-sm">Soporte Ventas</h3>
-                        <p class="text-[10px] text-green-600 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> En línea</p>
-                    </div>
+                    <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white"><i class="fas fa-robot"></i></div>
+                    <h3 class="font-bold text-sm dark:text-white">Mercado Limpio</h3>
                 </div>
-                <button onclick="toggleAIChat(false)" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button onclick="toggleAIChat(false)" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-3">
-                <div class="chat-bubble chat-bot">Hola. ¿Necesitas un pedido o sugerencia de ruta?</div>
+            <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+                <div class="chat-bubble chat-bot">Hola, soy el soporte de Mercado Limpio. ¿Qué necesitas?</div>
             </div>
-
-            <div id="typing" class="hidden px-6 py-2 bg-slate-50">
-                <div class="flex gap-1 items-center bg-white border border-slate-200 px-3 py-2 rounded-full w-fit">
-                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
-                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                    <div class="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                </div>
-            </div>
-            
-            <div class="p-4 bg-white border-t border-slate-200 pb-6 sm:rounded-b-3xl">
-                <div class="flex gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 focus-within:ring-2 ring-blue-500/20 focus-within:border-blue-500 transition-all">
-                    <input id="chat-in" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-transparent border-0 px-3 text-sm text-slate-800 placeholder-slate-400 focus:ring-0">
-                    <button onclick="sendChat()" class="w-10 h-10 bg-blue-600 rounded-xl text-white shadow-md hover:bg-blue-700 flex items-center justify-center">
-                        <i class="fas fa-paper-plane text-xs"></i>
-                    </button>
+            <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pb-6">
+                <div class="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <input id="chat-in" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-transparent border-0 px-3 text-sm dark:text-white outline-none">
+                    <button onclick="sendChat()" class="w-10 h-10 bg-blue-600 rounded-xl text-white flex items-center justify-center"><i class="fas fa-paper-plane text-xs"></i></button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-reg" class="fixed inset-0 z-[60] bg-slate-900/80 hidden flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 animate-pop shadow-2xl">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h3 id="reg-title" class="text-xl font-black text-slate-800 leading-tight">CLIENTE</h3>
-                    <div id="reg-info" class="text-xs text-slate-500 mt-1 font-medium">Cargando info...</div>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                    <i class="fas fa-user-tag"></i>
-                </div>
-            </div>
-            
+    <div id="modal-reg" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
+            <h3 id="reg-title" class="text-xl font-black mb-1 dark:text-white">CLIENTE</h3>
+            <div id="reg-info" class="text-xs text-slate-500 mb-4">...</div>
             <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="selectReason('Stock', this)" class="reason-btn btn-press bg-slate-50 border border-slate-200 p-4 rounded-xl text-left hover:border-blue-400 transition-all group">
-                    <i class="fas fa-box text-blue-500 block mb-2 text-xl group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold uppercase text-slate-600">Tiene Stock</span>
+                <button onclick="selectReason('Stock', this)" class="reason-btn btn-press bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-4 rounded-xl text-left">
+                    <i class="fas fa-box text-blue-500 block mb-2 text-xl"></i><span class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Tiene Stock</span>
                 </button>
-                <button onclick="selectReason('Dinero', this)" class="reason-btn btn-press bg-slate-50 border border-slate-200 p-4 rounded-xl text-left hover:border-red-400 transition-all group">
-                    <i class="fas fa-wallet text-red-500 block mb-2 text-xl group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold uppercase text-slate-600">Sin Dinero</span>
+                <button onclick="selectReason('Dinero', this)" class="reason-btn btn-press bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-4 rounded-xl text-left">
+                    <i class="fas fa-wallet text-red-500 block mb-2 text-xl"></i><span class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Sin Dinero</span>
                 </button>
-                <button onclick="selectReason('Cerrado', this)" class="reason-btn btn-press bg-slate-50 border border-slate-200 p-4 rounded-xl text-left hover:border-yellow-400 transition-all group">
-                    <i class="fas fa-store-slash text-yellow-500 block mb-2 text-xl group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold uppercase text-slate-600">Cerrado</span>
+                <button onclick="selectReason('Cerrado', this)" class="reason-btn btn-press bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-4 rounded-xl text-left">
+                    <i class="fas fa-store-slash text-yellow-500 block mb-2 text-xl"></i><span class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Cerrado</span>
                 </button>
-                <button onclick="selectReason('Volver', this)" class="reason-btn btn-press bg-slate-50 border border-slate-200 p-4 rounded-xl text-left hover:border-purple-400 transition-all group">
-                    <i class="fas fa-clock text-purple-500 block mb-2 text-xl group-hover:scale-110 transition-transform"></i>
-                    <span class="text-[10px] font-bold uppercase text-slate-600">Volver</span>
+                <button onclick="selectReason('Volver', this)" class="reason-btn btn-press bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-4 rounded-xl text-left">
+                    <i class="fas fa-clock text-purple-500 block mb-2 text-xl"></i><span class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Volver</span>
                 </button>
             </div>
-            
-            <textarea id="reg-obs" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm h-24 mb-4 resize-none text-slate-800 focus:border-blue-500 focus:ring-1 ring-blue-500 outline-none placeholder-slate-400" placeholder="Escribe una nota opcional..."></textarea>
-            
+            <textarea id="reg-obs" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm h-20 mb-4 resize-none dark:text-white outline-none" placeholder="Nota opcional..."></textarea>
             <div class="flex gap-3">
-                <button onclick="el('modal-reg').classList.add('hidden')" class="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">Cancelar</button>
-                <button onclick="commitSave()" class="flex-1 py-3.5 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-slate-800">GUARDAR</button>
+                <button onclick="el('modal-reg').classList.add('hidden')" class="flex-1 py-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold dark:text-white">Cancelar</button>
+                <button onclick="commitSave()" class="flex-1 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold">GUARDAR</button>
             </div>
         </div>
     </div>
@@ -252,32 +201,28 @@
         const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
         const state = { user: JSON.parse(localStorage.getItem('ml_user')), db: {}, route: {active:[], done:new Set()}, sel: new Set(), mode: 'list', cliId: null, tempReason: null };
         const el = id => document.getElementById(id);
-        
-        // TOAST
-        const toast = (m, t='info') => { 
-            const d=el('toast'); 
-            d.innerHTML = t==='error' ? `<i class="fas fa-circle-exclamation text-red-400"></i> ${m}` : `<i class="fas fa-circle-check text-green-400"></i> ${m}`;
-            d.style.opacity=1; d.style.top='30px'; 
-            setTimeout(()=>{d.style.opacity=0;d.style.top='20px'},2500); 
-        };
-        
-        // API FETCH
+        const toast = (m,t) => { const d=el('toast'); d.innerHTML= t==='error'?`<i class="fas fa-exclamation-circle text-red-400"></i> ${m}`:`<i class="fas fa-check-circle text-green-400"></i> ${m}`; d.style.opacity=1; d.style.top='30px'; setTimeout(()=>{d.style.opacity=0;d.style.top='20px'},2500); };
+
         async function api(act, pl) {
             const ctrl = new AbortController(); setTimeout(()=>ctrl.abort(), 45000);
             try {
                 const r = await fetch(WORKER, { method:'POST', body:JSON.stringify({action:act, payload:pl}), signal:ctrl.signal });
-                const j = await r.json();
-                if(j.status!=='success') throw new Error(j.message);
-                return j.data;
+                const j = await r.json(); if(j.status!=='success') throw new Error(j.message); return j.data;
             } catch(e) { throw e; }
         }
 
-        // INIT
         document.addEventListener('DOMContentLoaded', () => {
+            if(localStorage.getItem('ml_theme') === 'light') document.documentElement.classList.remove('dark');
             if(state.user) init(); else switchView('view-login');
             if(navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, {enableHighAccuracy:true});
-            el('chat-in').addEventListener('keydown', (e) => { if(e.key === 'Enter') sendChat(); });
+            el('chat-in').addEventListener('keydown', (e) => { if(e.key==='Enter') sendChat(); });
         });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if(html.classList.contains('dark')) { html.classList.remove('dark'); localStorage.setItem('ml_theme', 'light'); }
+            else { html.classList.add('dark'); localStorage.setItem('ml_theme', 'dark'); }
+        }
 
         function switchView(id) { document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active')); el(id).classList.add('active'); }
 
@@ -294,30 +239,27 @@
         function logout() { localStorage.removeItem('ml_user'); location.reload(); }
 
         async function init() {
-            switchView('view-dashboard'); 
-            el('lbl-saludo').innerText = state.user.user.toUpperCase();
+            switchView('view-dashboard'); el('lbl-saludo').innerText = state.user.user.toUpperCase();
             el('loader').classList.remove('hidden');
             try {
                 const d = await api('get_app_data', {vendedor:state.user.vendedor});
-                state.db = d;
-                renderGrid();
+                state.db = d; renderGrid();
                 if(d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
-            } catch(e) { toast('Error cargando datos','error'); } finally { el('loader').classList.add('hidden'); }
+            } catch(e) { toast('Error cargando','error'); } finally { el('loader').classList.add('hidden'); }
         }
 
-        // GRID ZONAS
         function renderGrid() {
             const g = el('zones-grid'); g.innerHTML = '';
             state.db.zonas.forEach(z => {
                 const crit = z.criticos>0;
                 const d = document.createElement('div');
-                d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden active:scale-95 bg-white border-slate-200 hover:border-blue-400 shadow-sm`;
+                d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
                 d.onclick = () => toggleSel(z.nombre, d);
                 d.innerHTML = `
-                    <h3 class="font-bold text-sm uppercase text-slate-800 truncate">${z.nombre}</h3>
+                    <h3 class="font-bold text-sm uppercase dark:text-white truncate">${z.nombre}</h3>
                     <div class="flex justify-between items-end mt-3">
-                        <span class="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded-lg">${z.total_clientes} Clientes</span>
-                        ${crit ? '<i class="fas fa-circle-exclamation text-red-500 animate-pulse text-lg"></i>' : '<i class="fas fa-map-pin text-slate-300"></i>'}
+                        <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">${z.total_clientes} Clientes</span>
+                        ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-pin text-slate-300"></i>'}
                     </div>
                     <div class="sel-overlay absolute top-2 right-2 hidden"><i class="fas fa-check-circle text-blue-600 text-xl bg-white rounded-full"></i></div>
                     <div class="sel-border absolute inset-0 border-2 border-blue-600 rounded-2xl hidden pointer-events-none"></div>
@@ -325,201 +267,141 @@
                 g.appendChild(d);
             });
         }
+
         function toggleSel(n, div) {
-            const ov = div.querySelector('.sel-overlay');
-            const bd = div.querySelector('.sel-border');
+            const ov = div.querySelector('.sel-overlay'), bd = div.querySelector('.sel-border');
             if(state.sel.has(n)) { state.sel.delete(n); ov.classList.add('hidden'); bd.classList.add('hidden'); }
             else { state.sel.add(n); ov.classList.remove('hidden'); bd.classList.remove('hidden'); }
-            const c = state.sel.size;
-            el('footer-dashboard').classList.toggle('hidden', c===0);
-            el('btn-start-lbl').innerText = `INICIAR (${c})`;
+            const c = state.sel.size; el('footer-dashboard').classList.toggle('hidden', c===0); el('btn-start-lbl').innerText = `INICIAR (${c})`;
         }
         function startRoute() {
-            const k = Array.from(state.sel);
-            if(k.length===0) return;
-            // FIX: Normalizar a mayusculas para comparar
+            const k = Array.from(state.sel); if(!k.length) return;
             state.route.active = state.db.clientes.filter(c => k.some(sel => sel.toUpperCase() === c.localidad_key.toUpperCase()));
             renderRoute(); switchView('view-route');
         }
 
-        // SUGERENCIAS (CON RADIO RELLENO)
         function showSuggestions(list) {
             const c = el('suggestions-list'); c.innerHTML='';
             list.forEach(loc => {
                 const b = document.createElement('div');
-                b.className = 'w-full p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center mb-2 cursor-pointer hover:bg-slate-100 transition-colors';
+                b.className = 'w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex justify-between items-center mb-2 cursor-pointer';
                 b.onclick = function() { 
-                    const icon = this.querySelector('i');
-                    if(state.sel.has(loc)) { 
-                        state.sel.delete(loc); 
-                        icon.className = 'far fa-circle text-slate-400 text-lg';
-                        this.classList.remove('border-blue-500', 'bg-blue-50');
-                    } else { 
-                        state.sel.add(loc); 
-                        icon.className = 'fas fa-check-circle text-blue-600 text-lg';
-                        this.classList.add('border-blue-500', 'bg-blue-50');
-                    }
+                    const i = this.querySelector('i');
+                    if(state.sel.has(loc)) { state.sel.delete(loc); i.className='far fa-circle text-slate-400 text-lg'; this.classList.remove('border-blue-500'); }
+                    else { state.sel.add(loc); i.className='fas fa-check-circle text-blue-600 text-lg'; this.classList.add('border-blue-500'); }
                 };
-                b.innerHTML = `<span class="font-bold text-sm text-slate-700">${loc}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
+                b.innerHTML = `<span class="font-bold text-sm dark:text-white">${loc}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
                 c.appendChild(b);
             });
             el('modal-suggestions').classList.remove('hidden');
         }
         function applySuggestions() { if(state.sel.size>0) startRoute(); el('modal-suggestions').classList.add('hidden'); }
 
-        // RUTA
         function renderRoute() {
             const c = el('route-container'); c.innerHTML = '';
             const pends = state.route.active.filter(x => !state.route.done.has(String(x.id)));
             el('route-count').innerText = pends.length;
-            
-            if(!pends.length) { 
-                c.innerHTML='<div class="text-center mt-20 opacity-50"><i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i><h3 class="text-xl font-bold text-slate-400">¡Ruta Completada!</h3></div>'; 
-                return; 
-            }
-
+            if(!pends.length) { c.innerHTML='<div class="text-center mt-20 opacity-50"><i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i><h3 class="text-xl font-bold dark:text-white">¡Ruta Completada!</h3></div>'; return; }
             const list = state.mode==='focus' ? [pends[0]] : pends;
             list.forEach((cli) => {
                 const days = cli.dias_sin_comprar;
-                let colorClass = 'bg-green-500';
-                if(days > 60) colorClass = 'bg-red-500';
-                else if(days > 30) colorClass = 'bg-yellow-500';
-
-                const div = document.createElement('div');
-                div.id = `card-${cli.id}`;
-                div.className = state.mode==='focus' ? 
-                    'h-[75vh] flex flex-col justify-between bg-white p-6 rounded-3xl border border-slate-200 relative overflow-hidden shadow-xl' : 
-                    'bg-white p-4 rounded-2xl border border-slate-200 relative shadow-sm card-shadow';
-                
+                let col = days>60?'bg-red-500':(days>30?'bg-yellow-500':'bg-green-500');
+                const div = document.createElement('div'); div.id = `card-${cli.id}`;
+                div.className = state.mode==='focus' ? 'h-[75vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl' : 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
                 div.innerHTML = `
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${colorClass}"></div>
-                    <div class="flex justify-between pl-3 mb-1">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">#${cli.id}</span>
-                        <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-bold">${days} días</span>
-                    </div>
-                    <h2 class="${state.mode==='focus'?'text-3xl':'text-lg'} font-black uppercase leading-tight text-slate-800 pl-3">${cli.nombre}</h2>
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 ${col}"></div>
+                    <div class="flex justify-between pl-3 mb-1"><span class="text-[10px] font-bold text-slate-400 uppercase">#${cli.id}</span><span class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 font-bold">${days} días</span></div>
+                    <h2 class="${state.mode==='focus'?'text-3xl':'text-lg'} font-black uppercase leading-tight dark:text-white pl-3">${cli.nombre}</h2>
                     <p class="text-slate-500 text-xs mt-1 truncate pl-3 flex items-center gap-1"><i class="fas fa-location-dot text-slate-300"></i> ${cli.direccion}</p>
-                    
-                    <div id="dist-${cli.id}" class="text-xs font-bold text-blue-600 mt-3 h-4 pl-3" data-lat="${cli.lat}" data-lng="${cli.lng}"><span class="animate-pulse">Calculando...</span></div>
-                    
+                    <div id="dist-${cli.id}" class="text-xs font-bold text-blue-600 mt-3 h-4 pl-3" data-lat="${cli.lat}" data-lng="${cli.lng}">...</div>
                     <div class="grid grid-cols-4 gap-2 mt-4 pl-3">
-                        <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-slate-900 hover:bg-slate-800 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 transition-all flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta</button>
-                        <button onclick="openReg('${cli.id}')" class="col-span-1 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 active:scale-95"><i class="fas fa-ellipsis"></i></button>
+                        <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-slate-900 dark:bg-blue-600 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta</button>
+                        <button onclick="openReg('${cli.id}')" class="col-span-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-white rounded-xl active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
                     </div>
                 `;
                 c.appendChild(div);
             });
             updateDistances();
         }
-
-        // DISTANCIAS
         function updateDistances(pos) {
-            if(!pos && !state.location) return;
             if(pos) state.location = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+            if(!state.location) return;
             document.querySelectorAll('[id^="dist-"]').forEach(el => {
                 const lat = el.getAttribute('data-lat'), lng = el.getAttribute('data-lng');
-                if(lat && lng && lat!='null' && lat!='') {
+                if(lat && lng) {
                     const km = getKm(state.location.lat, state.location.lng, lat, lng);
                     el.innerHTML = `<i class="fas fa-route"></i> ${km} km <span class="text-slate-400 font-normal ml-2">~${Math.round(km/20*60)} min</span>`;
                 }
             });
         }
-        function getKm(lat1,lon1,lat2,lon2) {
-            const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180, a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-            return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
-        }
+        function getKm(lat1,lon1,lat2,lon2) { const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180, a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2); return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1); }
 
-        // REGISTRO Y MODAL
         async function quickSale(id) { await doReg(id,'pedido','Venta OK','Rápida'); }
-        async function doReg(id,t,m,o) {
-            state.route.done.add(String(id)); renderRoute();
-            try { await api('registrar_movimiento',{vendedor:state.user.vendedor, clienteId:id, tipo:t, motivo:m, observacion:o}); toast('Registrado','success'); }
-            catch(e){ toast('Guardado offline','error'); }
-        }
+        async function doReg(id,t,m,o) { state.route.done.add(String(id)); renderRoute(); try { await api('registrar_movimiento',{vendedor:state.user.vendedor, clienteId:id, tipo:t, motivo:m, observacion:o}); toast('Guardado','success'); } catch(e){ toast('Guardado offline','error'); } }
         function openReg(id) { 
-            state.cliId = id; state.tempReason = null;
-            const c = state.db.clientes.find(x => String(x.id) == id);
+            state.cliId = id; state.tempReason = null; const c = state.db.clientes.find(x => String(x.id) == id);
             el('reg-title').innerText = c.nombre; el('reg-obs').value = ''; 
-            
             let info = `<span class="text-green-600 font-bold">Cliente Activo</span>`;
-            if(c.dias_sin_comprar > 60) info = `<span class="text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100"><i class="fas fa-triangle-exclamation"></i> CRÍTICO: +60 DÍAS SIN COMPRA</span>`;
-            else if(c.dias_sin_comprar > 30) info = `<span class="text-yellow-600 font-bold">Alerta: +30 días sin compra</span>`;
-            
-            el('reg-info').innerHTML = info;
-            document.querySelectorAll('.reason-btn').forEach(b => { b.className = 'reason-btn btn-press bg-slate-50 border border-slate-200 p-4 rounded-xl text-left hover:border-slate-400 transition-all'; });
-            el('modal-reg').classList.remove('hidden'); 
+            if(c.dias_sin_comprar > 60) info = `<span class="text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">⚠️ CRÍTICO: +60 DÍAS</span>`;
+            el('reg-info').innerHTML = info; el('modal-reg').classList.remove('hidden'); 
         }
-        function selectReason(reason, btn) {
-            state.tempReason = reason;
-            document.querySelectorAll('.reason-btn').forEach(b => b.className = 'reason-btn btn-press bg-slate-50 border border-slate-200 p-4 rounded-xl text-left opacity-60');
-            btn.className = 'reason-btn btn-press bg-blue-50 border-2 border-blue-500 p-4 rounded-xl text-left opacity-100 shadow-md transform scale-[1.02]';
-        }
-        async function commitSave() {
-            if(!state.tempReason && el('reg-obs').value.trim() === '') return toast('Selecciona motivo','error');
-            await doReg(state.cliId, 'visita', state.tempReason || 'Nota', el('reg-obs').value);
-            el('modal-reg').classList.add('hidden');
-        }
+        function selectReason(r,b) { state.tempReason=r; document.querySelectorAll('.reason-btn').forEach(btn => btn.classList.remove('ring-2','ring-blue-500')); b.classList.add('ring-2','ring-blue-500'); }
+        async function commitSave() { if(!state.tempReason && !el('reg-obs').value) return toast('Ingresa motivo','error'); await doReg(state.cliId,'visita',state.tempReason||'Nota',el('reg-obs').value); el('modal-reg').classList.add('hidden'); }
         function toggleViewMode() { state.mode=state.mode==='list'?'focus':'list'; renderRoute(); }
 
-        // CHATBOT
+        // CHATBOT LOGIC (REPARADA)
         function toggleAIChat(s) { 
-            const m = el('modal-chat'); 
-            const p = el('chat-panel');
-            if(s) { 
-                m.classList.remove('hidden'); 
-                setTimeout(() => p.classList.remove('translate-y-full'), 10);
-                setTimeout(()=>el('chat-in').focus(), 300); 
-            } else { 
-                p.classList.add('translate-y-full'); 
-                setTimeout(() => m.classList.add('hidden'), 300);
-            } 
+            const m = el('modal-chat'), p = el('chat-panel');
+            if(s) { m.classList.remove('hidden'); setTimeout(()=>p.classList.remove('translate-y-full'),10); setTimeout(()=>el('chat-in').focus(),300); }
+            else { p.classList.add('translate-y-full'); setTimeout(()=>m.classList.add('hidden'),300); }
         }
-        
         async function sendChat() {
             const i=el('chat-in'), t=i.value.trim(); if(!t) return;
             addMsg(t,'user'); i.value='';
-            el('typing').classList.remove('hidden'); el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
             try {
                 const res = await api('chatbot', {vendedor:state.user.vendedor, mensaje:t});
                 const r = res.respuesta;
-                if (r && typeof r === 'object') {
-                    let html = r.mensaje_corto || "Ok";
-                    if(r.html_extra) html += r.html_extra;
-                    addMsg(html, 'bot', true);
-                } else { addMsg(JSON.stringify(r), 'bot'); }
-            } catch(e) { addMsg('Error conexión','bot'); } finally { el('typing').classList.add('hidden'); }
+                // INTERPRETACION DE TIPOS DE RESPUESTA
+                if (r.type === 'ticket') {
+                    addMsg(r.text, 'bot');
+                    addTicket(r.data); // Dibuja el ticket
+                } else if (r.type === 'route') {
+                    addMsg(r.text, 'bot');
+                    addRouteBtn(r.data); // Dibuja botón ruta
+                } else {
+                    addMsg(r.text || "No entendí.", 'bot');
+                }
+            } catch(e) { addMsg('Error de conexión','bot'); }
         }
+        function addMsg(h,r) { const d=document.createElement('div'); d.className=`chat-bubble chat-${r} animate-pop`; d.innerText=h; el('chat-msgs').appendChild(d); el('chat-msgs').scrollTop=el('chat-msgs').scrollHeight; }
         
-        function addMsg(h,r,isHtml=false) {
-            const d=document.createElement('div'); d.className=`chat-bubble chat-${r} animate-pop`;
-            if(isHtml) d.innerHTML = h; else d.innerText = h;
+        // DIBUJADO DE TICKET (NATIVO EN APP)
+        function addTicket(items) {
+            const d = document.createElement('div');
+            d.innerHTML = `
+                <div class="ticket-box animate-pop">
+                    <div class="ticket-header">PEDIDO RECUPERADO</div>
+                    <div style="white-space: pre-wrap;">${items}</div>
+                    <button onclick="copyText(this, '${items.replace(/\n/g,'\\n').replace(/'/g,"\\'")}')" class="btn-copy-order"><i class="fas fa-copy"></i> COPIAR</button>
+                </div>
+            `;
             el('chat-msgs').appendChild(d); el('chat-msgs').scrollTop=el('chat-msgs').scrollHeight;
         }
 
-        window.acceptIARoute = (str) => {
-            toggleAIChat(false);
-            const list = str.split(',').map(s=>s.trim().toUpperCase());
-            state.sel = new Set(list); startRoute();
-        };
+        // DIBUJADO DE BOTÓN RUTA
+        function addRouteBtn(zone) {
+             const d = document.createElement('div');
+             d.innerHTML = `<button onclick="acceptIARoute('${zone}')" class="w-full bg-green-600 text-white p-3 rounded-xl font-bold mt-2 animate-pop shadow-md"><i class="fas fa-map-signs"></i> IR A ${zone}</button>`;
+             el('chat-msgs').appendChild(d); el('chat-msgs').scrollTop=el('chat-msgs').scrollHeight;
+        }
+
+        function acceptIARoute(z) { toggleAIChat(false); state.sel = new Set([z.toUpperCase()]); startRoute(); }
         
-        // FIX COPIADO (MODERNO)
-        window.copyOrderText = (txt, btn) => {
-            // Crear elemento temporal para copiar (más compatible que clipboard API en webviews viejos)
-            const el = document.createElement('textarea');
-            el.value = txt;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> COPIADO';
-            btn.style.background = '#10b981';
-            setTimeout(() => { 
-                btn.innerHTML = original; 
-                btn.style.background = '#0f172a';
-            }, 2000);
-        };
+        function copyText(btn, txt) {
+            const area = document.createElement('textarea'); area.value = txt; document.body.appendChild(area); area.select(); document.execCommand('copy'); document.body.removeChild(area);
+            const prev = btn.innerHTML; btn.innerHTML = '<i class="fas fa-check"></i> COPIADO'; btn.style.background = '#10b981';
+            setTimeout(() => { btn.innerHTML = prev; btn.style.background = ''; }, 2000);
+        }
     </script>
 </body>
 </html>
