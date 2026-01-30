@@ -7,118 +7,200 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
+        /* ESTILOS GLOBALES */
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; overflow: hidden; -webkit-tap-highlight-color: transparent; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* GESTIÓN DE VISTAS */
         .view-section { display: none; width: 100%; height: 100vh; flex-direction: column; }
         .view-section.active { display: flex; }
+        
+        /* BOTONES Y ANIMACIONES */
         .btn-press:active { transform: scale(0.96); transition: 0.1s; }
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
         .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        /* TOAST Y CHAT */
         .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 12px 20px; border-radius: 12px; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: 0.3s; }
         .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
         .chat-user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
         .chat-bot { background: #1e293b; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #334155; }
-        /* Ticket Style */
+        
+        /* TICKET DE PEDIDO */
         .ticket-container { background: #f1f5f9; color: #1e293b; padding: 12px; border-radius: 8px; margin-top: 5px; font-family: monospace; border: 2px dashed #cbd5e1; }
         .ticket-header { text-align: center; font-weight: bold; border-bottom: 1px dashed #94a3b8; padding-bottom: 8px; margin-bottom: 8px; }
-        .btn-copy-order { width: 100%; background: #2563eb; color: white; padding: 8px; border-radius: 6px; font-family: sans-serif; font-weight: bold; font-size: 0.8rem; margin-top: 8px; display: flex; justify-content: center; gap: 5px; }
+        .btn-copy-order { width: 100%; background: #2563eb; color: white; padding: 10px; border-radius: 6px; font-family: sans-serif; font-weight: bold; font-size: 0.85rem; margin-top: 8px; display: flex; justify-content: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-copy-order:active { background: #1d4ed8; }
     </style>
 </head>
 <body>
+
     <div id="loader" class="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center hidden">
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         <p class="mt-4 text-xs font-bold text-blue-400 tracking-widest animate-pulse">CARGANDO...</p>
     </div>
+
     <div id="toast" class="toast bg-gray-800 text-white"></div>
 
     <section id="view-login" class="view-section active justify-center p-6 bg-slate-900">
         <div class="w-full max-w-sm text-center mx-auto">
-            <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-blue-500/30 rotate-3"><i class="fas fa-box text-3xl"></i></div>
-            <h1 class="text-3xl font-black mb-10">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
-            <input id="login-user" type="text" class="w-full bg-slate-800 border-0 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-600 focus:ring-2 ring-blue-500" placeholder="USUARIO">
-            <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border-0 rounded-xl p-4 mb-6 text-center font-bold placeholder-slate-600 focus:ring-2 ring-blue-500" placeholder="PIN">
-            <button onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/50">ENTRAR</button>
+            <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-blue-500/30 rotate-3">
+                <i class="fas fa-box text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-black mb-10 text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
+            
+            <input id="login-user" type="text" class="w-full bg-slate-800 border-0 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-600 focus:ring-2 ring-blue-500 text-white" placeholder="USUARIO">
+            <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border-0 rounded-xl p-4 mb-6 text-center font-bold placeholder-slate-600 focus:ring-2 ring-blue-500 text-white" placeholder="PIN">
+            
+            <button onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/50 text-white">
+                INGRESAR AL SISTEMA
+            </button>
         </div>
     </section>
 
     <section id="view-dashboard" class="view-section bg-slate-950">
         <div class="p-6 pb-2 flex justify-between items-end bg-slate-950 sticky top-0 z-10">
-            <div><p class="text-xs text-blue-400 font-bold mb-1">HOLA, <span id="lbl-saludo">VENDEDOR</span></p><h2 class="text-3xl font-black leading-none">Mis Zonas</h2></div>
-            <button onclick="logout()" class="w-10 h-10 bg-slate-800 rounded-full text-slate-400"><i class="fas fa-power-off"></i></button>
+            <div>
+                <p class="text-xs text-blue-400 font-bold mb-1">HOLA, <span id="lbl-saludo">VENDEDOR</span></p>
+                <h2 class="text-3xl font-black leading-none text-white">Mis Zonas</h2>
+            </div>
+            <button onclick="logout()" class="w-10 h-10 bg-slate-800 rounded-full text-slate-400 hover:text-white">
+                <i class="fas fa-power-off"></i>
+            </button>
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 no-scrollbar">
             <div id="zones-grid" class="grid grid-cols-2 gap-3 pb-24"></div>
         </div>
 
-        <div id="footer-dashboard" class="p-4 bg-slate-950 fixed bottom-0 w-full hidden z-20">
-            <button onclick="startRoute()" class="btn-press w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-xl shadow-blue-900/40 flex justify-center items-center gap-2">
+        <div id="footer-dashboard" class="p-4 bg-slate-950 fixed bottom-0 w-full hidden z-20 border-t border-slate-900">
+            <button onclick="startRoute()" class="btn-press w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-xl shadow-blue-900/40 flex justify-center items-center gap-2 text-white">
                 <i class="fas fa-play"></i> <span id="btn-start-lbl">INICIAR</span>
             </button>
         </div>
-        <button onclick="toggleAIChat(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 rounded-full shadow-2xl flex items-center justify-center z-30 btn-press"><i class="fas fa-robot text-xl"></i></button>
+        
+        <button onclick="toggleAIChat(true)" class="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 rounded-full shadow-2xl flex items-center justify-center z-30 btn-press text-white border-2 border-slate-800">
+            <i class="fas fa-robot text-xl"></i>
+        </button>
     </section>
 
     <section id="view-route" class="view-section bg-slate-950">
         <div class="p-4 flex justify-between items-center bg-slate-900 border-b border-slate-800 sticky top-0 z-10 shadow-md">
-            <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-800 rounded-xl text-slate-300"><i class="fas fa-arrow-left"></i></button>
-            <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full"><div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div><span id="route-count" class="text-xs font-bold">0</span></div>
-            <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-800 rounded-xl text-blue-400"><i id="icon-view-mode" class="fas fa-list"></i></button>
+            <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-800 rounded-xl text-slate-300 hover:bg-slate-700">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span id="route-count" class="text-xs font-bold text-white">0</span>
+            </div>
+            <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-800 rounded-xl text-blue-400 border border-slate-700">
+                <i id="icon-view-mode" class="fas fa-list"></i>
+            </button>
         </div>
-        <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative"></div>
+        
+        <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative">
+            </div>
     </section>
 
     <div id="modal-suggestions" class="fixed inset-0 z-50 bg-black/95 flex items-end sm:items-center justify-center hidden p-4 backdrop-blur-sm">
-        <div class="bg-slate-900 w-full max-w-sm rounded-3xl p-6 border border-slate-800 animate-pop">
+        <div class="bg-slate-900 w-full max-w-sm rounded-3xl p-6 border border-slate-800 animate-pop shadow-2xl">
             <div class="text-center mb-6">
-                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fas fa-map-signs text-xl"></i></div>
-                <h3 class="text-xl font-black text-white">Ruta Recomendada</h3>
-                <p class="text-sm text-slate-400 mt-1">La IA analizó tu historial y sugiere:</p>
+                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-map-signs text-xl"></i>
+                </div>
+                <h3 class="text-xl font-black text-white">Plan del Día</h3>
+                <p class="text-sm text-slate-400 mt-1">La IA sugiere estas zonas para hoy:</p>
             </div>
-            <div id="suggestions-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto"></div>
+            
+            <div id="suggestions-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto">
+                </div>
+            
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="el('modal-suggestions').classList.add('hidden')" class="btn-press py-3 rounded-xl font-bold text-slate-400 bg-slate-800">Cerrar</button>
-                <button onclick="applySuggestions()" class="btn-press py-3 rounded-xl font-bold bg-blue-600 text-white">Aceptar</button>
+                <button onclick="el('modal-suggestions').classList.add('hidden')" class="btn-press py-3 rounded-xl font-bold text-slate-400 bg-slate-800">
+                    Omitir
+                </button>
+                <button onclick="applySuggestions()" class="btn-press py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30">
+                    Comenzar Ruta
+                </button>
             </div>
         </div>
     </div>
 
     <div id="modal-chat" class="fixed inset-0 z-50 bg-slate-900 translate-y-full transition-transform duration-300 flex flex-col">
         <div class="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center shadow-md">
-            <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center"><i class="fas fa-robot"></i></div><h3 class="font-bold">Asistente IA</h3></div>
-            <button onclick="toggleAIChat(false)" class="w-10 h-10"><i class="fas fa-chevron-down"></i></button>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white border-2 border-slate-700">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3 class="font-bold text-white">Mercado Limpio IA</h3>
+            </div>
+            <button onclick="toggleAIChat(false)" class="w-10 h-10 text-slate-400 hover:text-white">
+                <i class="fas fa-chevron-down"></i>
+            </button>
         </div>
+        
         <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2 bg-slate-950">
-            <div class="chat-bubble chat-bot">Hola. ¿Qué necesitas hoy? (Ej: "Pasame pedido cliente 10373" o "Sugerime ruta")</div>
+            <div class="chat-bubble chat-bot">Hola. ¿En qué te ayudo hoy? (Ej: "Pedido cliente 10373" o "Sugerir ruta")</div>
         </div>
+        
         <div class="p-4 bg-slate-800 border-t border-slate-700 pb-8 flex gap-2">
-            <input id="chat-in" type="text" placeholder="Escribe..." class="flex-1 bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-1 ring-indigo-500">
-            <button onclick="sendChat()" class="w-12 bg-indigo-600 rounded-xl"><i class="fas fa-paper-plane"></i></button>
+            <input id="chat-in" type="text" placeholder="Escribe aquí..." class="flex-1 bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-1 ring-indigo-500 text-white placeholder-slate-500">
+            <button onclick="sendChat()" class="w-12 bg-indigo-600 rounded-xl text-white shadow-lg">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
-    <div id="modal-reg" class="fixed inset-0 z-[60] bg-black/90 hidden flex items-center justify-center p-6"><div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-700 animate-pop">
-        <h3 id="reg-title" class="text-xl font-black mb-4">CLIENTE</h3>
-        <div class="grid grid-cols-2 gap-3 mb-4">
-            <button onclick="saveVis('Stock')" class="btn-press bg-slate-700 p-4 rounded-xl text-left"><i class="fas fa-box text-blue-400 block mb-2 text-xl"></i><span class="text-xs font-bold uppercase">Tiene Stock</span></button>
-            <button onclick="saveVis('Dinero')" class="btn-press bg-slate-700 p-4 rounded-xl text-left"><i class="fas fa-wallet text-red-400 block mb-2 text-xl"></i><span class="text-xs font-bold uppercase">Sin Dinero</span></button>
-            <button onclick="saveVis('Cerrado')" class="btn-press bg-slate-700 p-4 rounded-xl text-left"><i class="fas fa-store-slash text-yellow-400 block mb-2 text-xl"></i><span class="text-xs font-bold uppercase">Cerrado</span></button>
-            <button onclick="saveVis('Volver')" class="btn-press bg-slate-700 p-4 rounded-xl text-left"><i class="fas fa-clock text-purple-400 block mb-2 text-xl"></i><span class="text-xs font-bold uppercase">Volver</span></button>
+    <div id="modal-reg" class="fixed inset-0 z-[60] bg-black/90 hidden flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-slate-800 w-full max-w-sm rounded-3xl p-6 border border-slate-700 animate-pop shadow-2xl">
+            <h3 id="reg-title" class="text-xl font-black mb-4 text-white">CLIENTE</h3>
+            
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="saveVis('Stock')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                    <i class="fas fa-box text-blue-400 block mb-2 text-xl"></i>
+                    <span class="text-xs font-bold uppercase text-slate-200">Tiene Stock</span>
+                </button>
+                <button onclick="saveVis('Dinero')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                    <i class="fas fa-wallet text-red-400 block mb-2 text-xl"></i>
+                    <span class="text-xs font-bold uppercase text-slate-200">Sin Dinero</span>
+                </button>
+                <button onclick="saveVis('Cerrado')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                    <i class="fas fa-store-slash text-yellow-400 block mb-2 text-xl"></i>
+                    <span class="text-xs font-bold uppercase text-slate-200">Cerrado</span>
+                </button>
+                <button onclick="saveVis('Volver')" class="btn-press bg-slate-700 p-4 rounded-xl text-left hover:bg-slate-600 transition-colors">
+                    <i class="fas fa-clock text-purple-400 block mb-2 text-xl"></i>
+                    <span class="text-xs font-bold uppercase text-slate-200">Volver</span>
+                </button>
+            </div>
+            
+            <textarea id="reg-obs" class="w-full bg-slate-900 rounded-xl p-3 text-sm h-20 mb-4 resize-none text-white border border-slate-700 focus:border-blue-500 outline-none" placeholder="Nota opcional..."></textarea>
+            
+            <div class="flex gap-2">
+                <button onclick="el('modal-reg').classList.add('hidden')" class="flex-1 py-3 bg-slate-700 rounded-xl font-bold text-slate-300">Cancelar</button>
+                <button onclick="saveVis('Nota')" class="flex-1 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200">Guardar</button>
+            </div>
         </div>
-        <textarea id="reg-obs" class="w-full bg-slate-900 rounded-xl p-3 text-sm h-20 mb-4 resize-none" placeholder="Nota..."></textarea>
-        <div class="flex gap-2"><button onclick="el('modal-reg').classList.add('hidden')" class="flex-1 py-3 bg-slate-700 rounded-xl font-bold">Cancelar</button><button onclick="saveVis('Nota')" class="flex-1 py-3 bg-white text-black rounded-xl font-bold">Guardar</button></div>
-    </div></div>
+    </div>
 
     <script>
+        // === CONFIG ===
         const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
         const state = { user: JSON.parse(localStorage.getItem('ml_user')), db: {}, route: {active:[], done:new Set()}, sel: new Set(), mode: 'list', cliId: null };
         const el = id => document.getElementById(id);
-        const toast = (m, t='info') => { const d=el('toast'); d.innerText=m; d.style.opacity=1; d.style.top='30px'; d.className=`toast ${t==='error'?'bg-red-600':'bg-emerald-600'} text-white`; setTimeout(()=>{d.style.opacity=0;d.style.top='20px'},2500); };
         
-        // --- API & INIT ---
+        const toast = (m, t='info') => { 
+            const d=el('toast'); d.innerText=m; 
+            d.className=`toast ${t==='error'?'bg-red-600':'bg-emerald-600'} text-white`; 
+            d.style.opacity=1; d.style.top='30px'; 
+            setTimeout(()=>{d.style.opacity=0;d.style.top='20px'},2500); 
+        };
+        
+        // === API ===
         async function api(act, pl) {
-            const ctrl = new AbortController(); setTimeout(()=>ctrl.abort(), 40000);
+            const ctrl = new AbortController(); setTimeout(()=>ctrl.abort(), 45000); // 45s Timeout
             try {
                 const r = await fetch(WORKER, { method:'POST', body:JSON.stringify({action:act, payload:pl}), signal:ctrl.signal });
                 const j = await r.json();
@@ -127,14 +209,20 @@
             } catch(e) { throw e; }
         }
 
+        // === INICIO ===
         document.addEventListener('DOMContentLoaded', () => {
             if(state.user) init(); else switchView('view-login');
-            if(navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, {enableHighAccuracy:true});
+            // GPS Tracker
+            if(navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, {enableHighAccuracy:true, maximumAge:10000});
         });
 
-        function switchView(id) { document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active')); el(id).classList.add('active'); }
+        function switchView(id) { 
+            document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active')); 
+            el(id).classList.add('active'); 
+        }
+
         async function handleLogin() {
-            const u = el('login-user').value, p = el('login-pass').value;
+            const u = el('login-user').value.trim(), p = el('login-pass').value.trim();
             if(!u||!p) return toast('Faltan datos','error');
             el('loader').classList.remove('hidden');
             try {
@@ -146,109 +234,138 @@
         function logout() { localStorage.removeItem('ml_user'); location.reload(); }
 
         async function init() {
-            switchView('view-dashboard'); el('lbl-saludo').innerText = state.user.user.toUpperCase();
+            switchView('view-dashboard'); 
+            el('lbl-saludo').innerText = state.user.user.toUpperCase();
             el('loader').classList.remove('hidden');
             try {
                 const d = await api('get_app_data', {vendedor:state.user.vendedor});
                 state.db = d;
-                renderGrid();
-                // Check Sugerencias para Modal
-                if(d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
-            } catch(e) { toast('Error cargando','error'); } finally { el('loader').classList.add('hidden'); }
+                renderGrid(); // Dibuja botones
+                
+                // Mostrar Modal de Sugerencias si hay datos
+                if(d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
+                    showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+                }
+            } catch(e) { toast('Error cargando datos','error'); } finally { el('loader').classList.add('hidden'); }
         }
 
-        // --- DASHBOARD GRID ---
+        // === DASHBOARD GRID ===
         function renderGrid() {
             const g = el('zones-grid'); g.innerHTML = '';
-            state.db.zones.forEach(z => {
+            state.db.zonas.forEach(z => {
                 const crit = z.criticos>0;
                 const d = document.createElement('div');
+                // Estilo Grid visual
                 d.className = `p-4 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden active:scale-95 ${crit?'bg-red-900/10 border-red-500/30':'bg-slate-800 border-slate-700'}`;
                 d.onclick = () => toggleSel(z.nombre, d);
                 d.innerHTML = `
                     <h3 class="font-bold text-sm uppercase text-slate-200 truncate">${z.nombre}</h3>
                     <div class="flex justify-between items-end mt-2">
-                        <span class="text-xs text-slate-400 font-mono">${z.total} Clientes</span>
+                        <span class="text-xs text-slate-400 font-mono">${z.total_clientes} Clientes</span>
                         ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-marker-alt text-slate-600"></i>'}
                     </div>
-                    <div class="sel-overlay absolute inset-0 bg-blue-600/20 border-2 border-blue-500 hidden z-10"></div>
+                    <div class="sel-overlay absolute inset-0 bg-blue-600/20 border-2 border-blue-500 hidden z-10 flex items-center justify-center">
+                        <i class="fas fa-check-circle text-white text-3xl drop-shadow-md"></i>
+                    </div>
                 `;
                 g.appendChild(d);
             });
         }
+
         function toggleSel(n, div) {
-            if(state.sel.has(n)) { state.sel.delete(n); div.querySelector('.sel-overlay').classList.add('hidden'); }
-            else { state.sel.add(n); div.querySelector('.sel-overlay').classList.remove('hidden'); }
+            const ov = div.querySelector('.sel-overlay');
+            if(state.sel.has(n)) { state.sel.delete(n); ov.classList.add('hidden'); }
+            else { state.sel.add(n); ov.classList.remove('hidden'); }
+            
             const c = state.sel.size;
             el('footer-dashboard').classList.toggle('hidden', c===0);
             el('btn-start-lbl').innerText = `INICIAR (${c})`;
         }
+
         function startRoute() {
             const k = Array.from(state.sel);
+            if(k.length===0) return;
+            // Filtro de clientes por localidad_key
             state.route.active = state.db.clientes.filter(c=>k.includes(c.localidad_key));
-            renderRoute(); switchView('view-route');
+            renderRoute(); 
+            switchView('view-route');
         }
 
-        // --- MODAL SUGERENCIAS (NUEVO) ---
+        // === MODAL SUGERENCIAS ===
         function showSuggestions(list) {
             const c = el('suggestions-list'); c.innerHTML='';
             list.forEach(loc => {
                 const b = document.createElement('button');
-                b.className = 'w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-left flex justify-between items-center mb-2 active:bg-slate-700';
+                b.className = 'w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-left flex justify-between items-center mb-2 active:bg-slate-700 transition-colors';
                 b.onclick = function() { 
                     this.classList.toggle('ring-2'); this.classList.toggle('ring-blue-500'); this.classList.toggle('bg-slate-700');
                     if(state.sel.has(loc)) state.sel.delete(loc); else state.sel.add(loc);
                 };
-                b.innerHTML = `<span class="font-bold text-sm">${loc}</span><i class="far fa-circle text-slate-500"></i>`;
+                b.innerHTML = `<span class="font-bold text-sm text-white">${loc}</span><i class="far fa-circle text-slate-500"></i>`;
                 c.appendChild(b);
             });
             el('modal-suggestions').classList.remove('hidden');
         }
+
         function applySuggestions() {
-            if(state.sel.size>0) startRoute();
+            if(state.sel.size > 0) startRoute();
             el('modal-suggestions').classList.add('hidden');
         }
 
-        // --- RUTA & FLICKER FIX ---
+        // === RUTA Y ANTI-FLICKER ===
         function renderRoute() {
             const c = el('route-container'); c.innerHTML = '';
             const pends = state.route.active.filter(x => !state.route.done.has(String(x.id)));
             el('route-count').innerText = pends.length;
             
-            if(!pends.length) { c.innerHTML='<div class="text-center mt-20"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><h3 class="text-2xl font-bold">¡Ruta Finalizada!</h3></div>'; return; }
+            if(!pends.length) { 
+                c.innerHTML='<div class="text-center mt-20"><i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i><h3 class="text-2xl font-bold text-white">¡Ruta Finalizada!</h3></div>'; 
+                return; 
+            }
 
             const list = state.mode==='focus' ? [pends[0]] : pends;
-            list.forEach((cli, idx) => {
+            list.forEach((cli) => {
                 const days = cli.dias_sin_comprar;
                 const col = days>60?'bg-red-500':(days>30?'bg-yellow-500':'bg-green-500');
+                
                 const div = document.createElement('div');
-                // ID único para actualizar distancia sin borrar
-                div.id = `card-${cli.id}`;
-                div.className = state.mode==='focus' ? 'h-[75vh] flex flex-col justify-between bg-slate-900 p-6 rounded-3xl border border-slate-800 relative overflow-hidden' : 'bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-3 relative';
+                div.id = `card-${cli.id}`; // ID Único para actualizar solo distancia
+                div.className = state.mode==='focus' ? 
+                    'h-[75vh] flex flex-col justify-between bg-slate-900 p-6 rounded-3xl border border-slate-800 relative overflow-hidden shadow-xl' : 
+                    'bg-slate-900 p-4 rounded-2xl border border-slate-800 mb-3 relative shadow-md';
+                
                 div.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1 ${col}"></div>
-                    <div class="flex justify-between"><span class="text-xs font-bold text-slate-500">#${cli.id}</span><span class="text-xs bg-slate-800 px-2 rounded text-slate-300">${days}d</span></div>
-                    <h2 class="${state.mode==='focus'?'text-3xl':'text-lg'} font-black uppercase mt-1 leading-tight">${cli.nombre}</h2>
-                    <p class="text-slate-400 text-sm mt-1 truncate"><i class="fas fa-map-pin mr-1"></i>${cli.direccion}</p>
-                    <div id="dist-${cli.id}" class="text-xs font-bold text-blue-400 mt-2 h-4" data-lat="${cli.lat}" data-lng="${cli.lng}">Calculando...</div>
-                    <div class="grid grid-cols-4 gap-2 mt-4">
-                        <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-blue-600 py-3 rounded-xl font-bold">Venta</button>
-                        <button onclick="openReg('${cli.id}')" class="col-span-1 bg-slate-800 rounded-xl"><i class="fas fa-ellipsis-h"></i></button>
+                    <div class="flex justify-between pl-2">
+                        <span class="text-xs font-bold text-slate-500">#${cli.id}</span>
+                        <span class="text-xs bg-slate-800 px-2 rounded text-slate-300 border border-slate-700">${days}d</span>
+                    </div>
+                    <h2 class="${state.mode==='focus'?'text-3xl':'text-lg'} font-black uppercase mt-1 leading-tight text-white pl-2">${cli.nombre}</h2>
+                    <p class="text-slate-400 text-sm mt-1 truncate pl-2"><i class="fas fa-map-pin mr-1"></i>${cli.direccion}</p>
+                    
+                    <div id="dist-${cli.id}" class="text-xs font-bold text-blue-400 mt-2 h-4 pl-2" data-lat="${cli.lat}" data-lng="${cli.lng}">
+                        <span class="animate-pulse">Calculando...</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-2 mt-4 pl-2">
+                        <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-95 transition-transform">Venta</button>
+                        <button onclick="openReg('${cli.id}')" class="col-span-1 bg-slate-800 rounded-xl text-slate-300 border border-slate-700 active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
                     </div>
                 `;
                 c.appendChild(div);
             });
-            updateDistances(); // Calcular inicial
+            updateDistances(); // Calcular 1ra vez
         }
 
-        // Fix Flicker: Solo actualiza el texto, no el DOM entero
+        // ESTA FUNCIÓN CORRIGE EL PARPADEO
         function updateDistances(pos) {
             if(!pos && !state.location) return;
             if(pos) state.location = {lat:pos.coords.latitude, lng:pos.coords.longitude};
             
+            // Busca solo los elementos de distancia y actualiza su texto
             document.querySelectorAll('[id^="dist-"]').forEach(el => {
                 const lat = el.getAttribute('data-lat'), lng = el.getAttribute('data-lng');
-                if(lat && lng && lat!='null') {
+                if(lat && lng && lat!='null' && lat!='') {
                     const km = getKm(state.location.lat, state.location.lng, lat, lng);
                     el.innerHTML = `<i class="fas fa-route"></i> ${km} km <span class="text-yellow-500 ml-2">~${Math.round(km/20*60)} min</span>`;
                 }
@@ -260,45 +377,75 @@
             return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
         }
 
-        // --- ACTIONS ---
+        // === ACCIONES DE REGISTRO ===
         async function quickSale(id) { await doReg(id,'pedido','Venta OK','Rápida'); }
         async function saveVis(m) { if(state.cliId) await doReg(state.cliId,'visita',m,el('reg-obs').value); el('modal-reg').classList.add('hidden'); }
+        
         async function doReg(id,t,m,o) {
-            state.route.done.add(String(id)); renderRoute();
-            try { await api('registrar_movimiento',{vendedor:state.user.vendedor, clienteId:id, tipo:t, motivo:m, observacion:o}); toast('Registrado','success'); }
-            catch(e){ toast('Guardado local (offline)','error'); }
+            // Optimista
+            state.route.done.add(String(id)); 
+            renderRoute();
+            try { 
+                await api('registrar_movimiento',{vendedor:state.user.vendedor, clienteId:id, tipo:t, motivo:m, observacion:o}); 
+                toast('Registrado','success'); 
+            } catch(e){ toast('Guardado local (offline)','error'); }
         }
-        function openReg(id) { state.cliId=id; const c=state.db.clientes.find(x=>String(x.id)==id); el('reg-title').innerText=c.nombre; el('reg-obs').value=''; el('modal-reg').classList.remove('hidden'); }
+        
+        function openReg(id) { 
+            state.cliId=id; 
+            const c=state.db.clientes.find(x=>String(x.id)==id); 
+            el('reg-title').innerText=c.nombre; 
+            el('reg-obs').value=''; 
+            el('modal-reg').classList.remove('hidden'); 
+        }
+        
         function toggleViewMode() { state.mode=state.mode==='list'?'focus':'list'; renderRoute(); }
 
-        // --- CHATBOT (HTML READY) ---
+        // === CHATBOT HTML (V3.1) ===
         function toggleAIChat(s) { const m=el('modal-chat'); if(s) { m.classList.remove('translate-y-full'); setTimeout(()=>el('chat-in').focus(),300); } else m.classList.add('translate-y-full'); }
+        
         async function sendChat() {
             const i=el('chat-in'), t=i.value.trim(); if(!t) return;
-            addMsg(t,'user'); i.value='';
+            addMsg(t,'user'); 
+            i.value='';
+            
             try {
                 const res = await api('chatbot', {vendedor:state.user.vendedor, mensaje:t});
-                // LA MAGIA: Si el backend manda objeto JSON, usamos sus campos
-                const r = res.respuesta; 
-                let html = r.mensaje_corto || "Ok";
-                if(r.html_extra) html += r.html_extra; // Botones o Tickets
-                addMsg(html, 'bot', true);
-            } catch(e) { addMsg('Error conexión','bot'); }
+                // LEER OBJETO JSON DEL BACKEND
+                const r = res.respuesta;
+                if (r && typeof r === 'object') {
+                    let html = r.mensaje_corto || "Ok";
+                    if(r.html_extra) html += r.html_extra; // Agrega el Ticket/Botón
+                    addMsg(html, 'bot', true);
+                } else {
+                    addMsg(JSON.stringify(r), 'bot'); // Fallback
+                }
+            } catch(e) { 
+                addMsg('Error de conexión con la IA', 'bot'); 
+            }
         }
+        
         function addMsg(h,r,isHtml=false) {
-            const d=document.createElement('div'); d.className=`chat-bubble chat-${r} animate-pop`;
+            const d=document.createElement('div'); 
+            d.className=`chat-bubble chat-${r} animate-pop`;
             if(isHtml) d.innerHTML = h; else d.innerText = h;
             const c=el('chat-msgs'); c.appendChild(d); c.scrollTop=c.scrollHeight;
         }
-        // Función Global para el botón de IA
+
+        // Helpers Globales para el HTML inyectado por la IA
         window.acceptIARoute = (str) => {
             toggleAIChat(false);
             const list = str.split(',').map(s=>s.trim().toUpperCase());
-            state.sel = new Set(list); // Reemplaza selección anterior
+            state.sel = new Set(list); 
             startRoute();
         };
+        
         window.copyOrderText = (txt, btn) => {
-            navigator.clipboard.writeText(txt).then(()=>{ const o=btn.innerHTML; btn.innerHTML='COPIADO OK'; setTimeout(()=>btn.innerHTML=o,2000); });
+            navigator.clipboard.writeText(txt).then(()=>{ 
+                const o=btn.innerHTML; 
+                btn.innerHTML='<i class="fas fa-check"></i> COPIADO'; 
+                setTimeout(()=>btn.innerHTML=o,2000); 
+            });
         };
     </script>
 </body>
