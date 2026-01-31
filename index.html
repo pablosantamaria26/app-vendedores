@@ -47,17 +47,25 @@
 
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
-    /* Botones del ticket dentro del chat */
-    .btn-mini { display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; font-weight:800; font-size:12px; }
-    .btn-mini:active { transform: scale(0.98); }
+    /* Botón copiar en ticket */
     .btn-copy-order { margin-top:10px; width:100%; padding:10px 12px; border-radius:12px; font-weight:900; font-size:12px; display:flex; justify-content:center; gap:8px; background:#2563eb; color:#fff; }
     html.dark .btn-copy-order { background:#3b82f6; }
+
+    /* Typing indicator */
+    .typing-row { display:flex; align-items:center; gap:6px; }
+    .typing-dot { width:6px; height:6px; border-radius:50%; opacity:.7; }
+    html:not(.dark) .typing-dot { background:#334155; }
+    html.dark .typing-dot { background:#e2e8f0; }
+    @keyframes bounceDot { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-4px); opacity: 1; } }
+    .d1 { animation: bounceDot 1s infinite; }
+    .d2 { animation: bounceDot 1s infinite .15s; }
+    .d3 { animation: bounceDot 1s infinite .30s; }
 
     /* Oportunidades dentro del chat */
     .opp-card { border-radius:16px; padding:12px; border:1px solid; }
     html:not(.dark) .opp-card { background:#ffffff; border-color:#e2e8f0; }
     html.dark .opp-card { background:#0f172a; border-color:#334155; }
-    .opp-title { font-weight:900; font-size:13px; }
+    .opp-title { font-weight:900; font-size:13px; text-transform: uppercase; }
     .opp-sub { font-size:12px; opacity:.8; margin-top:2px; }
     .opp-actions { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:10px; }
     .opp-btn { padding:10px 10px; border-radius:14px; font-weight:900; font-size:12px; display:flex; justify-content:center; align-items:center; gap:8px; border:1px solid transparent; }
@@ -87,7 +95,7 @@
       <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Ventas & Logística</p>
 
       <input id="login-user" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="USUARIO">
-      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center font-bold placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="PIN">
+      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="PIN">
 
       <button onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
     </div>
@@ -216,7 +224,7 @@
     </div>
   </div>
 
-  <!-- MODAL PEDIDO (NUEVO) -->
+  <!-- MODAL PEDIDO -->
   <div id="modal-order" class="fixed inset-0 z-[80] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-5 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
       <div class="flex items-center justify-between">
@@ -248,9 +256,10 @@
 
   <script>
     // =========================
-    // CONFIG
+    // CONFIG / STATE
     // =========================
     const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
+    const OUTBOX_KEY = 'ml_outbox_v1';
 
     const state = {
       user: JSON.parse(localStorage.getItem('ml_user')),
@@ -261,11 +270,12 @@
       cliId: null,
       tempReason: null,
       location: null,
-      // modal pedido
-      currentOrder: { title: '', ticket: '' }
+      currentOrder: { title: '', ticket: '' },
+      outboxFlushing: false
     };
 
     const el = id => document.getElementById(id);
+
     const toast = (m, t) => {
       const d = el('toast');
       d.innerHTML = t === 'error'
@@ -290,8 +300,25 @@
       if (state.user) init(); else switchView('view-login');
 
       if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
+
       el('chat-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+
+      window.addEventListener('online', () => flushOutbox());
+      // intento inicial de sincronización
+      setTimeout(() => flushOutbox(), 1500);
     });
+
+    // =========================
+    // Nombre completo unificado
+    // =========================
+    function displayName(cli) {
+      if (!cli) return '';
+      const a = String(cli.apellido || '').trim();
+      const n = String(cli.nombre || '').trim();
+      const full = String(cli.nombre_full || '').trim();
+      const merged = [n, a].filter(Boolean).join(' ').trim();
+      return (full || merged || n || a || 'SIN NOMBRE').trim();
+    }
 
     function toggleTheme() {
       const html = document.documentElement;
@@ -330,6 +357,7 @@
         state.db = d;
         renderGrid();
         if (d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+        flushOutbox();
       } catch (e) {
         toast('Error cargando', 'error');
       } finally {
@@ -339,15 +367,15 @@
 
     function renderGrid() {
       const g = el('zones-grid'); g.innerHTML = '';
-      state.db.zonas.forEach(z => {
+      (state.db.zonas || []).forEach(z => {
         const crit = z.criticos > 0;
         const d = document.createElement('div');
         d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
         d.onclick = () => toggleSel(z.nombre, d);
         d.innerHTML = `
-          <h3 class="font-bold text-sm uppercase dark:text-white truncate">${z.nombre}</h3>
+          <h3 class="font-bold text-sm uppercase dark:text-white truncate">${escapeHtml(String(z.nombre || ''))}</h3>
           <div class="flex justify-between items-end mt-3">
-            <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">${z.total_clientes} Clientes</span>
+            <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">${escapeHtml(String(z.total_clientes || 0))} Clientes</span>
             ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-pin text-slate-300"></i>'}
           </div>
           <div class="sel-overlay absolute top-2 right-2 hidden"><i class="fas fa-check-circle text-blue-600 text-xl bg-white rounded-full"></i></div>
@@ -369,7 +397,7 @@
     function startRoute() {
       const k = Array.from(state.sel);
       if (!k.length) return;
-      state.route.active = state.db.clientes.filter(c => k.some(sel => sel.toUpperCase() === c.localidad_key.toUpperCase()));
+      state.route.active = (state.db.clientes || []).filter(c => k.some(sel => String(sel).toUpperCase() === String(c.localidad_key).toUpperCase()));
       renderRoute();
       switchView('view-route');
     }
@@ -384,7 +412,7 @@
           if (state.sel.has(loc)) { state.sel.delete(loc); i.className = 'far fa-circle text-slate-400 text-lg'; this.classList.remove('border-blue-500'); }
           else { state.sel.add(loc); i.className = 'fas fa-check-circle text-blue-600 text-lg'; this.classList.add('border-blue-500'); }
         };
-        b.innerHTML = `<span class="font-bold text-sm dark:text-white">${loc}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
+        b.innerHTML = `<span class="font-bold text-sm dark:text-white">${escapeHtml(String(loc))}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
         c.appendChild(b);
       });
       el('modal-suggestions').classList.remove('hidden');
@@ -394,7 +422,7 @@
 
     function renderRoute() {
       const c = el('route-container'); c.innerHTML = '';
-      const pends = state.route.active.filter(x => !state.route.done.has(String(x.id)));
+      const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
       el('route-count').innerText = pends.length;
 
       if (!pends.length) {
@@ -403,9 +431,13 @@
       }
 
       const list = state.mode === 'focus' ? [pends[0]] : pends;
+
       list.forEach((cli) => {
-        const days = cli.dias_sin_comprar;
+        const days = Number(cli.dias_sin_comprar ?? 999);
         let col = days > 60 ? 'bg-red-500' : (days > 30 ? 'bg-yellow-500' : 'bg-green-500');
+
+        const name = displayName(cli).toUpperCase();
+
         const div = document.createElement('div'); div.id = `card-${cli.id}`;
         div.className = state.mode === 'focus'
           ? 'h-[75vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
@@ -414,15 +446,15 @@
         div.innerHTML = `
           <div class="absolute left-0 top-0 bottom-0 w-1.5 ${col}"></div>
           <div class="flex justify-between pl-3 mb-1">
-            <span class="text-[10px] font-bold text-slate-400 uppercase">#${cli.id}</span>
-            <span class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 font-bold">${days} días</span>
+            <span class="text-[10px] font-bold text-slate-400 uppercase">#${escapeHtml(String(cli.id))}</span>
+            <span class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 font-bold">${escapeHtml(String(days))} días</span>
           </div>
-          <h2 class="${state.mode === 'focus' ? 'text-3xl' : 'text-lg'} font-black uppercase leading-tight dark:text-white pl-3">${cli.nombre}</h2>
-          <p class="text-slate-500 text-xs mt-1 truncate pl-3 flex items-center gap-1"><i class="fas fa-location-dot text-slate-300"></i> ${cli.direccion}</p>
-          <div id="dist-${cli.id}" class="text-xs font-bold text-blue-600 mt-3 h-4 pl-3" data-lat="${cli.lat}" data-lng="${cli.lng}">...</div>
+          <h2 class="${state.mode === 'focus' ? 'text-3xl' : 'text-lg'} font-black uppercase leading-tight dark:text-white pl-3">${escapeHtml(name)}</h2>
+          <p class="text-slate-500 text-xs mt-1 truncate pl-3 flex items-center gap-1"><i class="fas fa-location-dot text-slate-300"></i> ${escapeHtml(String(cli.direccion || ''))}</p>
+          <div id="dist-${cli.id}" class="text-xs font-bold text-blue-600 mt-3 h-4 pl-3" data-lat="${escapeHtml(String(cli.lat || ''))}" data-lng="${escapeHtml(String(cli.lng || ''))}">...</div>
           <div class="grid grid-cols-4 gap-2 mt-4 pl-3">
-            <button onclick="quickSale('${cli.id}')" class="col-span-3 bg-slate-900 dark:bg-blue-600 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta</button>
-            <button onclick="openReg('${cli.id}')" class="col-span-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-white rounded-xl active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
+            <button onclick="quickSale('${escapeAttr(String(cli.id))}')" class="col-span-3 bg-slate-900 dark:bg-blue-600 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta</button>
+            <button onclick="openReg('${escapeAttr(String(cli.id))}')" class="col-span-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-white rounded-xl active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
           </div>
         `;
         c.appendChild(div);
@@ -437,9 +469,11 @@
 
       document.querySelectorAll('[id^="dist-"]').forEach(node => {
         const lat = node.getAttribute('data-lat'), lng = node.getAttribute('data-lng');
-        if (lat && lng) {
-          const km = getKm(state.location.lat, state.location.lng, lat, lng);
+        if (lat && lng && isFinite(Number(lat)) && isFinite(Number(lng))) {
+          const km = getKm(state.location.lat, state.location.lng, Number(lat), Number(lng));
           node.innerHTML = `<i class="fas fa-route"></i> ${km} km <span class="text-slate-400 font-normal ml-2">~${Math.round(km / 20 * 60)} min</span>`;
+        } else {
+          node.innerHTML = '';
         }
       });
     }
@@ -452,26 +486,18 @@
       return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
     }
 
-    async function quickSale(id) { await doReg(id, 'pedido', 'Venta OK', 'Rápida'); }
-    async function doReg(id, t, m, o) {
-      state.route.done.add(String(id));
-      renderRoute();
-      try {
-        await api('registrar_movimiento', { vendedor: state.user.vendedor, clienteId: id, tipo: t, motivo: m, observacion: o });
-        toast('Guardado', 'success');
-      } catch (e) {
-        toast('Guardado offline', 'error');
-      }
-    }
-
+    // =========================
+    // REGISTROS (INSTANT UI + BACKGROUND + OUTBOX)
+    // =========================
     function openReg(id) {
-      state.cliId = id; state.tempReason = null;
-      const c = state.db.clientes.find(x => String(x.id) == id);
-      el('reg-title').innerText = c.nombre;
+      state.cliId = id;
+      state.tempReason = null;
+      const c = (state.db.clientes || []).find(x => String(x.id) == String(id));
+      el('reg-title').innerText = displayName(c).toUpperCase();
       el('reg-obs').value = '';
 
       let info = `<span class="text-green-600 font-bold">Cliente Activo</span>`;
-      if (c.dias_sin_comprar > 60) info = `<span class="text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">⚠️ CRÍTICO: +60 DÍAS</span>`;
+      if (c && Number(c.dias_sin_comprar) > 60) info = `<span class="text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">⚠️ CRÍTICO: +60 DÍAS</span>`;
       el('reg-info').innerHTML = info;
       el('modal-reg').classList.remove('hidden');
     }
@@ -482,10 +508,93 @@
       b.classList.add('ring-2', 'ring-blue-500');
     }
 
-    async function commitSave() {
+    function quickSale(id) {
+      // UI instantánea y envío background
+      doRegOptimistic(id, 'pedido', 'Venta OK', 'Rápida');
+    }
+
+    function commitSave() {
+      // UI instantánea: cierro modal YA y envío background
       if (!state.tempReason && !el('reg-obs').value) return toast('Ingresa motivo', 'error');
-      await doReg(state.cliId, 'visita', state.tempReason || 'Nota', el('reg-obs').value);
+      const id = state.cliId;
+      const reason = state.tempReason || 'Nota';
+      const obs = el('reg-obs').value || '';
+
       el('modal-reg').classList.add('hidden');
+      doRegOptimistic(id, 'visita', reason, obs);
+    }
+
+    function doRegOptimistic(id, tipo, motivo, observacion) {
+      const cid = String(id);
+
+      // 1) UI instantánea
+      state.route.done.add(cid);
+      renderRoute();
+
+      // 2) Background sync (con outbox si falla)
+      const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
+      sendInBackground('registrar_movimiento', payload);
+    }
+
+    async function sendInBackground(action, payload) {
+      try {
+        await api(action, payload);
+        toast('Guardado', 'success');
+        flushOutbox();
+      } catch (e) {
+        enqueueOutbox(action, payload);
+        toast('Sin señal: quedó en cola', 'error');
+      }
+    }
+
+    function enqueueOutbox(action, payload) {
+      const list = getOutbox();
+      list.push({ action, payload, ts: Date.now() });
+      localStorage.setItem(OUTBOX_KEY, JSON.stringify(list));
+    }
+
+    function getOutbox() {
+      try {
+        const raw = localStorage.getItem(OUTBOX_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    async function flushOutbox() {
+      if (state.outboxFlushing) return;
+      const list = getOutbox();
+      if (!list.length) return;
+
+      state.outboxFlushing = true;
+      try {
+        // Ping rápido para no perder tiempo si está offline “falso”
+        await api('ping', {});
+
+        let remaining = [...list];
+        const sent = [];
+
+        for (const item of list) {
+          try {
+            await api(item.action, item.payload);
+            sent.push(item);
+            remaining.shift();
+          } catch (e) {
+            // si falla uno, corto (para no quemar)
+            break;
+          }
+        }
+
+        // persistimos la cola restante
+        localStorage.setItem(OUTBOX_KEY, JSON.stringify(remaining));
+        if (sent.length) toast(`Sync OK: ${sent.length}`, 'success');
+      } catch (_) {
+        // sigue offline
+      } finally {
+        state.outboxFlushing = false;
+      }
     }
 
     function toggleViewMode() {
@@ -494,14 +603,14 @@
     }
 
     // =========================
-    // CHATBOT
+    // CHAT (typing + oportunidades)
     // =========================
     function toggleAIChat(s) {
       const m = el('modal-chat'), p = el('chat-panel');
       if (s) {
         m.classList.remove('hidden');
         setTimeout(() => p.classList.remove('translate-y-full'), 10);
-        setTimeout(() => el('chat-in').focus(), 300);
+        setTimeout(() => el('chat-in').focus(), 250);
       } else {
         p.classList.add('translate-y-full');
         setTimeout(() => m.classList.add('hidden'), 300);
@@ -516,9 +625,14 @@
       addMsg(t, 'user');
       i.value = '';
 
+      // typing bubble
+      const typingEl = addTyping();
+
       try {
         const res = await api('chatbot', { vendedor: state.user.vendedor, mensaje: t });
         const r = res.respuesta || {};
+
+        removeTyping(typingEl);
 
         if (r.type === 'ticket') {
           addMsg(r.text || 'Listo.', 'bot');
@@ -527,11 +641,11 @@
           addMsg(r.text || 'Dale.', 'bot');
           addRouteBtn(r.data || '');
         } else {
-          // text (puede venir con data JSON string para oportunidades)
           addMsg(r.text || "No entendí.", 'bot');
           maybeRenderOpportunities(r.data);
         }
       } catch (e) {
+        removeTyping(typingEl);
         addMsg('Error de conexión', 'bot');
       }
     }
@@ -544,7 +658,26 @@
       el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
     }
 
-    // Ticket nativo, SIN romper por comillas
+    function addTyping() {
+      const d = document.createElement('div');
+      d.className = 'chat-bubble chat-bot animate-pop';
+      d.innerHTML = `
+        <div class="typing-row">
+          <span class="typing-dot d1"></span>
+          <span class="typing-dot d2"></span>
+          <span class="typing-dot d3"></span>
+          <span style="font-weight:800; opacity:.75; font-size:12px;">Escribiendo...</span>
+        </div>
+      `;
+      el('chat-msgs').appendChild(d);
+      el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+      return d;
+    }
+
+    function removeTyping(node) {
+      try { if (node && node.parentNode) node.parentNode.removeChild(node); } catch (_) {}
+    }
+
     function addTicket(items) {
       const ticket = String(items || '');
       const d = document.createElement('div');
@@ -586,15 +719,10 @@
       startRoute();
     }
 
-    // =========================
-    // OPORTUNIDADES (data JSON)
-    // =========================
     function maybeRenderOpportunities(data) {
       if (!data) return;
 
       let obj = null;
-
-      // data puede venir como JSON string
       if (typeof data === 'string') {
         const s = data.trim();
         if (!s) return;
@@ -605,7 +733,6 @@
 
       if (!obj || !obj.suggestions || !Array.isArray(obj.suggestions) || obj.suggestions.length === 0) return;
 
-      // Render cards dentro del chat
       const wrap = document.createElement('div');
       wrap.className = 'animate-pop';
       const zone = obj.zone ? String(obj.zone) : 'Zona';
@@ -658,20 +785,15 @@
       const id = String(clienteId || '').trim();
       if (!id) return;
 
-      // buscamos cliente en la db actual
       const cli = (state.db?.clientes || []).find(c => String(c.id) === id);
       if (!cli) {
-        addMsg(`No tengo ese cliente cargado en la app ahora. (Probá cargar la zona donde está #${id})`, 'bot');
+        addMsg(`No tengo ese cliente cargado ahora. (Cargá la zona donde está #${id})`, 'bot');
         return;
       }
 
-      // Si ya estás en ruta: lo ponemos primero
       if (state.route.active && state.route.active.length) {
-        // quitar si ya existe
         state.route.active = state.route.active.filter(c => String(c.id) !== id);
-        // insertar primero
         state.route.active.unshift(cli);
-        // opcional: marcarlo como pendiente
         state.route.done.delete(id);
         renderRoute();
         toggleAIChat(false);
@@ -680,11 +802,10 @@
         return;
       }
 
-      // si no estás en ruta: selecciono su zona y arranco
       state.sel = new Set([String(cli.localidad_key || cli.localidad || '').toUpperCase()]);
       startRoute();
       toggleAIChat(false);
-      toast(`Ruta: ${cli.localidad}`, 'success');
+      toast(`Ruta: ${cli.localidad || ''}`, 'success');
     }
 
     // =========================
@@ -739,6 +860,10 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+    }
+
+    function escapeAttr(str) {
+      return String(str || '').replaceAll("'", "\\'").replaceAll('"', '&quot;');
     }
   </script>
 </body>
