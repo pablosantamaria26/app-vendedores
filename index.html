@@ -71,7 +71,6 @@
     html:not(.dark) .opp-btn-secondary { color:#334155; border-color:#cbd5e1; }
     .opp-meta { margin-top:8px; font-size:11px; opacity:.8; display:flex; gap:10px; flex-wrap:wrap; }
 
-    /* Chip de jornada en header ruta */
     .chip { font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; border-radius:999px; padding:6px 10px; border:1px solid; display:flex; align-items:center; gap:8px; }
     html:not(.dark) .chip { background:#fff; border-color:#e2e8f0; color:#0f172a; }
     html.dark .chip { background:#0b1224; border-color:#334155; color:#e2e8f0; }
@@ -138,19 +137,25 @@
 
   <!-- RUTA -->
   <section id="view-route" class="view-section bg-slate-100 dark:bg-slate-950">
+    <!-- HEADER CORREGIDO: incluye route-count -->
     <div class="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 flex justify-between items-center shadow-sm h-16">
       <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
         <i class="fas fa-chevron-left"></i>
       </button>
 
-      <!-- Chip turno + jornada -->
-      <div id="chip-jornada" class="chip">
-        <i class="fas fa-sun"></i>
-        <span id="chip-jornada-txt">JORNADA</span>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span id="route-count" class="text-sm font-bold">0</span>
+        </div>
+
+        <div id="chip-jornada" class="chip">
+          <i class="fas fa-sun"></i>
+          <span id="chip-jornada-txt">JORNADA</span>
+        </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <!-- Botón finalizar jornada -->
         <button onclick="openFinishModal()" class="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40">
           <i class="fas fa-flag-checkered"></i>
         </button>
@@ -299,9 +304,8 @@
     const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
     const OUTBOX_KEY = 'ml_outbox_v1';
 
-    // NUEVO: jornada persistente (localStorage)
-    const JKEY = () => `ml_active_jornada_${(state.user?.vendedor || 'NA')}`;
-    const JDAY = () => new Date().toISOString().slice(0,10); // yyyy-mm-dd (suficiente para client)
+    // Jornada persistente por vendedor
+    const JDAY = () => new Date().toISOString().slice(0, 10); // yyyy-mm-dd
     const nowTurno = () => (new Date().getHours() >= 14 ? 'Tarde' : 'Mañana');
 
     const state = {
@@ -315,15 +319,15 @@
       location: null,
       currentOrder: { title: '', ticket: '' },
       outboxFlushing: false,
-
-      // NUEVO (jornada)
-      jornada: null, // {date,turno,zonas,clientIds,doneIds,jornadaId,startedAt,status}
+      jornada: null
     };
 
+    const JKEY = () => `ml_active_jornada_${(state.user?.vendedor || 'NA')}`;
     const el = id => document.getElementById(id);
 
     const toast = (m, t) => {
       const d = el('toast');
+      if (!d) return;
       d.innerHTML = t === 'error'
         ? `<i class="fas fa-exclamation-circle text-red-400"></i> ${m}`
         : `<i class="fas fa-check-circle text-green-400"></i> ${m}`;
@@ -347,7 +351,8 @@
 
       if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
 
-      el('chat-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+      const chatIn = el('chat-in');
+      if (chatIn) chatIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 
       window.addEventListener('online', () => flushOutbox());
       setTimeout(() => flushOutbox(), 1500);
@@ -370,13 +375,16 @@
 
     function switchView(id) {
       document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-      el(id).classList.add('active');
+      const node = el(id);
+      if (node) node.classList.add('active');
     }
 
     async function handleLogin() {
-      const u = el('login-user').value.trim(), p = el('login-pass').value.trim();
+      const u = el('login-user')?.value?.trim() || '';
+      const p = el('login-pass')?.value?.trim() || '';
       if (!u || !p) return toast('Faltan datos', 'error');
-      el('loader').classList.remove('hidden');
+
+      el('loader')?.classList.remove('hidden');
       try {
         const d = await api('login', { user: u, pass: p });
         state.user = d;
@@ -385,21 +393,19 @@
       } catch (e) {
         toast(e.message, 'error');
       } finally {
-        el('loader').classList.add('hidden');
+        el('loader')?.classList.add('hidden');
       }
     }
     function logout() { localStorage.removeItem('ml_user'); location.reload(); }
 
-    // =========================
-    // JORNADA - persistencia
-    // =========================
+    // ========== Jornada local ==========
     function loadJornadaLocal() {
       try {
         const raw = localStorage.getItem(JKEY());
         if (!raw) return null;
         const j = JSON.parse(raw);
         if (!j || j.status !== 'ACTIVE') return null;
-        if (j.date !== JDAY()) return null; // solo reanudamos el mismo día
+        if (j.date !== JDAY()) return null;
         return j;
       } catch (_) { return null; }
     }
@@ -419,38 +425,27 @@
 
       const j = state.jornada;
       const turno = j?.turno || nowTurno();
-      const zonas = (j?.zonas || []).slice(0,2).join(', ');
+      const zonas = (j?.zonas || []).slice(0, 2).join(', ');
       const icon = chip.querySelector('i');
 
       if (turno === 'Tarde') { if (icon) icon.className = 'fas fa-moon'; }
       else { if (icon) icon.className = 'fas fa-sun'; }
 
-      txt.textContent = j
+      txt.textContent = j && j.status === 'ACTIVE'
         ? `${turno} · ${zonas || 'Ruta'}`
         : `${turno} · sin jornada`;
     }
 
     async function startJornadaBackend(zonas, turno) {
-      // En background + outbox si falla
       const payload = { vendedor: state.user.vendedor, zonas: zonas, turno: turno };
-      try {
-        const res = await api('start_jornada', payload);
-        return res;
-      } catch (e) {
-        enqueueOutbox('start_jornada', payload);
-        return null;
-      }
+      try { return await api('start_jornada', payload); }
+      catch (_) { enqueueOutbox('start_jornada', payload); return null; }
     }
 
     async function finalizeJornadaBackend(jornadaId, marcarPendientes, pendientes) {
       const payload = { vendedor: state.user.vendedor, jornadaId, marcarPendientes, pendientes };
-      try {
-        const res = await api('finalizar_jornada', payload);
-        return res;
-      } catch (e) {
-        enqueueOutbox('finalizar_jornada', payload);
-        return null;
-      }
+      try { return await api('finalizar_jornada', payload); }
+      catch (_) { enqueueOutbox('finalizar_jornada', payload); return null; }
     }
 
     async function registrarPendientesBatch(pendientes) {
@@ -461,22 +456,15 @@
         observacion: 'Cierre de jornada con pendientes'
       }));
       const payload = { vendedor: state.user.vendedor, items };
-      try {
-        const res = await api('registrar_batch', payload);
-        return res;
-      } catch (e) {
-        enqueueOutbox('registrar_batch', payload);
-        return null;
-      }
+      try { return await api('registrar_batch', payload); }
+      catch (_) { enqueueOutbox('registrar_batch', payload); return null; }
     }
 
     function resumeFromJornadaLocal(j) {
-      // reconstruye route.active según clientIds y marca done según doneIds
       const byId = new Map((state.db.clientes || []).map(c => [String(c.id), c]));
       const active = [];
       (j.clientIds || []).forEach(id => { if (byId.has(String(id))) active.push(byId.get(String(id))); });
 
-      // fallback: si faltan ids, usar zonas
       if (!active.length && j.zonas?.length) {
         active.push(...(state.db.clientes || []).filter(c => j.zonas.some(z => String(z).toUpperCase() === String(c.localidad_key).toUpperCase())));
       }
@@ -488,34 +476,30 @@
       toast('Reanudando jornada…', 'success');
     }
 
-    // =========================
-    // INIT
-    // =========================
+    // ========== Init ==========
     async function init() {
       switchView('view-dashboard');
-      el('lbl-saludo').innerText = state.user.user.toUpperCase();
-      el('loader').classList.remove('hidden');
+      const lbl = el('lbl-saludo');
+      if (lbl) lbl.innerText = (state.user?.user || '').toUpperCase();
 
+      el('loader')?.classList.remove('hidden');
       try {
         const d = await api('get_app_data', { vendedor: state.user.vendedor });
         state.db = d;
 
-        // 1) render dashboard
         renderGrid();
 
-        // 2) sugerencias IA (si no hay jornada activa local)
         const localJ = loadJornadaLocal();
-        if (!localJ && d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+        if (!localJ && d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
+          showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+        }
 
-        // 3) reanudar jornada local si existe
         if (localJ) {
           state.jornada = localJ;
           setChipJornada();
           resumeFromJornadaLocal(localJ);
         } else {
-          // si backend dice que hay jornada activa, no hacemos nada automático (todavía no tenemos clientIds)
-          // pero guardamos turno para chip
-          state.jornada = { status:'ACTIVE', date:JDAY(), turno: d.jornada_activa?.turno || nowTurno(), zonas: d.jornada_activa?.zonas || [] };
+          state.jornada = { status: 'ACTIVE', date: JDAY(), turno: d.jornada_activa?.turno || nowTurno(), zonas: d.jornada_activa?.zonas || [] };
           setChipJornada();
         }
 
@@ -523,22 +507,23 @@
       } catch (e) {
         toast('Error cargando', 'error');
       } finally {
-        el('loader').classList.add('hidden');
+        el('loader')?.classList.add('hidden');
       }
     }
 
-    // =========================
-    // GRID ZONAS
-    // =========================
+    // ========== GRID ==========
     function renderGrid() {
-      const g = el('zones-grid'); g.innerHTML = '';
+      const g = el('zones-grid');
+      if (!g) return;
+      g.innerHTML = '';
+
       (state.db.zonas || []).forEach(z => {
         const crit = z.criticos > 0;
         const d = document.createElement('div');
         d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
         d.onclick = () => toggleSel(z.nombre, d);
 
-        const last = z.ultima_visita ? `${z.ultima_visita}${z.ultimo_turno ? ` (${z.ultimo_turno[0]})` : ''}` : '';
+        const last = z.ultima_visita ? `${z.ultima_visita}${z.ultimo_turno ? ` (${String(z.ultimo_turno)[0]})` : ''}` : '';
         const days = (z.dias_desde !== "" && z.dias_desde != null) ? `${z.dias_desde}d` : '';
 
         d.innerHTML = `
@@ -556,26 +541,55 @@
     }
 
     function toggleSel(n, div) {
-      const ov = div.querySelector('.sel-overlay'), bd = div.querySelector('.sel-border');
-      if (state.sel.has(n)) { state.sel.delete(n); ov.classList.add('hidden'); bd.classList.add('hidden'); }
-      else { state.sel.add(n); ov.classList.remove('hidden'); bd.classList.remove('hidden'); }
+      const ov = div.querySelector('.sel-overlay');
+      const bd = div.querySelector('.sel-border');
+
+      if (state.sel.has(n)) { state.sel.delete(n); ov?.classList.add('hidden'); bd?.classList.add('hidden'); }
+      else { state.sel.add(n); ov?.classList.remove('hidden'); bd?.classList.remove('hidden'); }
+
       const c = state.sel.size;
-      el('footer-dashboard').classList.toggle('hidden', c === 0);
-      el('btn-start-lbl').innerText = `INICIAR (${c})`;
+      el('footer-dashboard')?.classList.toggle('hidden', c === 0);
+      const b = el('btn-start-lbl');
+      if (b) b.innerText = `INICIAR (${c})`;
     }
 
-    // =========================
-    // START ROUTE + CREATE JORNADA
-    // =========================
+    function showSuggestions(list) {
+      const c = el('suggestions-list');
+      if (!c) return;
+      c.innerHTML = '';
+
+      list.forEach(loc => {
+        const b = document.createElement('div');
+        b.className = 'w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex justify-between items-center mb-2 cursor-pointer';
+        b.onclick = function () {
+          const i = this.querySelector('i');
+          if (state.sel.has(loc)) { state.sel.delete(loc); if (i) i.className = 'far fa-circle text-slate-400 text-lg'; this.classList.remove('border-blue-500'); }
+          else { state.sel.add(loc); if (i) i.className = 'fas fa-check-circle text-blue-600 text-lg'; this.classList.add('border-blue-500'); }
+          const c2 = state.sel.size;
+          el('footer-dashboard')?.classList.toggle('hidden', c2 === 0);
+          const b2 = el('btn-start-lbl');
+          if (b2) b2.innerText = `INICIAR (${c2})`;
+        };
+        b.innerHTML = `<span class="font-bold text-sm dark:text-white">${escapeHtml(String(loc))}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
+        c.appendChild(b);
+      });
+
+      el('modal-suggestions')?.classList.remove('hidden');
+    }
+
+    function applySuggestions() {
+      if (state.sel.size > 0) startRoute();
+      el('modal-suggestions')?.classList.add('hidden');
+    }
+
+    // ========== START ROUTE ==========
     async function startRoute() {
       const k = Array.from(state.sel).map(x => String(x).toUpperCase());
       if (!k.length) return;
 
-      // construir active list
       state.route.active = (state.db.clientes || []).filter(c => k.some(sel => String(sel) === String(c.localidad_key).toUpperCase()));
       state.route.done = new Set();
 
-      // crear jornada local
       const clientIds = state.route.active.map(c => String(c.id));
       const turno = nowTurno();
 
@@ -593,7 +607,6 @@
       saveJornadaLocal(jLocal);
       setChipJornada();
 
-      // backend (background)
       const r = await startJornadaBackend(k, turno);
       if (r && r.jornadaId) {
         state.jornada.jornadaId = r.jornadaId;
@@ -604,24 +617,30 @@
       switchView('view-route');
     }
 
-    // =========================
-    // RENDER ROUTE
-    // =========================
+    // ========== ROUTE ==========
+    function syncJornadaDoneLocal() {
+      if (!state.jornada || state.jornada.status !== 'ACTIVE') return;
+      state.jornada.doneIds = Array.from(state.route.done).map(String);
+      saveJornadaLocal(state.jornada);
+    }
+
     function renderRoute() {
-      const c = el('route-container'); c.innerHTML = '';
+      const c = el('route-container');
+      if (!c) return;
+
+      c.innerHTML = '';
       const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
 
-      // actualizar chip
       setChipJornada();
+
+      const rc = el('route-count');
+      if (rc) rc.innerText = String(pends.length);
 
       if (!pends.length) {
         c.innerHTML = '<div class="text-center mt-20 opacity-50"><i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i><h3 class="text-xl font-bold dark:text-white">¡Ruta Completada!</h3></div>';
-        el('route-count').innerText = 0;
-        // si completó todo, sugerimos finalizar (no forzamos)
+        if (rc) rc.innerText = '0';
         return;
       }
-
-      el('route-count').innerText = pends.length;
 
       const list = state.mode === 'focus' ? [pends[0]] : pends;
 
@@ -631,7 +650,8 @@
 
         const name = displayName(cli).toUpperCase();
 
-        const div = document.createElement('div'); div.id = `card-${cli.id}`;
+        const div = document.createElement('div');
+        div.id = `card-${cli.id}`;
         div.className = state.mode === 'focus'
           ? 'h-[75vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
           : 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
@@ -654,15 +674,7 @@
       });
 
       updateDistances();
-
-      // persistencia doneIds
       syncJornadaDoneLocal();
-    }
-
-    function syncJornadaDoneLocal() {
-      if (!state.jornada || state.jornada.status !== 'ACTIVE') return;
-      state.jornada.doneIds = Array.from(state.route.done).map(String);
-      saveJornadaLocal(state.jornada);
     }
 
     function updateDistances(pos) {
@@ -670,13 +682,12 @@
       if (!state.location) return;
 
       document.querySelectorAll('[id^="dist-"]').forEach(node => {
-        const lat = node.getAttribute('data-lat'), lng = node.getAttribute('data-lng');
+        const lat = node.getAttribute('data-lat');
+        const lng = node.getAttribute('data-lng');
         if (lat && lng && isFinite(Number(lat)) && isFinite(Number(lng))) {
           const km = getKm(state.location.lat, state.location.lng, Number(lat), Number(lng));
           node.innerHTML = `<i class="fas fa-route"></i> ${km} km <span class="text-slate-400 font-normal ml-2">~${Math.round(km / 20 * 60)} min</span>`;
-        } else {
-          node.innerHTML = '';
-        }
+        } else node.innerHTML = '';
       });
     }
 
@@ -688,65 +699,52 @@
       return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
     }
 
-    // =========================
-    // FINALIZAR JORNADA
-    // =========================
+    // ========== FINALIZAR ==========
     function openFinishModal() {
       const pendingIds = (state.route.active || [])
         .filter(c => !state.route.done.has(String(c.id)))
         .map(c => String(c.id));
 
       const zonas = (state.jornada?.zonas || Array.from(state.sel)).join(', ') || '—';
-      el('finish-sub').innerText = pendingIds.length
+      const sub = el('finish-sub');
+      if (sub) sub.innerText = pendingIds.length
         ? `Zonas: ${zonas}. Quedan ${pendingIds.length} clientes pendientes.`
         : `Zonas: ${zonas}. No quedan pendientes.`;
 
       const m = el('modal-finish');
-      m.classList.remove('hidden');
-      m.classList.add('flex');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
     }
 
     function closeFinishModal() {
       const m = el('modal-finish');
-      m.classList.add('hidden');
-      m.classList.remove('flex');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
     }
 
     async function finishJornada(marcarPendientes) {
       closeFinishModal();
 
       const j = state.jornada;
-      if (!j || j.status !== 'ACTIVE') {
-        toast('No hay jornada activa', 'error');
-        return;
-      }
+      if (!j || j.status !== 'ACTIVE') { toast('No hay jornada activa', 'error'); return; }
 
       const pendingIds = (state.route.active || [])
         .filter(c => !state.route.done.has(String(c.id)))
         .map(c => String(c.id));
 
-      // UI: cerramos local ya
       j.status = 'CLOSED';
       saveJornadaLocal(j);
 
-      // si quiere marcar pendientes: hacemos batch (background/outbox)
       if (marcarPendientes && pendingIds.length) {
         await registrarPendientesBatch(pendingIds);
-        // también marcamos done local para que no reaparezcan si vuelve atrás
         pendingIds.forEach(id => state.route.done.add(String(id)));
       }
 
-      // finalizar backend (si no hay jornadaId igual lo intentamos en outbox)
-      const jornadaId = j.jornadaId;
-      if (jornadaId) await finalizeJornadaBackend(jornadaId, marcarPendientes, pendingIds);
+      if (j.jornadaId) await finalizeJornadaBackend(j.jornadaId, marcarPendientes, pendingIds);
       else enqueueOutbox('finalizar_jornada', { vendedor: state.user.vendedor, jornadaId: "", marcarPendientes, pendientes: pendingIds });
 
-      // limpiar
       clearJornadaLocal();
       state.jornada = null;
       setChipJornada();
 
-      // volver dashboard
       state.route.active = [];
       state.route.done = new Set();
       state.sel = new Set();
@@ -757,20 +755,22 @@
       flushOutbox();
     }
 
-    // =========================
-    // REGISTROS (INSTANT UI + BACKGROUND + OUTBOX)
-    // =========================
+    // ========== REGISTROS ==========
     function openReg(id) {
       state.cliId = id;
       state.tempReason = null;
       const c = (state.db.clientes || []).find(x => String(x.id) == String(id));
-      el('reg-title').innerText = displayName(c).toUpperCase();
-      el('reg-obs').value = '';
+      const title = el('reg-title');
+      if (title) title.innerText = displayName(c).toUpperCase();
+      const obs = el('reg-obs');
+      if (obs) obs.value = '';
 
       let info = `<span class="text-green-600 font-bold">Cliente Activo</span>`;
       if (c && Number(c.dias_sin_comprar) > 60) info = `<span class="text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">⚠️ CRÍTICO: +60 DÍAS</span>`;
-      el('reg-info').innerHTML = info;
-      el('modal-reg').classList.remove('hidden');
+      const ri = el('reg-info');
+      if (ri) ri.innerHTML = info;
+
+      el('modal-reg')?.classList.remove('hidden');
     }
 
     function selectReason(r, b) {
@@ -784,26 +784,22 @@
     }
 
     function commitSave() {
-      if (!state.tempReason && !el('reg-obs').value) return toast('Ingresa motivo', 'error');
+      if (!state.tempReason && !(el('reg-obs')?.value || '')) return toast('Ingresa motivo', 'error');
       const id = state.cliId;
       const reason = state.tempReason || 'Nota';
-      const obs = el('reg-obs').value || '';
+      const obs = el('reg-obs')?.value || '';
 
-      el('modal-reg').classList.add('hidden');
+      el('modal-reg')?.classList.add('hidden');
       doRegOptimistic(id, 'visita', reason, obs);
     }
 
     function doRegOptimistic(id, tipo, motivo, observacion) {
       const cid = String(id);
 
-      // UI instantánea
       state.route.done.add(cid);
       renderRoute();
-
-      // persistir jornada done
       syncJornadaDoneLocal();
 
-      // Background
       const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
       sendInBackground('registrar_movimiento', payload);
     }
@@ -819,6 +815,7 @@
       }
     }
 
+    // ========== OUTBOX ==========
     function enqueueOutbox(action, payload) {
       const list = getOutbox();
       list.push({ action, payload, ts: Date.now() });
@@ -830,9 +827,7 @@
         const raw = localStorage.getItem(OUTBOX_KEY);
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr : [];
-      } catch (_) {
-        return [];
-      }
+      } catch (_) { return []; }
     }
 
     async function flushOutbox() {
@@ -852,7 +847,7 @@
             await api(item.action, item.payload);
             sent.push(item);
             remaining.shift();
-          } catch (e) {
+          } catch (_) {
             break;
           }
         }
@@ -870,15 +865,15 @@
       renderRoute();
     }
 
-    // =========================
-    // CHAT (typing + oportunidades)
-    // =========================
+    // ========== CHAT ==========
     function toggleAIChat(s) {
       const m = el('modal-chat'), p = el('chat-panel');
+      if (!m || !p) return;
+
       if (s) {
         m.classList.remove('hidden');
         setTimeout(() => p.classList.remove('translate-y-full'), 10);
-        setTimeout(() => el('chat-in').focus(), 250);
+        setTimeout(() => el('chat-in')?.focus(), 250);
       } else {
         p.classList.add('translate-y-full');
         setTimeout(() => m.classList.add('hidden'), 300);
@@ -887,7 +882,7 @@
 
     async function sendChat() {
       const i = el('chat-in');
-      const t = i.value.trim();
+      const t = (i?.value || '').trim();
       if (!t) return;
 
       addMsg(t, 'user');
@@ -911,21 +906,25 @@
           addMsg(r.text || "No entendí.", 'bot');
           maybeRenderOpportunities(r.data);
         }
-      } catch (e) {
+      } catch (_) {
         removeTyping(typingEl);
         addMsg('Error de conexión', 'bot');
       }
     }
 
     function addMsg(h, r) {
+      const box = el('chat-msgs');
+      if (!box) return;
       const d = document.createElement('div');
       d.className = `chat-bubble chat-${r} animate-pop`;
       d.innerText = h;
-      el('chat-msgs').appendChild(d);
-      el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
     }
 
     function addTyping() {
+      const box = el('chat-msgs');
+      if (!box) return null;
       const d = document.createElement('div');
       d.className = 'chat-bubble chat-bot animate-pop';
       d.innerHTML = `
@@ -936,8 +935,8 @@
           <span style="font-weight:800; opacity:.75; font-size:12px;">Escribiendo...</span>
         </div>
       `;
-      el('chat-msgs').appendChild(d);
-      el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
       return d;
     }
 
@@ -947,6 +946,9 @@
 
     function addTicket(items) {
       const ticket = String(items || '');
+      const box = el('chat-msgs');
+      if (!box) return;
+
       const d = document.createElement('div');
       d.className = 'animate-pop';
       d.innerHTML = `
@@ -965,19 +967,23 @@
         setTimeout(() => { btn.innerHTML = prev; btn.style.background = ''; }, 1500);
       });
 
-      el('chat-msgs').appendChild(d);
-      el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
     }
 
     function addRouteBtn(zone) {
       const z = String(zone || '').trim();
       if (!z) return;
+      const box = el('chat-msgs');
+      if (!box) return;
+
       const d = document.createElement('div');
       d.className = 'animate-pop';
       d.innerHTML = `<button type="button" class="w-full bg-green-600 text-white p-3 rounded-xl font-bold mt-2 shadow-md btn-press"><i class="fas fa-map-signs"></i> IR A ${escapeHtml(z)}</button>`;
       d.querySelector('button').addEventListener('click', () => acceptIARoute(z));
-      el('chat-msgs').appendChild(d);
-      el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
     }
 
     function acceptIARoute(z) {
@@ -994,11 +1000,12 @@
         const s = data.trim();
         if (!s) return;
         try { obj = JSON.parse(s); } catch (_) { return; }
-      } else if (typeof data === 'object') {
-        obj = data;
-      }
+      } else if (typeof data === 'object') obj = data;
 
-      if (!obj || !obj.suggestions || !Array.isArray(obj.suggestions) || obj.suggestions.length === 0) return;
+      if (!obj || !Array.isArray(obj.suggestions) || obj.suggestions.length === 0) return;
+
+      const box = el('chat-msgs');
+      if (!box) return;
 
       const wrap = document.createElement('div');
       wrap.className = 'animate-pop';
@@ -1044,8 +1051,8 @@
         list.appendChild(card);
       });
 
-      el('chat-msgs').appendChild(wrap);
-      el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+      box.appendChild(wrap);
+      box.scrollTop = box.scrollHeight;
     }
 
     function goToClient(clienteId) {
@@ -1053,10 +1060,7 @@
       if (!id) return;
 
       const cli = (state.db?.clientes || []).find(c => String(c.id) === id);
-      if (!cli) {
-        addMsg(`No tengo ese cliente cargado ahora. (Cargá la zona donde está #${id})`, 'bot');
-        return;
-      }
+      if (!cli) { addMsg(`No tengo ese cliente cargado ahora. (Cargá la zona donde está #${id})`, 'bot'); return; }
 
       if (state.route.active && state.route.active.length) {
         state.route.active = state.route.active.filter(c => String(c.id) !== id);
@@ -1079,18 +1083,16 @@
       state.currentOrder.title = String(title || '');
       state.currentOrder.ticket = String(ticket || '');
 
-      el('order-title').innerText = state.currentOrder.title || 'Pedido';
-      el('order-ticket').innerText = state.currentOrder.ticket || '';
+      const ot = el('order-title'); if (ot) ot.innerText = state.currentOrder.title || 'Pedido';
+      const ok = el('order-ticket'); if (ok) ok.innerText = state.currentOrder.ticket || '';
 
       const m = el('modal-order');
-      m.classList.remove('hidden');
-      m.classList.add('flex');
+      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
     }
 
     function closeOrderModal() {
       const m = el('modal-order');
-      m.classList.add('hidden');
-      m.classList.remove('flex');
+      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
     }
 
     function copyCurrentOrder() {
@@ -1101,9 +1103,8 @@
     function copyPlainText(txt) {
       const t = String(txt || '');
       try {
-        if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(t);
-        } else {
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t);
+        else {
           const area = document.createElement('textarea');
           area.value = t;
           document.body.appendChild(area);
@@ -1122,7 +1123,6 @@
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
     }
-
     function escapeAttr(str) {
       return String(str || '').replaceAll("'", "\\'").replaceAll('"', '&quot;');
     }
