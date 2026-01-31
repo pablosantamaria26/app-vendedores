@@ -47,11 +47,9 @@
 
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
-    /* Botón copiar en ticket */
     .btn-copy-order { margin-top:10px; width:100%; padding:10px 12px; border-radius:12px; font-weight:900; font-size:12px; display:flex; justify-content:center; gap:8px; background:#2563eb; color:#fff; }
     html.dark .btn-copy-order { background:#3b82f6; }
 
-    /* Typing indicator */
     .typing-row { display:flex; align-items:center; gap:6px; }
     .typing-dot { width:6px; height:6px; border-radius:50%; opacity:.7; }
     html:not(.dark) .typing-dot { background:#334155; }
@@ -61,7 +59,6 @@
     .d2 { animation: bounceDot 1s infinite .15s; }
     .d3 { animation: bounceDot 1s infinite .30s; }
 
-    /* Oportunidades dentro del chat */
     .opp-card { border-radius:16px; padding:12px; border:1px solid; }
     html:not(.dark) .opp-card { background:#ffffff; border-color:#e2e8f0; }
     html.dark .opp-card { background:#0f172a; border-color:#334155; }
@@ -73,6 +70,11 @@
     .opp-btn-secondary { background:transparent; border-color:#64748b; color:#e2e8f0; }
     html:not(.dark) .opp-btn-secondary { color:#334155; border-color:#cbd5e1; }
     .opp-meta { margin-top:8px; font-size:11px; opacity:.8; display:flex; gap:10px; flex-wrap:wrap; }
+
+    /* Chip de jornada en header ruta */
+    .chip { font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; border-radius:999px; padding:6px 10px; border:1px solid; display:flex; align-items:center; gap:8px; }
+    html:not(.dark) .chip { background:#fff; border-color:#e2e8f0; color:#0f172a; }
+    html.dark .chip { background:#0b1224; border-color:#334155; color:#e2e8f0; }
   </style>
 </head>
 
@@ -140,13 +142,23 @@
       <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
         <i class="fas fa-chevron-left"></i>
       </button>
-      <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-        <span id="route-count" class="text-sm font-bold">0</span>
+
+      <!-- Chip turno + jornada -->
+      <div id="chip-jornada" class="chip">
+        <i class="fas fa-sun"></i>
+        <span id="chip-jornada-txt">JORNADA</span>
       </div>
-      <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-blue-500 border border-slate-200 dark:border-slate-700">
-        <i id="icon-view-mode" class="fas fa-list"></i>
-      </button>
+
+      <div class="flex items-center gap-2">
+        <!-- Botón finalizar jornada -->
+        <button onclick="openFinishModal()" class="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40">
+          <i class="fas fa-flag-checkered"></i>
+        </button>
+
+        <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-blue-500 border border-slate-200 dark:border-slate-700">
+          <i id="icon-view-mode" class="fas fa-list"></i>
+        </button>
+      </div>
     </div>
 
     <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
@@ -157,6 +169,35 @@
 
     <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative space-y-3"></div>
   </section>
+
+  <!-- MODAL FINALIZAR -->
+  <div id="modal-finish" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="text-lg font-black dark:text-white">Finalizar jornada</h3>
+          <p id="finish-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-1">...</p>
+        </div>
+        <button onclick="closeFinishModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <button onclick="finishJornada(true)" class="btn-press w-full py-3 rounded-xl font-black bg-red-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-check-double"></i> Finalizar y marcar pendientes “No llegué”
+        </button>
+
+        <button onclick="finishJornada(false)" class="btn-press w-full py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Finalizar sin marcar pendientes
+        </button>
+
+        <button onclick="closeFinishModal()" class="btn-press w-full py-3 rounded-xl font-black bg-transparent text-slate-500 dark:text-slate-400">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL SUGGESTIONS -->
   <div id="modal-suggestions" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden p-4 backdrop-blur-sm">
@@ -255,11 +296,13 @@
   </div>
 
   <script>
-    // =========================
-    // CONFIG / STATE
-    // =========================
     const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
     const OUTBOX_KEY = 'ml_outbox_v1';
+
+    // NUEVO: jornada persistente (localStorage)
+    const JKEY = () => `ml_active_jornada_${(state.user?.vendedor || 'NA')}`;
+    const JDAY = () => new Date().toISOString().slice(0,10); // yyyy-mm-dd (suficiente para client)
+    const nowTurno = () => (new Date().getHours() >= 14 ? 'Tarde' : 'Mañana');
 
     const state = {
       user: JSON.parse(localStorage.getItem('ml_user')),
@@ -271,7 +314,10 @@
       tempReason: null,
       location: null,
       currentOrder: { title: '', ticket: '' },
-      outboxFlushing: false
+      outboxFlushing: false,
+
+      // NUEVO (jornada)
+      jornada: null, // {date,turno,zonas,clientIds,doneIds,jornadaId,startedAt,status}
     };
 
     const el = id => document.getElementById(id);
@@ -304,13 +350,9 @@
       el('chat-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 
       window.addEventListener('online', () => flushOutbox());
-      // intento inicial de sincronización
       setTimeout(() => flushOutbox(), 1500);
     });
 
-    // =========================
-    // Nombre completo unificado
-    // =========================
     function displayName(cli) {
       if (!cli) return '';
       const a = String(cli.apellido || '').trim();
@@ -348,15 +390,135 @@
     }
     function logout() { localStorage.removeItem('ml_user'); location.reload(); }
 
+    // =========================
+    // JORNADA - persistencia
+    // =========================
+    function loadJornadaLocal() {
+      try {
+        const raw = localStorage.getItem(JKEY());
+        if (!raw) return null;
+        const j = JSON.parse(raw);
+        if (!j || j.status !== 'ACTIVE') return null;
+        if (j.date !== JDAY()) return null; // solo reanudamos el mismo día
+        return j;
+      } catch (_) { return null; }
+    }
+
+    function saveJornadaLocal(j) {
+      try { localStorage.setItem(JKEY(), JSON.stringify(j)); } catch (_) {}
+    }
+
+    function clearJornadaLocal() {
+      try { localStorage.removeItem(JKEY()); } catch (_) {}
+    }
+
+    function setChipJornada() {
+      const chip = el('chip-jornada');
+      const txt = el('chip-jornada-txt');
+      if (!chip || !txt) return;
+
+      const j = state.jornada;
+      const turno = j?.turno || nowTurno();
+      const zonas = (j?.zonas || []).slice(0,2).join(', ');
+      const icon = chip.querySelector('i');
+
+      if (turno === 'Tarde') { if (icon) icon.className = 'fas fa-moon'; }
+      else { if (icon) icon.className = 'fas fa-sun'; }
+
+      txt.textContent = j
+        ? `${turno} · ${zonas || 'Ruta'}`
+        : `${turno} · sin jornada`;
+    }
+
+    async function startJornadaBackend(zonas, turno) {
+      // En background + outbox si falla
+      const payload = { vendedor: state.user.vendedor, zonas: zonas, turno: turno };
+      try {
+        const res = await api('start_jornada', payload);
+        return res;
+      } catch (e) {
+        enqueueOutbox('start_jornada', payload);
+        return null;
+      }
+    }
+
+    async function finalizeJornadaBackend(jornadaId, marcarPendientes, pendientes) {
+      const payload = { vendedor: state.user.vendedor, jornadaId, marcarPendientes, pendientes };
+      try {
+        const res = await api('finalizar_jornada', payload);
+        return res;
+      } catch (e) {
+        enqueueOutbox('finalizar_jornada', payload);
+        return null;
+      }
+    }
+
+    async function registrarPendientesBatch(pendientes) {
+      const items = pendientes.map(cid => ({
+        clienteId: String(cid),
+        tipo: 'visita',
+        motivo: 'No llegue',
+        observacion: 'Cierre de jornada con pendientes'
+      }));
+      const payload = { vendedor: state.user.vendedor, items };
+      try {
+        const res = await api('registrar_batch', payload);
+        return res;
+      } catch (e) {
+        enqueueOutbox('registrar_batch', payload);
+        return null;
+      }
+    }
+
+    function resumeFromJornadaLocal(j) {
+      // reconstruye route.active según clientIds y marca done según doneIds
+      const byId = new Map((state.db.clientes || []).map(c => [String(c.id), c]));
+      const active = [];
+      (j.clientIds || []).forEach(id => { if (byId.has(String(id))) active.push(byId.get(String(id))); });
+
+      // fallback: si faltan ids, usar zonas
+      if (!active.length && j.zonas?.length) {
+        active.push(...(state.db.clientes || []).filter(c => j.zonas.some(z => String(z).toUpperCase() === String(c.localidad_key).toUpperCase())));
+      }
+
+      state.route.active = active;
+      state.route.done = new Set((j.doneIds || []).map(String));
+      renderRoute();
+      switchView('view-route');
+      toast('Reanudando jornada…', 'success');
+    }
+
+    // =========================
+    // INIT
+    // =========================
     async function init() {
       switchView('view-dashboard');
       el('lbl-saludo').innerText = state.user.user.toUpperCase();
       el('loader').classList.remove('hidden');
+
       try {
         const d = await api('get_app_data', { vendedor: state.user.vendedor });
         state.db = d;
+
+        // 1) render dashboard
         renderGrid();
-        if (d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+
+        // 2) sugerencias IA (si no hay jornada activa local)
+        const localJ = loadJornadaLocal();
+        if (!localJ && d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+
+        // 3) reanudar jornada local si existe
+        if (localJ) {
+          state.jornada = localJ;
+          setChipJornada();
+          resumeFromJornadaLocal(localJ);
+        } else {
+          // si backend dice que hay jornada activa, no hacemos nada automático (todavía no tenemos clientIds)
+          // pero guardamos turno para chip
+          state.jornada = { status:'ACTIVE', date:JDAY(), turno: d.jornada_activa?.turno || nowTurno(), zonas: d.jornada_activa?.zonas || [] };
+          setChipJornada();
+        }
+
         flushOutbox();
       } catch (e) {
         toast('Error cargando', 'error');
@@ -365,6 +527,9 @@
       }
     }
 
+    // =========================
+    // GRID ZONAS
+    // =========================
     function renderGrid() {
       const g = el('zones-grid'); g.innerHTML = '';
       (state.db.zonas || []).forEach(z => {
@@ -372,12 +537,17 @@
         const d = document.createElement('div');
         d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
         d.onclick = () => toggleSel(z.nombre, d);
+
+        const last = z.ultima_visita ? `${z.ultima_visita}${z.ultimo_turno ? ` (${z.ultimo_turno[0]})` : ''}` : '';
+        const days = (z.dias_desde !== "" && z.dias_desde != null) ? `${z.dias_desde}d` : '';
+
         d.innerHTML = `
           <h3 class="font-bold text-sm uppercase dark:text-white truncate">${escapeHtml(String(z.nombre || ''))}</h3>
           <div class="flex justify-between items-end mt-3">
             <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">${escapeHtml(String(z.total_clientes || 0))} Clientes</span>
             ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-pin text-slate-300"></i>'}
           </div>
+          ${last ? `<div class="mt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Última: ${escapeHtml(last)} ${days ? `· ${escapeHtml(days)}` : ''}</div>` : `<div class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Última: —</div>`}
           <div class="sel-overlay absolute top-2 right-2 hidden"><i class="fas fa-check-circle text-blue-600 text-xl bg-white rounded-full"></i></div>
           <div class="sel-border absolute inset-0 border-2 border-blue-600 rounded-2xl hidden pointer-events-none"></div>
         `;
@@ -394,41 +564,64 @@
       el('btn-start-lbl').innerText = `INICIAR (${c})`;
     }
 
-    function startRoute() {
-      const k = Array.from(state.sel);
+    // =========================
+    // START ROUTE + CREATE JORNADA
+    // =========================
+    async function startRoute() {
+      const k = Array.from(state.sel).map(x => String(x).toUpperCase());
       if (!k.length) return;
-      state.route.active = (state.db.clientes || []).filter(c => k.some(sel => String(sel).toUpperCase() === String(c.localidad_key).toUpperCase()));
+
+      // construir active list
+      state.route.active = (state.db.clientes || []).filter(c => k.some(sel => String(sel) === String(c.localidad_key).toUpperCase()));
+      state.route.done = new Set();
+
+      // crear jornada local
+      const clientIds = state.route.active.map(c => String(c.id));
+      const turno = nowTurno();
+
+      const jLocal = {
+        date: JDAY(),
+        turno,
+        zonas: k,
+        clientIds,
+        doneIds: [],
+        jornadaId: null,
+        startedAt: Date.now(),
+        status: 'ACTIVE'
+      };
+      state.jornada = jLocal;
+      saveJornadaLocal(jLocal);
+      setChipJornada();
+
+      // backend (background)
+      const r = await startJornadaBackend(k, turno);
+      if (r && r.jornadaId) {
+        state.jornada.jornadaId = r.jornadaId;
+        saveJornadaLocal(state.jornada);
+      }
+
       renderRoute();
       switchView('view-route');
     }
 
-    function showSuggestions(list) {
-      const c = el('suggestions-list'); c.innerHTML = '';
-      list.forEach(loc => {
-        const b = document.createElement('div');
-        b.className = 'w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex justify-between items-center mb-2 cursor-pointer';
-        b.onclick = function () {
-          const i = this.querySelector('i');
-          if (state.sel.has(loc)) { state.sel.delete(loc); i.className = 'far fa-circle text-slate-400 text-lg'; this.classList.remove('border-blue-500'); }
-          else { state.sel.add(loc); i.className = 'fas fa-check-circle text-blue-600 text-lg'; this.classList.add('border-blue-500'); }
-        };
-        b.innerHTML = `<span class="font-bold text-sm dark:text-white">${escapeHtml(String(loc))}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
-        c.appendChild(b);
-      });
-      el('modal-suggestions').classList.remove('hidden');
-    }
-
-    function applySuggestions() { if (state.sel.size > 0) startRoute(); el('modal-suggestions').classList.add('hidden'); }
-
+    // =========================
+    // RENDER ROUTE
+    // =========================
     function renderRoute() {
       const c = el('route-container'); c.innerHTML = '';
       const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
-      el('route-count').innerText = pends.length;
+
+      // actualizar chip
+      setChipJornada();
 
       if (!pends.length) {
         c.innerHTML = '<div class="text-center mt-20 opacity-50"><i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i><h3 class="text-xl font-bold dark:text-white">¡Ruta Completada!</h3></div>';
+        el('route-count').innerText = 0;
+        // si completó todo, sugerimos finalizar (no forzamos)
         return;
       }
+
+      el('route-count').innerText = pends.length;
 
       const list = state.mode === 'focus' ? [pends[0]] : pends;
 
@@ -461,6 +654,15 @@
       });
 
       updateDistances();
+
+      // persistencia doneIds
+      syncJornadaDoneLocal();
+    }
+
+    function syncJornadaDoneLocal() {
+      if (!state.jornada || state.jornada.status !== 'ACTIVE') return;
+      state.jornada.doneIds = Array.from(state.route.done).map(String);
+      saveJornadaLocal(state.jornada);
     }
 
     function updateDistances(pos) {
@@ -487,6 +689,75 @@
     }
 
     // =========================
+    // FINALIZAR JORNADA
+    // =========================
+    function openFinishModal() {
+      const pendingIds = (state.route.active || [])
+        .filter(c => !state.route.done.has(String(c.id)))
+        .map(c => String(c.id));
+
+      const zonas = (state.jornada?.zonas || Array.from(state.sel)).join(', ') || '—';
+      el('finish-sub').innerText = pendingIds.length
+        ? `Zonas: ${zonas}. Quedan ${pendingIds.length} clientes pendientes.`
+        : `Zonas: ${zonas}. No quedan pendientes.`;
+
+      const m = el('modal-finish');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeFinishModal() {
+      const m = el('modal-finish');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    async function finishJornada(marcarPendientes) {
+      closeFinishModal();
+
+      const j = state.jornada;
+      if (!j || j.status !== 'ACTIVE') {
+        toast('No hay jornada activa', 'error');
+        return;
+      }
+
+      const pendingIds = (state.route.active || [])
+        .filter(c => !state.route.done.has(String(c.id)))
+        .map(c => String(c.id));
+
+      // UI: cerramos local ya
+      j.status = 'CLOSED';
+      saveJornadaLocal(j);
+
+      // si quiere marcar pendientes: hacemos batch (background/outbox)
+      if (marcarPendientes && pendingIds.length) {
+        await registrarPendientesBatch(pendingIds);
+        // también marcamos done local para que no reaparezcan si vuelve atrás
+        pendingIds.forEach(id => state.route.done.add(String(id)));
+      }
+
+      // finalizar backend (si no hay jornadaId igual lo intentamos en outbox)
+      const jornadaId = j.jornadaId;
+      if (jornadaId) await finalizeJornadaBackend(jornadaId, marcarPendientes, pendingIds);
+      else enqueueOutbox('finalizar_jornada', { vendedor: state.user.vendedor, jornadaId: "", marcarPendientes, pendientes: pendingIds });
+
+      // limpiar
+      clearJornadaLocal();
+      state.jornada = null;
+      setChipJornada();
+
+      // volver dashboard
+      state.route.active = [];
+      state.route.done = new Set();
+      state.sel = new Set();
+      renderGrid();
+      switchView('view-dashboard');
+
+      toast('Jornada finalizada', 'success');
+      flushOutbox();
+    }
+
+    // =========================
     // REGISTROS (INSTANT UI + BACKGROUND + OUTBOX)
     // =========================
     function openReg(id) {
@@ -509,12 +780,10 @@
     }
 
     function quickSale(id) {
-      // UI instantánea y envío background
       doRegOptimistic(id, 'pedido', 'Venta OK', 'Rápida');
     }
 
     function commitSave() {
-      // UI instantánea: cierro modal YA y envío background
       if (!state.tempReason && !el('reg-obs').value) return toast('Ingresa motivo', 'error');
       const id = state.cliId;
       const reason = state.tempReason || 'Nota';
@@ -527,11 +796,14 @@
     function doRegOptimistic(id, tipo, motivo, observacion) {
       const cid = String(id);
 
-      // 1) UI instantánea
+      // UI instantánea
       state.route.done.add(cid);
       renderRoute();
 
-      // 2) Background sync (con outbox si falla)
+      // persistir jornada done
+      syncJornadaDoneLocal();
+
+      // Background
       const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
       sendInBackground('registrar_movimiento', payload);
     }
@@ -570,7 +842,6 @@
 
       state.outboxFlushing = true;
       try {
-        // Ping rápido para no perder tiempo si está offline “falso”
         await api('ping', {});
 
         let remaining = [...list];
@@ -582,16 +853,13 @@
             sent.push(item);
             remaining.shift();
           } catch (e) {
-            // si falla uno, corto (para no quemar)
             break;
           }
         }
 
-        // persistimos la cola restante
         localStorage.setItem(OUTBOX_KEY, JSON.stringify(remaining));
         if (sent.length) toast(`Sync OK: ${sent.length}`, 'success');
       } catch (_) {
-        // sigue offline
       } finally {
         state.outboxFlushing = false;
       }
@@ -625,7 +893,6 @@
       addMsg(t, 'user');
       i.value = '';
 
-      // typing bubble
       const typingEl = addTyping();
 
       try {
@@ -808,9 +1075,6 @@
       toast(`Ruta: ${cli.localidad || ''}`, 'success');
     }
 
-    // =========================
-    // MODAL PEDIDO
-    // =========================
     function openOrderModal(title, ticket) {
       state.currentOrder.title = String(title || '');
       state.currentOrder.ticket = String(ticket || '');
@@ -834,9 +1098,6 @@
       toast('Pedido copiado', 'success');
     }
 
-    // =========================
-    // UTILS
-    // =========================
     function copyPlainText(txt) {
       const t = String(txt || '');
       try {
