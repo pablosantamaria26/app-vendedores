@@ -47,9 +47,11 @@
 
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
+    /* Botón copiar en ticket */
     .btn-copy-order { margin-top:10px; width:100%; padding:10px 12px; border-radius:12px; font-weight:900; font-size:12px; display:flex; justify-content:center; gap:8px; background:#2563eb; color:#fff; }
     html.dark .btn-copy-order { background:#3b82f6; }
 
+    /* Typing indicator */
     .typing-row { display:flex; align-items:center; gap:6px; }
     .typing-dot { width:6px; height:6px; border-radius:50%; opacity:.7; }
     html:not(.dark) .typing-dot { background:#334155; }
@@ -59,6 +61,7 @@
     .d2 { animation: bounceDot 1s infinite .15s; }
     .d3 { animation: bounceDot 1s infinite .30s; }
 
+    /* Oportunidades dentro del chat */
     .opp-card { border-radius:16px; padding:12px; border:1px solid; }
     html:not(.dark) .opp-card { background:#ffffff; border-color:#e2e8f0; }
     html.dark .opp-card { background:#0f172a; border-color:#334155; }
@@ -71,9 +74,14 @@
     html:not(.dark) .opp-btn-secondary { color:#334155; border-color:#cbd5e1; }
     .opp-meta { margin-top:8px; font-size:11px; opacity:.8; display:flex; gap:10px; flex-wrap:wrap; }
 
-    .chip { font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; border-radius:999px; padding:6px 10px; border:1px solid; display:flex; align-items:center; gap:8px; }
-    html:not(.dark) .chip { background:#fff; border-color:#e2e8f0; color:#0f172a; }
-    html.dark .chip { background:#0b1224; border-color:#334155; color:#e2e8f0; }
+    /* Zona card meta */
+    .zone-meta { margin-top: 10px; display:flex; flex-direction:column; gap:6px; }
+    .zone-chip { font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.18em; opacity:.85; }
+    .zone-last-row { font-size:11px; font-weight:800; display:flex; gap:8px; align-items:center; opacity:.9; }
+    html.dark .zone-last-row { color: #cbd5e1; }
+    html:not(.dark) .zone-last-row { color: #475569; }
+    .zone-last-label { opacity:.7; font-weight:900; font-size:10px; letter-spacing:.22em; }
+    .zone-last-motivo { font-weight:900; }
   </style>
 </head>
 
@@ -137,31 +145,22 @@
 
   <!-- RUTA -->
   <section id="view-route" class="view-section bg-slate-100 dark:bg-slate-950">
-    <!-- HEADER CORREGIDO: incluye route-count -->
     <div class="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 flex justify-between items-center shadow-sm h-16">
       <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
         <i class="fas fa-chevron-left"></i>
       </button>
 
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span id="route-count" class="text-sm font-bold">0</span>
-        </div>
-
-        <div id="chip-jornada" class="chip">
-          <i class="fas fa-sun"></i>
-          <span id="chip-jornada-txt">JORNADA</span>
-        </div>
+      <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span id="route-count" class="text-sm font-bold">0</span>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button onclick="openFinishModal()" class="w-10 h-10 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40">
-          <i class="fas fa-flag-checkered"></i>
-        </button>
-
+      <div class="flex gap-2">
         <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-blue-500 border border-slate-200 dark:border-slate-700">
           <i id="icon-view-mode" class="fas fa-list"></i>
+        </button>
+        <button onclick="markZoneNoLlegue()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-red-500 border border-slate-200 dark:border-slate-700" title="Marcar pendientes como No llegué">
+          <i class="fas fa-ban"></i>
         </button>
       </div>
     </div>
@@ -174,35 +173,6 @@
 
     <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative space-y-3"></div>
   </section>
-
-  <!-- MODAL FINALIZAR -->
-  <div id="modal-finish" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
-      <div class="flex items-start justify-between">
-        <div>
-          <h3 class="text-lg font-black dark:text-white">Finalizar jornada</h3>
-          <p id="finish-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-1">...</p>
-        </div>
-        <button onclick="closeFinishModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="mt-4 space-y-3">
-        <button onclick="finishJornada(true)" class="btn-press w-full py-3 rounded-xl font-black bg-red-600 text-white flex items-center justify-center gap-2">
-          <i class="fas fa-check-double"></i> Finalizar y marcar pendientes “No llegué”
-        </button>
-
-        <button onclick="finishJornada(false)" class="btn-press w-full py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-          Finalizar sin marcar pendientes
-        </button>
-
-        <button onclick="closeFinishModal()" class="btn-press w-full py-3 rounded-xl font-black bg-transparent text-slate-500 dark:text-slate-400">
-          Cancelar
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL SUGGESTIONS -->
   <div id="modal-suggestions" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden p-4 backdrop-blur-sm">
@@ -261,6 +231,9 @@
         <button onclick="selectReason('Volver', this)" class="reason-btn btn-press bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-4 rounded-xl text-left">
           <i class="fas fa-clock text-purple-500 block mb-2 text-xl"></i><span class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">Volver</span>
         </button>
+        <button onclick="selectReason('No llegué', this)" class="reason-btn btn-press bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-4 rounded-xl text-left col-span-2">
+          <i class="fas fa-ban text-red-500 block mb-2 text-xl"></i><span class="text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300">No llegué</span>
+        </button>
       </div>
       <textarea id="reg-obs" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm h-20 mb-4 resize-none dark:text-white outline-none" placeholder="Nota opcional..."></textarea>
       <div class="flex gap-3">
@@ -301,28 +274,25 @@
   </div>
 
   <script>
+    // =========================
+    // CONFIG / STATE
+    // =========================
     const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
     const OUTBOX_KEY = 'ml_outbox_v1';
-
-    // Jornada persistente por vendedor
-    const JDAY = () => new Date().toISOString().slice(0, 10); // yyyy-mm-dd
-    const nowTurno = () => (new Date().getHours() >= 14 ? 'Tarde' : 'Mañana');
 
     const state = {
       user: JSON.parse(localStorage.getItem('ml_user')),
       db: {},
-      route: { active: [], done: new Set() },
+      route: { active: [], done: new Set(), currentZones: [] },
       sel: new Set(),
       mode: 'list',
       cliId: null,
       tempReason: null,
       location: null,
       currentOrder: { title: '', ticket: '' },
-      outboxFlushing: false,
-      jornada: null
+      outboxFlushing: false
     };
 
-    const JKEY = () => `ml_active_jornada_${(state.user?.vendedor || 'NA')}`;
     const el = id => document.getElementById(id);
 
     const toast = (m, t) => {
@@ -351,13 +321,15 @@
 
       if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
 
-      const chatIn = el('chat-in');
-      if (chatIn) chatIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+      el('chat-in')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 
       window.addEventListener('online', () => flushOutbox());
       setTimeout(() => flushOutbox(), 1500);
     });
 
+    // =========================
+    // Nombre completo unificado
+    // =========================
     function displayName(cli) {
       if (!cli) return '';
       const a = String(cli.apellido || '').trim();
@@ -375,15 +347,12 @@
 
     function switchView(id) {
       document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-      const node = el(id);
-      if (node) node.classList.add('active');
+      el(id)?.classList.add('active');
     }
 
     async function handleLogin() {
-      const u = el('login-user')?.value?.trim() || '';
-      const p = el('login-pass')?.value?.trim() || '';
+      const u = el('login-user')?.value?.trim(), p = el('login-pass')?.value?.trim();
       if (!u || !p) return toast('Faltan datos', 'error');
-
       el('loader')?.classList.remove('hidden');
       try {
         const d = await api('login', { user: u, pass: p });
@@ -398,111 +367,116 @@
     }
     function logout() { localStorage.removeItem('ml_user'); location.reload(); }
 
-    // ========== Jornada local ==========
-    function loadJornadaLocal() {
+    // =========================
+    // ZONE LAST CACHE (por vendedor)
+    // =========================
+    function normKey(s) {
+      return String(s || '').trim().toUpperCase();
+    }
+    function zoneLastStorageKey() {
+      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+      return `ml_zone_last_v1_${String(v).toUpperCase()}`;
+    }
+    function getZoneLastMap() {
       try {
-        const raw = localStorage.getItem(JKEY());
-        if (!raw) return null;
-        const j = JSON.parse(raw);
-        if (!j || j.status !== 'ACTIVE') return null;
-        if (j.date !== JDAY()) return null;
-        return j;
-      } catch (_) { return null; }
+        const raw = localStorage.getItem(zoneLastStorageKey());
+        const obj = raw ? JSON.parse(raw) : {};
+        return (obj && typeof obj === 'object') ? obj : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function setZoneLastMap(map) {
+      try { localStorage.setItem(zoneLastStorageKey(), JSON.stringify(map || {})); } catch (_) {}
     }
 
-    function saveJornadaLocal(j) {
-      try { localStorage.setItem(JKEY(), JSON.stringify(j)); } catch (_) {}
-    }
+    function parseDateValue(v) {
+      if (v == null) return null;
+      // number epoch
+      if (typeof v === 'number' && isFinite(v)) {
+        const ms = v < 1e12 ? v * 1000 : v; // si viene en segundos
+        const d = new Date(ms);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const s = String(v).trim();
+      if (!s) return null;
 
-    function clearJornadaLocal() {
-      try { localStorage.removeItem(JKEY()); } catch (_) {}
-    }
+      // ISO
+      const iso = new Date(s);
+      if (!isNaN(iso.getTime())) return iso;
 
-    function setChipJornada() {
-      const chip = el('chip-jornada');
-      const txt = el('chip-jornada-txt');
-      if (!chip || !txt) return;
-
-      const j = state.jornada;
-      const turno = j?.turno || nowTurno();
-      const zonas = (j?.zonas || []).slice(0, 2).join(', ');
-      const icon = chip.querySelector('i');
-
-      if (turno === 'Tarde') { if (icon) icon.className = 'fas fa-moon'; }
-      else { if (icon) icon.className = 'fas fa-sun'; }
-
-      txt.textContent = j && j.status === 'ACTIVE'
-        ? `${turno} · ${zonas || 'Ruta'}`
-        : `${turno} · sin jornada`;
-    }
-
-    async function startJornadaBackend(zonas, turno) {
-      const payload = { vendedor: state.user.vendedor, zonas: zonas, turno: turno };
-      try { return await api('start_jornada', payload); }
-      catch (_) { enqueueOutbox('start_jornada', payload); return null; }
-    }
-
-    async function finalizeJornadaBackend(jornadaId, marcarPendientes, pendientes) {
-      const payload = { vendedor: state.user.vendedor, jornadaId, marcarPendientes, pendientes };
-      try { return await api('finalizar_jornada', payload); }
-      catch (_) { enqueueOutbox('finalizar_jornada', payload); return null; }
-    }
-
-    async function registrarPendientesBatch(pendientes) {
-      const items = pendientes.map(cid => ({
-        clienteId: String(cid),
-        tipo: 'visita',
-        motivo: 'No llegue',
-        observacion: 'Cierre de jornada con pendientes'
-      }));
-      const payload = { vendedor: state.user.vendedor, items };
-      try { return await api('registrar_batch', payload); }
-      catch (_) { enqueueOutbox('registrar_batch', payload); return null; }
-    }
-
-    function resumeFromJornadaLocal(j) {
-      const byId = new Map((state.db.clientes || []).map(c => [String(c.id), c]));
-      const active = [];
-      (j.clientIds || []).forEach(id => { if (byId.has(String(id))) active.push(byId.get(String(id))); });
-
-      if (!active.length && j.zonas?.length) {
-        active.push(...(state.db.clientes || []).filter(c => j.zonas.some(z => String(z).toUpperCase() === String(c.localidad_key).toUpperCase())));
+      // dd/mm/yyyy hh:mm(:ss)
+      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (m) {
+        const dd = Number(m[1]), mm = Number(m[2]) - 1, yy = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
+        const HH = Number(m[4] || 0), MI = Number(m[5] || 0), SS = Number(m[6] || 0);
+        const d = new Date(yy, mm, dd, HH, MI, SS);
+        return isNaN(d.getTime()) ? null : d;
       }
 
-      state.route.active = active;
-      state.route.done = new Set((j.doneIds || []).map(String));
-      renderRoute();
-      switchView('view-route');
-      toast('Reanudando jornada…', 'success');
+      return null;
     }
 
-    // ========== Init ==========
+    function fmtDateTime(d, mode='short') {
+      if (!(d instanceof Date) || isNaN(d.getTime())) return '—';
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const HH = String(d.getHours()).padStart(2,'0');
+      const MI = String(d.getMinutes()).padStart(2,'0');
+      if (mode === 'date') return `${dd}/${mm}`;
+      return `${dd}/${mm} ${HH}:${MI}`;
+    }
+
+    function getZoneLastInfo(zoneName, backendFallbackObj) {
+      const zKey = normKey(zoneName);
+      const map = getZoneLastMap();
+      if (map[zKey]) return map[zKey];
+
+      // fallback backend si existe
+      const bf = backendFallbackObj || {};
+      const candidates = [
+        bf.ultima_visita_ts, bf.ultima_visita, bf.ultima, bf.last_ts,
+        bf.ultima_compra_ts, bf.ultima_compra
+      ];
+      for (const c of candidates) {
+        const d = parseDateValue(c);
+        if (d) return { ts: d.getTime(), motivo: bf.ultima_motivo || bf.motivo || '', tipo: bf.ultima_tipo || bf.tipo || '' };
+      }
+      return null;
+    }
+
+    function touchZoneLast(zoneName, tipo, motivo) {
+      const zKey = normKey(zoneName);
+      if (!zKey) return;
+
+      const map = getZoneLastMap();
+      map[zKey] = { ts: Date.now(), tipo: String(tipo||''), motivo: String(motivo||'') };
+      setZoneLastMap(map);
+
+      // update DOM instantáneo si está renderizado
+      document.querySelectorAll('[data-zone-key]').forEach(card => {
+        if (card?.dataset?.zoneKey === zKey) {
+          const lastEl = card.querySelector('.zone-last');
+          const motEl = card.querySelector('.zone-last-motivo');
+          if (lastEl) lastEl.textContent = fmtDateTime(new Date(map[zKey].ts), 'short');
+          if (motEl) motEl.textContent = map[zKey].motivo ? `· ${map[zKey].motivo}` : '';
+        }
+      });
+    }
+
+    function getClientZoneKey(cli) {
+      return normKey(cli?.localidad_key || cli?.localidad || '');
+    }
+
     async function init() {
       switchView('view-dashboard');
-      const lbl = el('lbl-saludo');
-      if (lbl) lbl.innerText = (state.user?.user || '').toUpperCase();
-
+      el('lbl-saludo').innerText = (state.user?.user || '').toUpperCase();
       el('loader')?.classList.remove('hidden');
       try {
         const d = await api('get_app_data', { vendedor: state.user.vendedor });
-        state.db = d;
-
+        state.db = d || {};
         renderGrid();
-
-        const localJ = loadJornadaLocal();
-        if (!localJ && d.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
-          showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
-        }
-
-        if (localJ) {
-          state.jornada = localJ;
-          setChipJornada();
-          resumeFromJornadaLocal(localJ);
-        } else {
-          state.jornada = { status: 'ACTIVE', date: JDAY(), turno: d.jornada_activa?.turno || nowTurno(), zonas: d.jornada_activa?.zonas || [] };
-          setChipJornada();
-        }
-
+        if (d?.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
         flushOutbox();
       } catch (e) {
         toast('Error cargando', 'error');
@@ -511,28 +485,40 @@
       }
     }
 
-    // ========== GRID ==========
     function renderGrid() {
-      const g = el('zones-grid');
-      if (!g) return;
+      const g = el('zones-grid'); if (!g) return;
       g.innerHTML = '';
 
       (state.db.zonas || []).forEach(z => {
-        const crit = z.criticos > 0;
-        const d = document.createElement('div');
-        d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
-        d.onclick = () => toggleSel(z.nombre, d);
+        const crit = Number(z.criticos || 0) > 0;
+        const zName = String(z.nombre || '');
+        const zKey = normKey(zName);
 
-        const last = z.ultima_visita ? `${z.ultima_visita}${z.ultimo_turno ? ` (${String(z.ultimo_turno)[0]})` : ''}` : '';
-        const days = (z.dias_desde !== "" && z.dias_desde != null) ? `${z.dias_desde}d` : '';
+        const info = getZoneLastInfo(zName, z);
+        const lastText = info?.ts ? fmtDateTime(new Date(info.ts), 'short') : '—';
+        const lastMot = info?.motivo ? `· ${String(info.motivo)}` : '';
+
+        const d = document.createElement('div');
+        d.dataset.zoneKey = zKey;
+        d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
+        d.onclick = () => toggleSel(zName, d);
 
         d.innerHTML = `
-          <h3 class="font-bold text-sm uppercase dark:text-white truncate">${escapeHtml(String(z.nombre || ''))}</h3>
+          <h3 class="font-bold text-sm uppercase dark:text-white truncate">${escapeHtml(zName)}</h3>
+
           <div class="flex justify-between items-end mt-3">
             <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">${escapeHtml(String(z.total_clientes || 0))} Clientes</span>
             ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-pin text-slate-300"></i>'}
           </div>
-          ${last ? `<div class="mt-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Última: ${escapeHtml(last)} ${days ? `· ${escapeHtml(days)}` : ''}</div>` : `<div class="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Última: —</div>`}
+
+          <div class="zone-meta">
+            <div class="zone-last-row">
+              <span class="zone-last-label">ÚLTIMA</span>
+              <span class="zone-last">${escapeHtml(lastText)}</span>
+              <span class="zone-last-motivo">${escapeHtml(lastMot)}</span>
+            </div>
+          </div>
+
           <div class="sel-overlay absolute top-2 right-2 hidden"><i class="fas fa-check-circle text-blue-600 text-xl bg-white rounded-full"></i></div>
           <div class="sel-border absolute inset-0 border-2 border-blue-600 rounded-2xl hidden pointer-events-none"></div>
         `;
@@ -541,39 +527,46 @@
     }
 
     function toggleSel(n, div) {
-      const ov = div.querySelector('.sel-overlay');
-      const bd = div.querySelector('.sel-border');
-
-      if (state.sel.has(n)) { state.sel.delete(n); ov?.classList.add('hidden'); bd?.classList.add('hidden'); }
-      else { state.sel.add(n); ov?.classList.remove('hidden'); bd?.classList.remove('hidden'); }
-
+      const ov = div.querySelector('.sel-overlay'), bd = div.querySelector('.sel-border');
+      if (state.sel.has(n)) { state.sel.delete(n); ov.classList.add('hidden'); bd.classList.add('hidden'); }
+      else { state.sel.add(n); ov.classList.remove('hidden'); bd.classList.remove('hidden'); }
       const c = state.sel.size;
       el('footer-dashboard')?.classList.toggle('hidden', c === 0);
-      const b = el('btn-start-lbl');
-      if (b) b.innerText = `INICIAR (${c})`;
+      if (el('btn-start-lbl')) el('btn-start-lbl').innerText = `INICIAR (${c})`;
+    }
+
+    function startRoute() {
+      const k = Array.from(state.sel).map(x => String(x));
+      if (!k.length) return;
+
+      // reset route state
+      state.route.done = new Set();
+      state.route.currentZones = k.map(normKey);
+
+      // filtrar clientes por zona
+      const all = (state.db.clientes || []);
+      const selected = new Set(k.map(normKey));
+      state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
+
+      // ir a ruta y render
+      switchView('view-route');
+      renderRoute();
     }
 
     function showSuggestions(list) {
-      const c = el('suggestions-list');
-      if (!c) return;
+      const c = el('suggestions-list'); if (!c) return;
       c.innerHTML = '';
-
       list.forEach(loc => {
         const b = document.createElement('div');
         b.className = 'w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex justify-between items-center mb-2 cursor-pointer';
         b.onclick = function () {
           const i = this.querySelector('i');
-          if (state.sel.has(loc)) { state.sel.delete(loc); if (i) i.className = 'far fa-circle text-slate-400 text-lg'; this.classList.remove('border-blue-500'); }
-          else { state.sel.add(loc); if (i) i.className = 'fas fa-check-circle text-blue-600 text-lg'; this.classList.add('border-blue-500'); }
-          const c2 = state.sel.size;
-          el('footer-dashboard')?.classList.toggle('hidden', c2 === 0);
-          const b2 = el('btn-start-lbl');
-          if (b2) b2.innerText = `INICIAR (${c2})`;
+          if (state.sel.has(loc)) { state.sel.delete(loc); i.className = 'far fa-circle text-slate-400 text-lg'; this.classList.remove('border-blue-500'); }
+          else { state.sel.add(loc); i.className = 'fas fa-check-circle text-blue-600 text-lg'; this.classList.add('border-blue-500'); }
         };
         b.innerHTML = `<span class="font-bold text-sm dark:text-white">${escapeHtml(String(loc))}</span><i class="far fa-circle text-slate-400 text-lg"></i>`;
         c.appendChild(b);
       });
-
       el('modal-suggestions')?.classList.remove('hidden');
     }
 
@@ -582,63 +575,23 @@
       el('modal-suggestions')?.classList.add('hidden');
     }
 
-    // ========== START ROUTE ==========
-    async function startRoute() {
-      const k = Array.from(state.sel).map(x => String(x).toUpperCase());
-      if (!k.length) return;
-
-      state.route.active = (state.db.clientes || []).filter(c => k.some(sel => String(sel) === String(c.localidad_key).toUpperCase()));
-      state.route.done = new Set();
-
-      const clientIds = state.route.active.map(c => String(c.id));
-      const turno = nowTurno();
-
-      const jLocal = {
-        date: JDAY(),
-        turno,
-        zonas: k,
-        clientIds,
-        doneIds: [],
-        jornadaId: null,
-        startedAt: Date.now(),
-        status: 'ACTIVE'
-      };
-      state.jornada = jLocal;
-      saveJornadaLocal(jLocal);
-      setChipJornada();
-
-      const r = await startJornadaBackend(k, turno);
-      if (r && r.jornadaId) {
-        state.jornada.jornadaId = r.jornadaId;
-        saveJornadaLocal(state.jornada);
-      }
-
-      renderRoute();
-      switchView('view-route');
-    }
-
-    // ========== ROUTE ==========
-    function syncJornadaDoneLocal() {
-      if (!state.jornada || state.jornada.status !== 'ACTIVE') return;
-      state.jornada.doneIds = Array.from(state.route.done).map(String);
-      saveJornadaLocal(state.jornada);
-    }
-
     function renderRoute() {
-      const c = el('route-container');
-      if (!c) return;
-
+      const c = el('route-container'); if (!c) return;
       c.innerHTML = '';
+
       const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
 
-      setChipJornada();
-
       const rc = el('route-count');
-      if (rc) rc.innerText = String(pends.length);
+      if (rc) rc.innerText = pends.length;
 
       if (!pends.length) {
-        c.innerHTML = '<div class="text-center mt-20 opacity-50"><i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i><h3 class="text-xl font-bold dark:text-white">¡Ruta Completada!</h3></div>';
-        if (rc) rc.innerText = '0';
+        c.innerHTML = `
+          <div class="text-center mt-20 opacity-50">
+            <i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i>
+            <h3 class="text-xl font-bold dark:text-white">¡Ruta Completada!</h3>
+            <p class="text-xs mt-2 text-slate-400">Si te faltó alguien, usá el botón <b>No llegué</b> antes de terminar.</p>
+          </div>
+        `;
         return;
       }
 
@@ -650,8 +603,7 @@
 
         const name = displayName(cli).toUpperCase();
 
-        const div = document.createElement('div');
-        div.id = `card-${cli.id}`;
+        const div = document.createElement('div'); div.id = `card-${cli.id}`;
         div.className = state.mode === 'focus'
           ? 'h-[75vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
           : 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
@@ -674,7 +626,6 @@
       });
 
       updateDistances();
-      syncJornadaDoneLocal();
     }
 
     function updateDistances(pos) {
@@ -682,12 +633,14 @@
       if (!state.location) return;
 
       document.querySelectorAll('[id^="dist-"]').forEach(node => {
-        const lat = node.getAttribute('data-lat');
-        const lng = node.getAttribute('data-lng');
+        const lat = node.getAttribute('data-lat'), lng = node.getAttribute('data-lng');
         if (lat && lng && isFinite(Number(lat)) && isFinite(Number(lng))) {
-          const km = getKm(state.location.lat, state.location.lng, Number(lat), Number(lng));
-          node.innerHTML = `<i class="fas fa-route"></i> ${km} km <span class="text-slate-400 font-normal ml-2">~${Math.round(km / 20 * 60)} min</span>`;
-        } else node.innerHTML = '';
+          const km = parseFloat(getKm(state.location.lat, state.location.lng, Number(lat), Number(lng)));
+          if (!isFinite(km)) { node.innerHTML = ''; return; }
+          node.innerHTML = `<i class="fas fa-route"></i> ${km.toFixed(1)} km <span class="text-slate-400 font-normal ml-2">~${Math.round((km / 20) * 60)} min</span>`;
+        } else {
+          node.innerHTML = '';
+        }
       });
     }
 
@@ -695,82 +648,29 @@
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+              * Math.sin(dLon / 2) * Math.sin(dLon / 2);
       return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
     }
 
-    // ========== FINALIZAR ==========
-    function openFinishModal() {
-      const pendingIds = (state.route.active || [])
-        .filter(c => !state.route.done.has(String(c.id)))
-        .map(c => String(c.id));
-
-      const zonas = (state.jornada?.zonas || Array.from(state.sel)).join(', ') || '—';
-      const sub = el('finish-sub');
-      if (sub) sub.innerText = pendingIds.length
-        ? `Zonas: ${zonas}. Quedan ${pendingIds.length} clientes pendientes.`
-        : `Zonas: ${zonas}. No quedan pendientes.`;
-
-      const m = el('modal-finish');
-      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
-    }
-
-    function closeFinishModal() {
-      const m = el('modal-finish');
-      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
-    }
-
-    async function finishJornada(marcarPendientes) {
-      closeFinishModal();
-
-      const j = state.jornada;
-      if (!j || j.status !== 'ACTIVE') { toast('No hay jornada activa', 'error'); return; }
-
-      const pendingIds = (state.route.active || [])
-        .filter(c => !state.route.done.has(String(c.id)))
-        .map(c => String(c.id));
-
-      j.status = 'CLOSED';
-      saveJornadaLocal(j);
-
-      if (marcarPendientes && pendingIds.length) {
-        await registrarPendientesBatch(pendingIds);
-        pendingIds.forEach(id => state.route.done.add(String(id)));
-      }
-
-      if (j.jornadaId) await finalizeJornadaBackend(j.jornadaId, marcarPendientes, pendingIds);
-      else enqueueOutbox('finalizar_jornada', { vendedor: state.user.vendedor, jornadaId: "", marcarPendientes, pendientes: pendingIds });
-
-      clearJornadaLocal();
-      state.jornada = null;
-      setChipJornada();
-
-      state.route.active = [];
-      state.route.done = new Set();
-      state.sel = new Set();
-      renderGrid();
-      switchView('view-dashboard');
-
-      toast('Jornada finalizada', 'success');
-      flushOutbox();
-    }
-
-    // ========== REGISTROS ==========
+    // =========================
+    // REGISTROS (INSTANT UI + BACKGROUND + OUTBOX)
+    // =========================
     function openReg(id) {
       state.cliId = id;
       state.tempReason = null;
       const c = (state.db.clientes || []).find(x => String(x.id) == String(id));
-      const title = el('reg-title');
-      if (title) title.innerText = displayName(c).toUpperCase();
-      const obs = el('reg-obs');
-      if (obs) obs.value = '';
+      el('reg-title').innerText = displayName(c).toUpperCase();
+      el('reg-obs').value = '';
 
       let info = `<span class="text-green-600 font-bold">Cliente Activo</span>`;
       if (c && Number(c.dias_sin_comprar) > 60) info = `<span class="text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">⚠️ CRÍTICO: +60 DÍAS</span>`;
-      const ri = el('reg-info');
-      if (ri) ri.innerHTML = info;
+      el('reg-info').innerHTML = info;
+      el('modal-reg').classList.remove('hidden');
 
-      el('modal-reg')?.classList.remove('hidden');
+      // reset visual selection
+      document.querySelectorAll('.reason-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-blue-500'));
     }
 
     function selectReason(r, b) {
@@ -784,22 +684,28 @@
     }
 
     function commitSave() {
-      if (!state.tempReason && !(el('reg-obs')?.value || '')) return toast('Ingresa motivo', 'error');
+      if (!state.tempReason && !el('reg-obs').value) return toast('Ingresa motivo', 'error');
       const id = state.cliId;
       const reason = state.tempReason || 'Nota';
-      const obs = el('reg-obs')?.value || '';
+      const obs = el('reg-obs').value || '';
 
-      el('modal-reg')?.classList.add('hidden');
+      el('modal-reg').classList.add('hidden');
       doRegOptimistic(id, 'visita', reason, obs);
     }
 
     function doRegOptimistic(id, tipo, motivo, observacion) {
       const cid = String(id);
 
+      // 1) UI instantánea
       state.route.done.add(cid);
       renderRoute();
-      syncJornadaDoneLocal();
 
+      // 2) actualizar "ÚLTIMA" de la zona (cache + ui)
+      const cli = (state.db.clientes || []).find(x => String(x.id) === cid);
+      const zKey = getClientZoneKey(cli);
+      if (zKey) touchZoneLast(zKey, tipo, motivo);
+
+      // 3) Background sync (con outbox si falla)
       const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
       sendInBackground('registrar_movimiento', payload);
     }
@@ -815,7 +721,6 @@
       }
     }
 
-    // ========== OUTBOX ==========
     function enqueueOutbox(action, payload) {
       const list = getOutbox();
       list.push({ action, payload, ts: Date.now() });
@@ -827,7 +732,9 @@
         const raw = localStorage.getItem(OUTBOX_KEY);
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr : [];
-      } catch (_) { return []; }
+      } catch (_) {
+        return [];
+      }
     }
 
     async function flushOutbox() {
@@ -838,14 +745,13 @@
       state.outboxFlushing = true;
       try {
         await api('ping', {});
-
         let remaining = [...list];
-        const sent = [];
+        let sentCount = 0;
 
         for (const item of list) {
           try {
             await api(item.action, item.payload);
-            sent.push(item);
+            sentCount++;
             remaining.shift();
           } catch (_) {
             break;
@@ -853,8 +759,9 @@
         }
 
         localStorage.setItem(OUTBOX_KEY, JSON.stringify(remaining));
-        if (sent.length) toast(`Sync OK: ${sent.length}`, 'success');
+        if (sentCount) toast(`Sync OK: ${sentCount}`, 'success');
       } catch (_) {
+        // offline real
       } finally {
         state.outboxFlushing = false;
       }
@@ -862,14 +769,51 @@
 
     function toggleViewMode() {
       state.mode = state.mode === 'list' ? 'focus' : 'list';
+      const ic = el('icon-view-mode');
+      if (ic) ic.className = state.mode === 'list' ? 'fas fa-list' : 'fas fa-crosshairs';
       renderRoute();
     }
 
-    // ========== CHAT ==========
+    // =========================
+    // NO LLEGUÉ (ZONA)
+    // =========================
+    function markZoneNoLlegue() {
+      const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
+      if (!pends.length) return toast('No hay pendientes', 'error');
+
+      const n = pends.length;
+      const ok = confirm(`¿Marcar ${n} clientes como "No llegué" para esta zona?\n(Queda registrado en Bitácora / offline si no hay señal)`);
+      if (!ok) return;
+
+      // marcar done y encolar movimientos (sin spam de toasts)
+      for (const cli of pends) {
+        const cid = String(cli.id);
+        state.route.done.add(cid);
+
+        const payload = {
+          vendedor: state.user.vendedor,
+          clienteId: cid,
+          tipo: 'visita',
+          motivo: 'No llegué',
+          observacion: 'Zona'
+        };
+        enqueueOutbox('registrar_movimiento', payload);
+      }
+
+      // actualizar last por cada zona seleccionada
+      (state.route.currentZones || []).forEach(z => touchZoneLast(z, 'visita', 'No llegué'));
+
+      renderRoute();
+      toast(`Marcados ${n} como "No llegué"`, 'success');
+      flushOutbox();
+    }
+
+    // =========================
+    // CHAT (typing + oportunidades)
+    // =========================
     function toggleAIChat(s) {
       const m = el('modal-chat'), p = el('chat-panel');
       if (!m || !p) return;
-
       if (s) {
         m.classList.remove('hidden');
         setTimeout(() => p.classList.remove('translate-y-full'), 10);
@@ -882,7 +826,7 @@
 
     async function sendChat() {
       const i = el('chat-in');
-      const t = (i?.value || '').trim();
+      const t = i?.value?.trim();
       if (!t) return;
 
       addMsg(t, 'user');
@@ -892,7 +836,7 @@
 
       try {
         const res = await api('chatbot', { vendedor: state.user.vendedor, mensaje: t });
-        const r = res.respuesta || {};
+        const r = res?.respuesta || {};
 
         removeTyping(typingEl);
 
@@ -906,25 +850,22 @@
           addMsg(r.text || "No entendí.", 'bot');
           maybeRenderOpportunities(r.data);
         }
-      } catch (_) {
+      } catch (e) {
         removeTyping(typingEl);
         addMsg('Error de conexión', 'bot');
       }
     }
 
     function addMsg(h, r) {
-      const box = el('chat-msgs');
-      if (!box) return;
       const d = document.createElement('div');
       d.className = `chat-bubble chat-${r} animate-pop`;
       d.innerText = h;
-      box.appendChild(d);
-      box.scrollTop = box.scrollHeight;
+      el('chat-msgs')?.appendChild(d);
+      const cm = el('chat-msgs');
+      if (cm) cm.scrollTop = cm.scrollHeight;
     }
 
     function addTyping() {
-      const box = el('chat-msgs');
-      if (!box) return null;
       const d = document.createElement('div');
       d.className = 'chat-bubble chat-bot animate-pop';
       d.innerHTML = `
@@ -935,8 +876,9 @@
           <span style="font-weight:800; opacity:.75; font-size:12px;">Escribiendo...</span>
         </div>
       `;
-      box.appendChild(d);
-      box.scrollTop = box.scrollHeight;
+      el('chat-msgs')?.appendChild(d);
+      const cm = el('chat-msgs');
+      if (cm) cm.scrollTop = cm.scrollHeight;
       return d;
     }
 
@@ -946,9 +888,6 @@
 
     function addTicket(items) {
       const ticket = String(items || '');
-      const box = el('chat-msgs');
-      if (!box) return;
-
       const d = document.createElement('div');
       d.className = 'animate-pop';
       d.innerHTML = `
@@ -967,23 +906,21 @@
         setTimeout(() => { btn.innerHTML = prev; btn.style.background = ''; }, 1500);
       });
 
-      box.appendChild(d);
-      box.scrollTop = box.scrollHeight;
+      el('chat-msgs')?.appendChild(d);
+      const cm = el('chat-msgs');
+      if (cm) cm.scrollTop = cm.scrollHeight;
     }
 
     function addRouteBtn(zone) {
       const z = String(zone || '').trim();
       if (!z) return;
-      const box = el('chat-msgs');
-      if (!box) return;
-
       const d = document.createElement('div');
       d.className = 'animate-pop';
       d.innerHTML = `<button type="button" class="w-full bg-green-600 text-white p-3 rounded-xl font-bold mt-2 shadow-md btn-press"><i class="fas fa-map-signs"></i> IR A ${escapeHtml(z)}</button>`;
       d.querySelector('button').addEventListener('click', () => acceptIARoute(z));
-
-      box.appendChild(d);
-      box.scrollTop = box.scrollHeight;
+      el('chat-msgs')?.appendChild(d);
+      const cm = el('chat-msgs');
+      if (cm) cm.scrollTop = cm.scrollHeight;
     }
 
     function acceptIARoute(z) {
@@ -1000,12 +937,11 @@
         const s = data.trim();
         if (!s) return;
         try { obj = JSON.parse(s); } catch (_) { return; }
-      } else if (typeof data === 'object') obj = data;
+      } else if (typeof data === 'object') {
+        obj = data;
+      }
 
-      if (!obj || !Array.isArray(obj.suggestions) || obj.suggestions.length === 0) return;
-
-      const box = el('chat-msgs');
-      if (!box) return;
+      if (!obj || !obj.suggestions || !Array.isArray(obj.suggestions) || obj.suggestions.length === 0) return;
 
       const wrap = document.createElement('div');
       wrap.className = 'animate-pop';
@@ -1051,8 +987,9 @@
         list.appendChild(card);
       });
 
-      box.appendChild(wrap);
-      box.scrollTop = box.scrollHeight;
+      el('chat-msgs')?.appendChild(wrap);
+      const cm = el('chat-msgs');
+      if (cm) cm.scrollTop = cm.scrollHeight;
     }
 
     function goToClient(clienteId) {
@@ -1060,7 +997,10 @@
       if (!id) return;
 
       const cli = (state.db?.clientes || []).find(c => String(c.id) === id);
-      if (!cli) { addMsg(`No tengo ese cliente cargado ahora. (Cargá la zona donde está #${id})`, 'bot'); return; }
+      if (!cli) {
+        addMsg(`No tengo ese cliente cargado ahora. (Cargá la zona donde está #${id})`, 'bot');
+        return;
+      }
 
       if (state.route.active && state.route.active.length) {
         state.route.active = state.route.active.filter(c => String(c.id) !== id);
@@ -1079,20 +1019,25 @@
       toast(`Ruta: ${cli.localidad || ''}`, 'success');
     }
 
+    // =========================
+    // MODAL PEDIDO
+    // =========================
     function openOrderModal(title, ticket) {
       state.currentOrder.title = String(title || '');
       state.currentOrder.ticket = String(ticket || '');
 
-      const ot = el('order-title'); if (ot) ot.innerText = state.currentOrder.title || 'Pedido';
-      const ok = el('order-ticket'); if (ok) ok.innerText = state.currentOrder.ticket || '';
+      el('order-title').innerText = state.currentOrder.title || 'Pedido';
+      el('order-ticket').innerText = state.currentOrder.ticket || '';
 
       const m = el('modal-order');
-      if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+      m.classList.remove('hidden');
+      m.classList.add('flex');
     }
 
     function closeOrderModal() {
       const m = el('modal-order');
-      if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
+      m.classList.add('hidden');
+      m.classList.remove('flex');
     }
 
     function copyCurrentOrder() {
@@ -1100,11 +1045,15 @@
       toast('Pedido copiado', 'success');
     }
 
+    // =========================
+    // UTILS
+    // =========================
     function copyPlainText(txt) {
       const t = String(txt || '');
       try {
-        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t);
-        else {
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(t);
+        } else {
           const area = document.createElement('textarea');
           area.value = t;
           document.body.appendChild(area);
@@ -1123,6 +1072,7 @@
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
     }
+
     function escapeAttr(str) {
       return String(str || '').replaceAll("'", "\\'").replaceAll('"', '&quot;');
     }
