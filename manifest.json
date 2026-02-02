@@ -4,7 +4,7 @@
   "short_name": "Ventas ML",
   "lang": "es-AR",
   "dir": "ltr",
-  "start_url": "./",
+  "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "window-controls-overlay"],
@@ -27,13 +27,13 @@
       "purpose": "any"
     },
     {
-      "src": "ml-icon-192.png",
+      "src": "ml-icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "ml-icon-512.png",
+      "src": "ml-icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -43,7 +43,7 @@
     {
       "name": "Ver Ruta",
       "short_name": "Ruta",
-      "url": "./",
+      "url": "./?source=pwa",
       "icons": [{ "src": "ml-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
