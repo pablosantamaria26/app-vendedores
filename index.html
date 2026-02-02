@@ -115,6 +115,37 @@
     .search-dd-row:hover { background: rgba(59,130,246,.08); }
     .search-dd-title { font-weight: 900; font-size: 12px; text-transform: uppercase; }
     .search-dd-sub { font-size: 11px; opacity: .8; margin-top: 2px; }
+
+    /* =========================================================
+       ✅ MEJORAS PEDIDAS: MODALES (tap fuera + safe-area + scroll)
+       ✅ TARJETAS: contraste modo claro/oscuro
+       ========================================================= */
+    :root{
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .modal-wrap{
+      padding-top: calc(16px + var(--safe-top));
+      padding-bottom: calc(16px + var(--safe-bottom));
+    }
+    .modal-card{
+      max-height: calc(100vh - (32px + var(--safe-top) + var(--safe-bottom)));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* tarjetas: claro gris, oscuro más claro que el fondo */
+    html:not(.dark) .card-soft{
+      background:#f3f4f6;
+      border-color:#e5e7eb;
+    }
+    html.dark .card-soft{
+      background:#111b2e;
+      border-color:#334155;
+    }
+    /* chat: safe bottom para que no tape la barra inferior */
+    #chat-panel{
+      padding-bottom: calc(8px + var(--safe-bottom));
+    }
   </style>
 </head>
 
@@ -243,8 +274,8 @@
   </section>
 
   <!-- MODAL SUGGESTIONS -->
-  <div id="modal-suggestions" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
+  <div id="modal-suggestions" data-close="modal-suggestions" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center hidden p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop modal-card">
       <div class="text-center mb-6">
         <h3 class="text-xl font-black dark:text-white">Plan Sugerido</h3>
         <p class="text-sm text-slate-500 dark:text-slate-400">Selecciona las zonas para hoy:</p>
@@ -257,9 +288,9 @@
     </div>
   </div>
 
-  <!-- MODAL NO LLEGUE ZONA (NUEVO, LINDO) -->
-  <div id="modal-no-llegue-zone" class="fixed inset-0 z-[70] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+  <!-- MODAL NO LLEGUE ZONA -->
+  <div id="modal-no-llegue-zone" data-close="modal-no-llegue-zone" class="fixed inset-0 z-[70] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Finalizar zona</p>
@@ -303,9 +334,9 @@
     </div>
   </div>
 
-  <!-- MODAL SEMANA (NUEVO) -->
-  <div id="modal-week" class="fixed inset-0 z-[65] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+  <!-- MODAL SEMANA -->
+  <div id="modal-week" data-close="modal-week" class="fixed inset-0 z-[65] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-[10px] font-black uppercase tracking-widest text-blue-500">Semana</p>
@@ -344,9 +375,9 @@
     </div>
   </div>
 
-  <!-- MODAL ONBOARDING (NUEVO) -->
-  <div id="modal-onboard" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+  <!-- MODAL ONBOARDING -->
+  <div id="modal-onboard" data-close="modal-onboard" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-[10px] font-black uppercase tracking-widest text-indigo-500">Primera vez</p>
@@ -404,7 +435,7 @@
   </div>
 
   <!-- CHAT -->
-  <div id="modal-chat" class="fixed inset-0 z-50 bg-black/50 hidden flex flex-col justify-end sm:justify-center items-center backdrop-blur-sm">
+  <div id="modal-chat" data-close="modal-chat" class="fixed inset-0 z-50 bg-black/50 hidden flex flex-col justify-end sm:justify-center items-center backdrop-blur-sm modal-wrap">
     <div id="chat-panel" class="bg-slate-50 dark:bg-slate-950 w-full sm:max-w-md h-[80vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col transform translate-y-full transition-transform duration-300">
       <div class="p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center rounded-t-3xl">
         <div class="flex items-center gap-3">
@@ -431,8 +462,8 @@
   </div>
 
   <!-- MODAL REG -->
-  <div id="modal-reg" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center p-6 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop">
+  <div id="modal-reg" data-close="modal-reg" class="fixed inset-0 z-[60] bg-black/80 hidden flex items-center justify-center p-6 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-pop modal-card">
       <h3 id="reg-title" class="text-xl font-black mb-1 dark:text-white">CLIENTE</h3>
       <div id="reg-info" class="text-xs text-slate-500 mb-4">...</div>
       <div class="grid grid-cols-2 gap-3 mb-4">
@@ -461,8 +492,8 @@
   </div>
 
   <!-- MODAL PEDIDO -->
-  <div id="modal-order" class="fixed inset-0 z-[80] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-5 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+  <div id="modal-order" data-close="modal-order" class="fixed inset-0 z-[80] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-5 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-[10px] font-black uppercase tracking-widest text-blue-500">Último pedido</p>
@@ -490,9 +521,9 @@
     </div>
   </div>
 
-  <!-- ✅ NUEVO: MODAL CLIENTE (BUSCADOR) -->
-  <div id="modal-client" class="fixed inset-0 z-[85] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+  <!-- MODAL CLIENTE -->
+  <div id="modal-client" data-close="modal-client" class="fixed inset-0 z-[85] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
       <div class="flex items-center justify-between">
         <div class="min-w-0">
           <p class="text-[10px] font-black uppercase tracking-widest text-blue-500">Cliente</p>
@@ -549,9 +580,9 @@
     </div>
   </div>
 
-  <!-- ✅ NUEVO: MODAL BUSCADOR (lista grande, opcional) -->
-  <div id="modal-client-search" class="fixed inset-0 z-[84] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+  <!-- MODAL BUSCADOR -->
+  <div id="modal-client-search" data-close="modal-client-search" class="fixed inset-0 z-[84] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-[10px] font-black uppercase tracking-widest text-indigo-500">Buscador</p>
@@ -646,6 +677,55 @@
         clearTimeout(to);
       }
     }
+
+    // =========================
+    // ✅ MODALS UX: tap fuera + ESC (sin romper tu lógica)
+    // =========================
+    (function initModalUX_(){
+      document.addEventListener('click', (ev) => {
+        const t = ev.target;
+        if (!(t instanceof Element)) return;
+
+        const closeId = t.getAttribute('data-close');
+        if (!closeId) return;
+
+        // Si tocó el overlay (y no el contenido), cerramos
+        const modalEl = document.getElementById(closeId);
+        if (!modalEl) return;
+        if (t !== modalEl) return;
+
+        // chat: cerramos con su función para respetar animación
+        if (closeId === 'modal-chat') {
+          try { toggleAIChat(false); } catch(_) { modalEl.classList.add('hidden'); }
+          return;
+        }
+
+        modalEl.classList.add('hidden');
+        // NO removemos "flex" para no romper modales que lo traen fijo en el className
+
+        try { hideSearchDropdown_(); } catch(_) {}
+      });
+
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Escape') return;
+
+        // Prioridad: chat si está abierto
+        const chat = el('modal-chat');
+        if (chat && !chat.classList.contains('hidden')) {
+          try { toggleAIChat(false); } catch(_) { chat.classList.add('hidden'); }
+          return;
+        }
+
+        // Cerrar el primer modal visible con data-close
+        const open = Array.from(document.querySelectorAll('[data-close]'))
+          .find(x => !x.classList.contains('hidden'));
+
+        if (open) {
+          open.classList.add('hidden');
+          try { hideSearchDropdown_(); } catch(_) {}
+        }
+      });
+    })();
 
     // =========================
     // BOOT
@@ -1003,7 +1083,9 @@
 
         const d = document.createElement('div');
         d.dataset.zoneKey = zKey;
-        d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
+
+        // ✅ cambio pedido: card-soft (gris claro / tono más claro en dark)
+        d.className = `p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden card-soft border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-500`;
         d.onclick = () => toggleSel(zName, d);
 
         d.innerHTML = `
@@ -1094,19 +1176,15 @@
       const query = String(q || '').trim();
       if (!query || query.length < 2) return hideSearchDropdown_();
 
-      // Si es solo números y >=4, igual hacemos live (devuelve 1-2)
       let items = [];
       try {
-        // Online -> backend
         if (navigator.onLine && state.user?.vendedor) {
           const res = await api('clientes_search', { vendedor: state.user.vendedor, q: query, limit: 8 }, 12000);
           items = res?.items || [];
         } else {
-          // Offline -> fallback local (cache)
           items = localSearchFallback_(query, 8);
         }
       } catch (_) {
-        // fallback local
         items = localSearchFallback_(query, 8);
       }
 
@@ -1173,18 +1251,15 @@
 
       el('loader')?.classList.remove('hidden');
       try {
-        // Prefer backend lookup (seguro por vendedor + ticket)
         const res = await api('cliente_lookup', { vendedor: state.user.vendedor, clienteId: cid }, 20000);
         const cli = res?.cliente || null;
         const ult = res?.ultimoPedido || null;
         const ticket = String(res?.ticket || '');
 
-        // ✅ Inyectamos en cache local para poder "Ir a cliente"
         if (cli) upsertClientInLocalDB_(cli);
 
         openClientModal_(cid, cli, ult, ticket);
       } catch (e) {
-        // Fallback: buscar en cache local (sin ticket seguro)
         const cli = (state.db?.clientes || []).find(c => String(c.id) === cid) || null;
         if (!cli) {
           toast(e?.message || 'No pude buscar (sin señal / no está en cache)', 'error');
@@ -1202,7 +1277,6 @@
       if (!state.db) state.db = {};
       if (!Array.isArray(state.db.clientes)) state.db.clientes = [];
 
-      // normalizamos shape mínimo como el resto del front
       const normalized = {
         id: String(cli.id || cli.NumeroCliente || cli.numeroCliente || cli.Numero || cli.numero || cli.clienteId || cli.ClienteId || ''),
         nombre: cli.nombre || cli.Nombre || '',
@@ -1239,7 +1313,6 @@
 
       let t = String(ticket || '').trim();
       if (!t) {
-        // si no hay ticket pero hay ultimo pedido
         if (ult?.fechaFmt || ult?.fechaISO || ult?.productos) {
           const fecha = ult?.fechaFmt || ult?.fechaISO || '';
           const prod = ult?.productos || '';
@@ -1274,7 +1347,6 @@
       const name = cli ? displayName(cli) : `#${id}`;
       const ticket = String(state.clientView?.ticket || el('client-ticket')?.textContent || '');
 
-      // si no hay ticket real, disparo chat
       if (!ticket || ticket.includes('Sin ticket')) {
         closeClientModal();
         toggleAIChat(true);
@@ -1301,7 +1373,6 @@
       m.classList.add('flex');
       setTimeout(()=> el('q-client-modal')?.focus(), 150);
 
-      // precarga con lo que ya escribió
       const q = String(el('q-client')?.value || '').trim();
       if (q) {
         el('q-client-modal').value = q;
@@ -1386,32 +1457,15 @@
       const q = el('q-client')?.value?.trim();
       if (!q) return;
 
-      // ✅ 1) Si parece ID (4-6 dígitos), uso lookup seguro (backend)
       if (/^\d{4,6}$/.test(q) && state.user?.vendedor) {
         hideSearchDropdown_();
         await lookupAndOpenClient_(q);
         return;
       }
 
-      // ✅ 2) Si no es sólo ID, abro modal de búsqueda con query
       openClientSearchModal();
       el('q-client-modal').value = q;
       renderClientSearchList_(q);
-
-      // -----------------------
-      // LEGACY (no lo borro):
-      // -----------------------
-      // const cli = (state.db?.clientes || []).find(c => String(c.id) === String(q));
-      // if (!cli) return toast('No lo tengo cargado. (Cargá su zona)', 'error');
-      // state.sel = new Set([String(cli.localidad_key || cli.localidad || '').toUpperCase()]);
-      // startRoute();
-      // setTimeout(() => {
-      //   state.route.active = state.route.active.filter(c => String(c.id) !== String(q));
-      //   state.route.active.unshift(cli);
-      //   state.route.done.delete(String(q));
-      //   renderRoute();
-      //   toast(`Cliente #${q} al frente`, 'success');
-      // }, 50);
     }
 
     // =========================
@@ -1421,7 +1475,6 @@
       const k = Array.from(state.sel).map(x => String(x));
       if (!k.length) return;
 
-      // reset route state
       state.route.done = new Set();
       state.route.currentZones = k.map(normKey);
 
@@ -1429,8 +1482,6 @@
       const selected = new Set(k.map(normKey));
       state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
 
-      // start jornada backend (si existe)
-      // NOTE: no bloquea UI; si falla, no rompe
       (async () => {
         try {
           const resp = await api('start_jornada', { vendedor: state.user.vendedor, zonas: k }, 20000);
@@ -1444,7 +1495,6 @@
       switchView('view-route');
       renderRoute();
 
-      // persist week as "en curso" no, solo al marcar eventos.
       toast(`Ruta lista: ${k.length} zona(s)`, 'success');
     }
 
@@ -1505,9 +1555,11 @@
         const name = displayName(cli).toUpperCase();
 
         const div = document.createElement('div'); div.id = `card-${cli.id}`;
+
+        // ✅ cambio pedido: card-soft para contraste
         div.className = state.mode === 'focus'
-          ? 'h-[70vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
-          : 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
+          ? 'h-[70vh] flex flex-col justify-between card-soft p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
+          : 'card-soft p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
 
         div.innerHTML = `
           <div class="absolute left-0 top-0 bottom-0 w-1.5 ${col}"></div>
@@ -1610,11 +1662,9 @@
     function doRegOptimistic(id, tipo, motivo, observacion) {
       const cid = String(id);
 
-      // UI instant
       state.route.done.add(cid);
       renderRoute();
 
-      // zona last + semana
       const cli = (state.db.clientes || []).find(x => String(x.id) === cid);
       const zKey = getClientZoneKey(cli);
       if (zKey) {
@@ -1622,7 +1672,6 @@
         markWeekZone_(zKey, motivo);
       }
 
-      // backend / outbox
       const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
       sendInBackground('registrar_movimiento', payload);
     }
@@ -1719,18 +1768,15 @@
       const note = String(el('nlz-note').value || '').trim();
       const alsoWeek = !!el('nlz-also-week')?.checked;
 
-      // 1) UI instant
       for (const cli of pends) state.route.done.add(String(cli.id));
       renderRoute();
 
-      // 2) zona last + week
       const zones = (state.route.currentZones || []).map(normKey).filter(Boolean);
       zones.forEach(z => {
         touchZoneLast(z, 'visita', 'No llegué');
         if (alsoWeek) markWeekZone_(z, 'No llegué');
       });
 
-      // 3) backend batch (1 request) + offline outbox
       const items = pends.map(cli => ({
         clienteId: String(cli.id),
         tipo: 'visita',
@@ -1741,7 +1787,6 @@
       closeNoLlegueZoneModal();
       toast(`Marcados ${items.length} como "No llegué"`, 'success');
 
-      // prefer batch endpoint (exists in GS)
       sendInBackground('registrar_batch', { vendedor: state.user.vendedor, items });
     }
 
@@ -1749,20 +1794,16 @@
     // Finalizar turno / día (jornada)
     // =========================
     function finalizeTurnOrDay() {
-      // UX simple: si hay jornada activa en backend, la finalizamos.
-      // Si falla o no hay, no rompe.
       const j = state.jornada;
       const nowTurn = turnoNow_();
 
-      // si no hay jornadaId, intentamos pedirla
       if (!j?.jornadaId) {
         toast('Cerrando (sin jornada id)...', 'error');
         return;
       }
 
-      // guardamos pendientes no tocados? (si quedan, recomendamos usar No llegué antes)
       const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
-      const marcarPendientes = false; // acá NO marcamos auto (vos ya tenés modal No llegué)
+      const marcarPendientes = false;
       const pendientes = pends.map(x => String(x.id));
 
       el('loader')?.classList.remove('hidden');
@@ -1781,7 +1822,6 @@
           toast('Jornada finalizada', 'success');
         } catch (e) {
           toast('No pude finalizar (sin señal): queda para luego', 'error');
-          // dejamos en cola
           enqueueOutbox('finalizar_jornada', {
             vendedor: state.user.vendedor,
             jornadaId: j.jornadaId,
@@ -1815,7 +1855,6 @@
       const list = el('week-list');
       list.innerHTML = '';
 
-      // Build combined list
       const merged = [];
       for (const z of allZones) {
         const i = zonesDone[z] || null;
@@ -1900,7 +1939,6 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
       const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
       const done = localStorage.getItem(ONBOARD_KEY(v));
       if (done) return;
-      // show
       el('modal-onboard').classList.remove('hidden');
       el('modal-onboard').classList.add('flex');
       setTimeout(()=>el('ob-name')?.focus(), 150);
@@ -1920,21 +1958,17 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
       const shift = String(el('ob-shift').value || 'doble');
       const pain = String(el('ob-pain').value || '').trim();
 
-      // Guardamos local (para UI)
       try {
         localStorage.setItem(`ml_profile_${CACHE_VER}_${String(v).toUpperCase()}`, JSON.stringify({ name, style, shift, pain, ts: Date.now() }));
       } catch (_) {}
 
-      // Enviamos al chatbot como mensaje "perfil" (queda registrado en IA_ChatLog para hilo)
       try {
         await api('chatbot', {
           vendedor: state.user.vendedor,
           mensaje: `Perfil vendedor (para recordarlo): Me llamo ${name}. Estilo preferido: ${style}. Turnos: ${shift}. Lo que más me cuesta: ${pain || '—'}.`
         }, 25000);
         toast('Perfil guardado (hilo)', 'success');
-      } catch (_) {
-        // si no hay señal, no es grave
-      }
+      } catch (_) {}
     }
 
     // =========================
@@ -1965,7 +1999,6 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
     function openOrderFromClient(id) {
       const cli = (state.db?.clientes || []).find(c => String(c.id) === String(id));
       const name = cli ? displayName(cli) : `#${id}`;
-      // pedimos al chat el ticket (backend determinístico). Mostrará ticket.
       toggleAIChat(true);
       setTimeout(()=> {
         el('chat-in').value = `Último pedido del cliente ${name} #${id}`;
