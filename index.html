@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#6366f1">
+
+  <!-- iOS / Apple -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ventas ML">
+  <link rel="apple-touch-icon" href="ml-icon-192.png">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Mercado Limpio Ventas</title>
@@ -2268,5 +2277,125 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
         .trim();
     }
   </script>
+  <script>
+  // =========================
+  // PWA: Service Worker + Install UX
+  // =========================
+
+  // 1) Registrar Service Worker
+  (function registerSW(){
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', async () => {
+      try {
+        await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+        // console.log('SW OK');
+      } catch (e) {
+        // console.warn('SW FAIL', e);
+      }
+    });
+  })();
+
+  // 2) Botón "Instalar" (solo aparece cuando corresponde)
+  let deferredPrompt = null;
+
+  function ensureInstallButton_(){
+    if (document.getElementById('pwa-install-btn')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'pwa-install-btn';
+    btn.type = 'button';
+    btn.textContent = 'Instalar App';
+    btn.style.position = 'fixed';
+    btn.style.left = '16px';
+    btn.style.bottom = '16px';
+    btn.style.zIndex = '9999';
+    btn.style.padding = '12px 14px';
+    btn.style.borderRadius = '14px';
+    btn.style.fontWeight = '900';
+    btn.style.fontSize = '12px';
+    btn.style.border = '1px solid rgba(148,163,184,.35)';
+    btn.style.background = 'rgba(15,23,42,.92)';
+    btn.style.color = '#fff';
+    btn.style.backdropFilter = 'blur(10px)';
+    btn.style.display = 'none'; // arranca oculto
+
+    // safe-area iPhone
+    btn.style.marginBottom = 'env(safe-area-inset-bottom, 0px)';
+
+    btn.addEventListener('click', async () => {
+      try {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const choice = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          btn.style.display = 'none';
+
+          if (typeof toast === 'function') {
+            toast(choice?.outcome === 'accepted' ? 'Instalación iniciada' : 'Instalación cancelada', choice?.outcome === 'accepted' ? 'success' : 'error');
+          }
+        } else {
+          // iOS: no hay prompt
+          if (isIOS_()) {
+            showIOSInstallHint_();
+          }
+        }
+      } catch(_) {}
+    });
+
+    document.body.appendChild(btn);
+  }
+
+  // Chrome/Android: capturar evento
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    ensureInstallButton_();
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'block';
+
+    if (typeof toast === 'function') toast('Podés instalar la app', 'success');
+  });
+
+  // Si ya está instalada, ocultar
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'none';
+    if (typeof toast === 'function') toast('App instalada', 'success');
+  });
+
+  // iOS: hint manual
+  function isIOS_(){
+    return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  }
+
+  function isStandalone_(){
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone === true);
+  }
+
+  function showIOSInstallHint_(){
+    if (isStandalone_()) return;
+    const msg = 'En iPhone: Compartir → “Agregar a pantalla de inicio”';
+    if (typeof toast === 'function') return toast(msg, 'success');
+    alert(msg);
+  }
+
+  // Mostrar hint iOS al entrar (solo si corresponde, sin molestar si ya es standalone)
+  (function iosAutoHint_(){
+    try {
+      ensureInstallButton_();
+      if (isIOS_() && !isStandalone_()) {
+        // No lo muestro como botón, solo aviso si querés:
+        // showIOSInstallHint_();
+        // Si preferís botón visible en iOS:
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) { btn.textContent = 'Agregar a Inicio'; btn.style.display = 'block'; }
+      }
+    } catch(_) {}
+  })();
+</script>
+
 </body>
 </html>
