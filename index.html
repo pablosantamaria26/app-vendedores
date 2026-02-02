@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Mercado Limpio App</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
   <script>
     tailwind.config = {
@@ -29,8 +29,8 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
 
     .btn-press:active { transform: scale(0.96); transition: 0.1s; }
-    @keyframes popIn { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
-    .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes popIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+    .animate-pop { animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
 
     .view-section { display: none; height: 100vh; flex-direction: column; }
     .view-section.active { display: flex; }
@@ -41,17 +41,15 @@
     html.dark .chat-user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
     html.dark .chat-bot { background: #334155; color: #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #475569; }
 
-    .ticket-box { font-family: monospace; padding: 10px; border-radius: 12px; margin-top: 6px; font-size: 0.85rem; border: 2px dashed; }
+    .ticket-box { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; padding: 10px; border-radius: 12px; margin-top: 6px; font-size: 0.85rem; border: 2px dashed; }
     html:not(.dark) .ticket-box { background: #f8fafc; color: #334155; border-color: #cbd5e1; }
     html.dark .ticket-box { background: #0b1224; color: #cbd5e1; border-color: #475569; }
 
     .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
-    /* Botón copiar en ticket */
     .btn-copy-order { margin-top:10px; width:100%; padding:10px 12px; border-radius:12px; font-weight:900; font-size:12px; display:flex; justify-content:center; gap:8px; background:#2563eb; color:#fff; }
     html.dark .btn-copy-order { background:#3b82f6; }
 
-    /* Typing indicator */
     .typing-row { display:flex; align-items:center; gap:6px; }
     .typing-dot { width:6px; height:6px; border-radius:50%; opacity:.7; }
     html:not(.dark) .typing-dot { background:#334155; }
@@ -61,7 +59,6 @@
     .d2 { animation: bounceDot 1s infinite .15s; }
     .d3 { animation: bounceDot 1s infinite .30s; }
 
-    /* Oportunidades dentro del chat */
     .opp-card { border-radius:16px; padding:12px; border:1px solid; }
     html:not(.dark) .opp-card { background:#ffffff; border-color:#e2e8f0; }
     html.dark .opp-card { background:#0f172a; border-color:#334155; }
@@ -74,7 +71,6 @@
     html:not(.dark) .opp-btn-secondary { color:#334155; border-color:#cbd5e1; }
     .opp-meta { margin-top:8px; font-size:11px; opacity:.8; display:flex; gap:10px; flex-wrap:wrap; }
 
-    /* Zona card meta */
     .zone-meta { margin-top: 10px; display:flex; flex-direction:column; gap:6px; }
     .zone-chip { font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.18em; opacity:.85; }
     .zone-last-row { font-size:11px; font-weight:800; display:flex; gap:8px; align-items:center; opacity:.9; }
@@ -82,6 +78,25 @@
     html:not(.dark) .zone-last-row { color: #475569; }
     .zone-last-label { opacity:.7; font-weight:900; font-size:10px; letter-spacing:.22em; }
     .zone-last-motivo { font-weight:900; }
+
+    /* mini chips */
+    .mini-chip { font-size:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; padding:6px 10px; border-radius:999px; border:1px solid; }
+    html.dark .mini-chip { border-color:#334155; background:#0b1224; color:#cbd5e1; }
+    html:not(.dark) .mini-chip { border-color:#e2e8f0; background:#ffffff; color:#334155; }
+
+    /* subtle skeleton */
+    .skeleton { position: relative; overflow: hidden; }
+    .skeleton:before {
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.08), rgba(255,255,255,0));
+      transform: translateX(-100%);
+      animation: shimmer 1.1s infinite;
+    }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+    /* better focus for inputs */
+    input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.25); border-color: rgba(59,130,246,.7) !important; }
   </style>
 </head>
 
@@ -103,10 +118,12 @@
       <h1 class="text-3xl font-black mb-2 text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
       <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Ventas & Logística</p>
 
-      <input id="login-user" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="USUARIO">
-      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="PIN">
+      <input id="login-user" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="USUARIO" autocomplete="username" />
+      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="PIN" autocomplete="current-password" />
 
-      <button onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
+      <button id="btn-login" onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
+
+      <p class="mt-6 text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">Tip: ENTER en el PIN</p>
     </div>
   </section>
 
@@ -116,6 +133,10 @@
       <div>
         <p class="text-[10px] text-blue-500 font-bold uppercase mb-1">Bienvenido</p>
         <h2 class="text-2xl font-black leading-none">HOLA, <span id="lbl-saludo">...</span></h2>
+        <div class="mt-2 flex gap-2 flex-wrap">
+          <span id="chip-turno" class="mini-chip"><i class="fas fa-sun"></i> TURNO: —</span>
+          <span id="chip-semana" class="mini-chip cursor-pointer btn-press" onclick="openWeekModal()"><i class="fas fa-calendar-week"></i> SEMANA</span>
+        </div>
       </div>
       <div class="flex gap-2">
         <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
@@ -125,6 +146,19 @@
           <i class="fas fa-power-off text-xs"></i>
         </button>
       </div>
+    </div>
+
+    <div class="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+      <div class="flex gap-2">
+        <div class="flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-magnifying-glass text-slate-400"></i>
+          <input id="q-client" type="text" inputmode="numeric" placeholder="Buscar cliente por ID..." class="flex-1 bg-transparent border-0 text-sm dark:text-white outline-none" />
+          <button class="btn-press px-3 py-2 rounded-xl bg-blue-600 text-white font-black text-xs" onclick="searchClientById()">IR</button>
+        </div>
+      </div>
+      <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+        Carga instantánea: cache local + refresh en segundo plano
+      </p>
     </div>
 
     <div class="flex-1 overflow-y-auto p-4 pb-24 no-scrollbar">
@@ -156,10 +190,10 @@
       </div>
 
       <div class="flex gap-2">
-        <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-blue-500 border border-slate-200 dark:border-slate-700">
+        <button onclick="toggleViewMode()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-blue-500 border border-slate-200 dark:border-slate-700" title="Modo lista / foco">
           <i id="icon-view-mode" class="fas fa-list"></i>
         </button>
-        <button onclick="markZoneNoLlegue()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-red-500 border border-slate-200 dark:border-slate-700" title="Marcar pendientes como No llegué">
+        <button onclick="openNoLlegueZoneModal()" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-red-500 border border-slate-200 dark:border-slate-700" title="Finalizar zona como No llegué">
           <i class="fas fa-ban"></i>
         </button>
       </div>
@@ -172,6 +206,13 @@
     </div>
 
     <div id="route-container" class="flex-1 overflow-y-auto p-4 pb-20 no-scrollbar relative space-y-3"></div>
+
+    <div class="fixed bottom-0 w-full p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+      <button onclick="finalizeTurnOrDay()" class="btn-press w-full bg-slate-900 dark:bg-blue-600 text-white py-3 rounded-xl font-black flex items-center justify-center gap-2">
+        <i class="fas fa-flag-checkered"></i> Finalizar (turno / día)
+      </button>
+      <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Se guarda offline si no hay señal</p>
+    </div>
   </section>
 
   <!-- MODAL SUGGESTIONS -->
@@ -189,24 +230,173 @@
     </div>
   </div>
 
+  <!-- MODAL NO LLEGUE ZONA (NUEVO, LINDO) -->
+  <div id="modal-no-llegue-zone" class="fixed inset-0 z-[70] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Finalizar zona</p>
+          <h3 class="text-lg font-black dark:text-white">Marcar como “No llegué”</h3>
+          <p id="nlz-sub" class="text-xs mt-1 text-slate-500 dark:text-slate-400">...</p>
+        </div>
+        <button onclick="closeNoLlegueZoneModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Pendientes</div>
+          <div id="nlz-count" class="text-3xl font-black mt-1">0</div>
+        </div>
+        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Zona(s)</div>
+          <div id="nlz-zones" class="text-sm font-black mt-1 truncate">—</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nota (opcional)</label>
+        <textarea id="nlz-note" class="w-full mt-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm h-20 resize-none dark:text-white" placeholder="Ej: Sin señal / cliente cerrado / lluvia / me fui a otra zona..."></textarea>
+      </div>
+
+      <div class="mt-4 flex items-center gap-2">
+        <input id="nlz-also-week" type="checkbox" class="w-4 h-4" checked />
+        <label for="nlz-also-week" class="text-xs font-bold text-slate-600 dark:text-slate-300">Guardar esto en “Semana” (para que quede marcado)</label>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button onclick="closeNoLlegueZoneModal()" class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Cancelar
+        </button>
+        <button onclick="confirmNoLlegueZone()" class="btn-press py-3 rounded-xl font-black bg-red-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-ban"></i> Confirmar No llegué
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SEMANA (NUEVO) -->
+  <div id="modal-week" class="fixed inset-0 z-[65] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-blue-500">Semana</p>
+          <h3 class="text-lg font-black dark:text-white">Zonas hechas y pendientes</h3>
+          <p id="week-sub" class="text-xs mt-1 text-slate-500 dark:text-slate-400">...</p>
+        </div>
+        <button onclick="closeWeekModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Hechas</div>
+          <div id="week-done" class="text-3xl font-black mt-1">0</div>
+        </div>
+        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Pendientes</div>
+          <div id="week-pending" class="text-3xl font-black mt-1">0</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Detalle</div>
+        <div id="week-list" class="max-h-72 overflow-y-auto no-scrollbar space-y-2"></div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button onclick="resetWeekProgress()" class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Reset semana
+        </button>
+        <button onclick="askAIWeekPlan()" class="btn-press py-3 rounded-xl font-black bg-blue-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-brain"></i> Pedir plan a soporte
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ONBOARDING (NUEVO) -->
+  <div id="modal-onboard" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-indigo-500">Primera vez</p>
+          <h3 class="text-lg font-black dark:text-white">Dejame conocerte 30 segundos</h3>
+          <p class="text-xs mt-1 text-slate-500 dark:text-slate-400">
+            Esto se guarda como “hilo” del chat para que el soporte te hable distinto.
+          </p>
+        </div>
+        <button onclick="closeOnboard(false)" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Cómo querés que te llame</label>
+          <input id="ob-name" type="text" class="w-full mt-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm dark:text-white" placeholder="Ej: Martín / Rami / El Toro..." />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Tu estilo</label>
+            <select id="ob-style" class="w-full mt-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm dark:text-white">
+              <option value="directo">Directo y firme</option>
+              <option value="calmo">Calmo y paciente</option>
+              <option value="humor">Con humor</option>
+              <option value="coach">Modo coach (motivación)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Turnos</label>
+            <select id="ob-shift" class="w-full mt-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm dark:text-white">
+              <option value="manana">Solo mañana</option>
+              <option value="tarde">Solo tarde</option>
+              <option value="doble" selected>Ambos (mañana + tarde)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Qué te cuesta más (1 frase)</label>
+          <input id="ob-pain" type="text" class="w-full mt-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm dark:text-white" placeholder="Ej: Me dicen 'tengo proveedor' y me bloqueo" />
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button onclick="closeOnboard(false)" class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Omitir
+        </button>
+        <button onclick="closeOnboard(true)" class="btn-press py-3 rounded-xl font-black bg-indigo-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-check"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- CHAT -->
   <div id="modal-chat" class="fixed inset-0 z-50 bg-black/50 hidden flex flex-col justify-end sm:justify-center items-center backdrop-blur-sm">
     <div id="chat-panel" class="bg-slate-50 dark:bg-slate-950 w-full sm:max-w-md h-[80vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col transform translate-y-full transition-transform duration-300">
       <div class="p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center rounded-t-3xl">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white"><i class="fas fa-robot"></i></div>
-          <h3 class="font-bold text-sm dark:text-white">Mercado Limpio</h3>
+          <div>
+            <h3 class="font-bold text-sm dark:text-white">Mercado Limpio</h3>
+            <p id="chat-sub" class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Soporte</p>
+          </div>
         </div>
         <button onclick="toggleAIChat(false)" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center"><i class="fas fa-times"></i></button>
       </div>
 
       <div id="chat-msgs" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-        <div class="chat-bubble chat-bot">Hola, soy el soporte de Mercado Limpio. ¿Qué necesitas?</div>
+        <div class="chat-bubble chat-bot">Hola. ¿Qué necesitás?</div>
       </div>
 
       <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pb-6">
         <div class="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <input id="chat-in" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-transparent border-0 px-3 text-sm dark:text-white outline-none">
+          <input id="chat-in" type="text" placeholder="Escribe tu consulta..." class="flex-1 bg-transparent border-0 px-3 text-sm dark:text-white outline-none" />
           <button onclick="sendChat()" class="w-10 h-10 bg-blue-600 rounded-xl text-white flex items-center justify-center"><i class="fas fa-paper-plane text-xs"></i></button>
         </div>
       </div>
@@ -280,6 +470,15 @@
     const WORKER = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
     const OUTBOX_KEY = 'ml_outbox_v1';
 
+    const CACHE_VER = 'v2';
+    const APP_CACHE_TTL_MS = 1000 * 60 * 12; // 12 min
+    const APP_CACHE_KEY = (v) => `ml_app_cache_${CACHE_VER}_${String(v||'GEN').toUpperCase()}`;
+    const APP_CACHE_META_KEY = (v) => `ml_app_cache_meta_${CACHE_VER}_${String(v||'GEN').toUpperCase()}`;
+    const ONBOARD_KEY = (v) => `ml_onboard_done_${CACHE_VER}_${String(v||'GEN').toUpperCase()}`;
+
+    const WEEK_KEY = (v) => `ml_week_progress_${CACHE_VER}_${String(v||'GEN').toUpperCase()}`; // {weekId, zones:{ZONA:{ts,turno,motivo}}}
+    const ZONE_LAST_KEY = (v) => `ml_zone_last_${CACHE_VER}_${String(v||'GEN').toUpperCase()}`;
+
     const state = {
       user: JSON.parse(localStorage.getItem('ml_user')),
       db: {},
@@ -290,7 +489,8 @@
       tempReason: null,
       location: null,
       currentOrder: { title: '', ticket: '' },
-      outboxFlushing: false
+      outboxFlushing: false,
+      jornada: { activa:false, jornadaId:null, turno:null, zonas:[] }
     };
 
     const el = id => document.getElementById(id);
@@ -303,32 +503,220 @@
         : `<i class="fas fa-check-circle text-green-400"></i> ${m}`;
       d.style.opacity = 1;
       d.style.top = '30px';
-      setTimeout(() => { d.style.opacity = 0; d.style.top = '20px'; }, 2500);
+      setTimeout(() => { d.style.opacity = 0; d.style.top = '20px'; }, 2400);
     };
 
-    async function api(act, pl) {
+    async function api(act, pl, timeoutMs=20000) {
       const ctrl = new AbortController();
-      setTimeout(() => ctrl.abort(), 45000);
-      const r = await fetch(WORKER, { method: 'POST', body: JSON.stringify({ action: act, payload: pl }), signal: ctrl.signal });
-      const j = await r.json();
-      if (j.status !== 'success') throw new Error(j.message || 'Error');
-      return j.data;
+      const to = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const r = await fetch(WORKER, { method: 'POST', body: JSON.stringify({ action: act, payload: pl }), signal: ctrl.signal });
+        const j = await r.json();
+        if (j.status !== 'success') throw new Error(j.message || 'Error');
+        return j.data;
+      } finally {
+        clearTimeout(to);
+      }
     }
 
+    // =========================
+    // BOOT
+    // =========================
     document.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('ml_theme') === 'light') document.documentElement.classList.remove('dark');
-      if (state.user) init(); else switchView('view-login');
 
-      if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
+      // Enter para login
+      el('login-user')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') el('login-pass')?.focus(); });
+      el('login-pass')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') handleLogin(); });
 
+      // chat enter
       el('chat-in')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 
+      // geoloc
+      if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
+
+      // fast offline sync
       window.addEventListener('online', () => flushOutbox());
-      setTimeout(() => flushOutbox(), 1500);
+      setTimeout(() => flushOutbox(), 1200);
+
+      // daily boundary
+      ensureDailyBoundaryReset_();
+
+      if (state.user) init(); else switchView('view-login');
     });
 
     // =========================
-    // Nombre completo unificado
+    // Utils: Dates / Keys
+    // =========================
+    function normKey(s) { return String(s || '').trim().toUpperCase(); }
+    function todayKey_() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${dd}`;
+    }
+    function weekId_() {
+      // ISO week approx
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+      const week1 = new Date(d.getFullYear(), 0, 4);
+      const w = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+      return `${d.getFullYear()}-W${String(w).padStart(2,'0')}`;
+    }
+    function turnoNow_() {
+      const h = new Date().getHours();
+      return (h >= 14) ? 'Tarde' : 'Mañana';
+    }
+    function setTurnoChip_() {
+      const c = el('chip-turno');
+      if (!c) return;
+      const t = turnoNow_();
+      c.innerHTML = (t === 'Tarde')
+        ? `<i class="fas fa-moon"></i> TURNO: TARDE`
+        : `<i class="fas fa-sun"></i> TURNO: MAÑANA`;
+    }
+
+    function parseDateValue(v) {
+      if (v == null) return null;
+      if (typeof v === 'number' && isFinite(v)) {
+        const ms = v < 1e12 ? v * 1000 : v;
+        const d = new Date(ms);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const s = String(v).trim();
+      if (!s) return null;
+      const iso = new Date(s);
+      if (!isNaN(iso.getTime())) return iso;
+
+      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (m) {
+        const dd = Number(m[1]), mm = Number(m[2]) - 1, yy = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
+        const HH = Number(m[4] || 0), MI = Number(m[5] || 0), SS = Number(m[6] || 0);
+        const d = new Date(yy, mm, dd, HH, MI, SS);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+
+    function fmtDateTime(d, mode='short') {
+      if (!(d instanceof Date) || isNaN(d.getTime())) return '—';
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const HH = String(d.getHours()).padStart(2,'0');
+      const MI = String(d.getMinutes()).padStart(2,'0');
+      if (mode === 'date') return `${dd}/${mm}`;
+      return `${dd}/${mm} ${HH}:${MI}`;
+    }
+
+    // =========================
+    // Cache app data (instant load)
+    // =========================
+    function getAppCache_(v) {
+      try {
+        const raw = localStorage.getItem(APP_CACHE_KEY(v));
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+    function setAppCache_(v, data) {
+      try {
+        localStorage.setItem(APP_CACHE_KEY(v), JSON.stringify(data || {}));
+        localStorage.setItem(APP_CACHE_META_KEY(v), JSON.stringify({ ts: Date.now(), day: todayKey_() }));
+      } catch (_) {}
+    }
+    function isAppCacheFresh_(v) {
+      try {
+        const meta = JSON.parse(localStorage.getItem(APP_CACHE_META_KEY(v)) || '{}');
+        if (!meta || meta.day !== todayKey_()) return false;
+        return (Date.now() - Number(meta.ts || 0)) <= APP_CACHE_TTL_MS;
+      } catch (_) { return false; }
+    }
+
+    // =========================
+    // Weekly progress (persist)
+    // =========================
+    function getWeekProgress_() {
+      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+      try {
+        const raw = localStorage.getItem(WEEK_KEY(v));
+        const obj = raw ? JSON.parse(raw) : null;
+        const wid = weekId_();
+        if (!obj || obj.weekId !== wid) return { weekId: wid, zones: {} };
+        if (!obj.zones || typeof obj.zones !== 'object') obj.zones = {};
+        return obj;
+      } catch (_) {
+        return { weekId: weekId_(), zones: {} };
+      }
+    }
+    function setWeekProgress_(obj) {
+      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+      try { localStorage.setItem(WEEK_KEY(v), JSON.stringify(obj || { weekId: weekId_(), zones: {} })); } catch (_) {}
+    }
+    function markWeekZone_(zoneName, motivo='OK') {
+      const z = normKey(zoneName);
+      if (!z) return;
+      const wk = getWeekProgress_();
+      wk.zones[z] = { ts: Date.now(), turno: turnoNow_(), motivo: String(motivo||'') };
+      setWeekProgress_(wk);
+    }
+
+    // =========================
+    // Zone last cache (per vendor)
+    // =========================
+    function zoneLastStorageKey() {
+      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+      return ZONE_LAST_KEY(v);
+    }
+    function getZoneLastMap() {
+      try {
+        const raw = localStorage.getItem(zoneLastStorageKey());
+        const obj = raw ? JSON.parse(raw) : {};
+        return (obj && typeof obj === 'object') ? obj : {};
+      } catch (_) {
+        return {};
+      }
+    }
+    function setZoneLastMap(map) {
+      try { localStorage.setItem(zoneLastStorageKey(), JSON.stringify(map || {})); } catch (_) {}
+    }
+
+    function getZoneLastInfo(zoneName, backendFallbackObj) {
+      const zKey = normKey(zoneName);
+      const map = getZoneLastMap();
+      if (map[zKey]) return map[zKey];
+
+      const bf = backendFallbackObj || {};
+      const candidates = [ bf.ultima_visita_ts, bf.ultima_visita, bf.ultima, bf.last_ts ];
+      for (const c of candidates) {
+        const d = parseDateValue(c);
+        if (d) return { ts: d.getTime(), motivo: bf.ultima_motivo || bf.motivo || '', tipo: bf.ultima_tipo || bf.tipo || '' };
+      }
+      return null;
+    }
+
+    function touchZoneLast(zoneName, tipo, motivo) {
+      const zKey = normKey(zoneName);
+      if (!zKey) return;
+
+      const map = getZoneLastMap();
+      map[zKey] = { ts: Date.now(), tipo: String(tipo||''), motivo: String(motivo||'') };
+      setZoneLastMap(map);
+
+      document.querySelectorAll('[data-zone-key]').forEach(card => {
+        if (card?.dataset?.zoneKey === zKey) {
+          const lastEl = card.querySelector('.zone-last');
+          const motEl = card.querySelector('.zone-last-motivo');
+          if (lastEl) lastEl.textContent = fmtDateTime(new Date(map[zKey].ts), 'short');
+          if (motEl) motEl.textContent = map[zKey].motivo ? `· ${map[zKey].motivo}` : '';
+        }
+      });
+    }
+
+    function getClientZoneKey(cli) { return normKey(cli?.localidad_key || cli?.localidad || ''); }
+
+    // =========================
+    // Base
     // =========================
     function displayName(cli) {
       if (!cli) return '';
@@ -355,7 +743,7 @@
       if (!u || !p) return toast('Faltan datos', 'error');
       el('loader')?.classList.remove('hidden');
       try {
-        const d = await api('login', { user: u, pass: p });
+        const d = await api('login', { user: u, pass: p }, 25000);
         state.user = d;
         localStorage.setItem('ml_user', JSON.stringify(d));
         init();
@@ -368,126 +756,106 @@
     function logout() { localStorage.removeItem('ml_user'); location.reload(); }
 
     // =========================
-    // ZONE LAST CACHE (por vendedor)
+    // Daily reset boundary
     // =========================
-    function normKey(s) {
-      return String(s || '').trim().toUpperCase();
-    }
-    function zoneLastStorageKey() {
-      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
-      return `ml_zone_last_v1_${String(v).toUpperCase()}`;
-    }
-    function getZoneLastMap() {
-      try {
-        const raw = localStorage.getItem(zoneLastStorageKey());
-        const obj = raw ? JSON.parse(raw) : {};
-        return (obj && typeof obj === 'object') ? obj : {};
-      } catch (_) {
-        return {};
+    function ensureDailyBoundaryReset_() {
+      const key = 'ml_day_key';
+      const today = todayKey_();
+      const prev = localStorage.getItem(key);
+      if (prev !== today) {
+        // reset only daily ephemeral things
+        try {
+          localStorage.setItem(key, today);
+          localStorage.removeItem(OUTBOX_KEY); // opcional: si preferís mantener cola, comentá esta línea
+          // NO tocamos week progress
+        } catch (_) {}
       }
-    }
-    function setZoneLastMap(map) {
-      try { localStorage.setItem(zoneLastStorageKey(), JSON.stringify(map || {})); } catch (_) {}
-    }
-
-    function parseDateValue(v) {
-      if (v == null) return null;
-      // number epoch
-      if (typeof v === 'number' && isFinite(v)) {
-        const ms = v < 1e12 ? v * 1000 : v; // si viene en segundos
-        const d = new Date(ms);
-        return isNaN(d.getTime()) ? null : d;
-      }
-      const s = String(v).trim();
-      if (!s) return null;
-
-      // ISO
-      const iso = new Date(s);
-      if (!isNaN(iso.getTime())) return iso;
-
-      // dd/mm/yyyy hh:mm(:ss)
-      const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-      if (m) {
-        const dd = Number(m[1]), mm = Number(m[2]) - 1, yy = Number(m[3]) < 100 ? 2000 + Number(m[3]) : Number(m[3]);
-        const HH = Number(m[4] || 0), MI = Number(m[5] || 0), SS = Number(m[6] || 0);
-        const d = new Date(yy, mm, dd, HH, MI, SS);
-        return isNaN(d.getTime()) ? null : d;
-      }
-
-      return null;
+      // schedule check (every 2 minutes)
+      setInterval(() => {
+        const t = todayKey_();
+        const p = localStorage.getItem(key);
+        if (p !== t) location.reload();
+      }, 120000);
     }
 
-    function fmtDateTime(d, mode='short') {
-      if (!(d instanceof Date) || isNaN(d.getTime())) return '—';
-      const dd = String(d.getDate()).padStart(2,'0');
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const HH = String(d.getHours()).padStart(2,'0');
-      const MI = String(d.getMinutes()).padStart(2,'0');
-      if (mode === 'date') return `${dd}/${mm}`;
-      return `${dd}/${mm} ${HH}:${MI}`;
-    }
-
-    function getZoneLastInfo(zoneName, backendFallbackObj) {
-      const zKey = normKey(zoneName);
-      const map = getZoneLastMap();
-      if (map[zKey]) return map[zKey];
-
-      // fallback backend si existe
-      const bf = backendFallbackObj || {};
-      const candidates = [
-        bf.ultima_visita_ts, bf.ultima_visita, bf.ultima, bf.last_ts,
-        bf.ultima_compra_ts, bf.ultima_compra
-      ];
-      for (const c of candidates) {
-        const d = parseDateValue(c);
-        if (d) return { ts: d.getTime(), motivo: bf.ultima_motivo || bf.motivo || '', tipo: bf.ultima_tipo || bf.tipo || '' };
-      }
-      return null;
-    }
-
-    function touchZoneLast(zoneName, tipo, motivo) {
-      const zKey = normKey(zoneName);
-      if (!zKey) return;
-
-      const map = getZoneLastMap();
-      map[zKey] = { ts: Date.now(), tipo: String(tipo||''), motivo: String(motivo||'') };
-      setZoneLastMap(map);
-
-      // update DOM instantáneo si está renderizado
-      document.querySelectorAll('[data-zone-key]').forEach(card => {
-        if (card?.dataset?.zoneKey === zKey) {
-          const lastEl = card.querySelector('.zone-last');
-          const motEl = card.querySelector('.zone-last-motivo');
-          if (lastEl) lastEl.textContent = fmtDateTime(new Date(map[zKey].ts), 'short');
-          if (motEl) motEl.textContent = map[zKey].motivo ? `· ${map[zKey].motivo}` : '';
-        }
-      });
-    }
-
-    function getClientZoneKey(cli) {
-      return normKey(cli?.localidad_key || cli?.localidad || '');
-    }
-
+    // =========================
+    // INIT (instant cache + refresh)
+    // =========================
     async function init() {
       switchView('view-dashboard');
       el('lbl-saludo').innerText = (state.user?.user || '').toUpperCase();
+      setTurnoChip_();
+
+      // 1) instant render from cache if exists
+      const vend = state.user?.vendedor;
+      const cached = getAppCache_(vend);
+      if (cached && cached.zonas && cached.clientes) {
+        state.db = cached;
+        renderGrid(true);
+      } else {
+        // skeleton
+        renderGridSkeleton_();
+      }
+
+      // 2) refresh in background (fast)
       el('loader')?.classList.remove('hidden');
       try {
-        const d = await api('get_app_data', { vendedor: state.user.vendedor });
+        const d = await api('get_app_data', { vendedor: vend }, 25000);
         state.db = d || {};
-        renderGrid();
+        setAppCache_(vend, state.db);
+        renderGrid(false);
+
+        // sugerencias IA
         if (d?.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+
+        // jornada activa backend
+        if (d?.jornada_activa?.activa) {
+          state.jornada = {
+            activa: true,
+            jornadaId: d.jornada_activa.jornadaId,
+            turno: d.jornada_activa.turno,
+            zonas: d.jornada_activa.zonas || []
+          };
+        } else {
+          state.jornada = { activa:false, jornadaId:null, turno: turnoNow_(), zonas: [] };
+        }
+        updateChatSub_();
+
+        // onboard first time
+        maybeShowOnboard_();
+
         flushOutbox();
       } catch (e) {
-        toast('Error cargando', 'error');
+        toast('Error cargando (usando cache)', 'error');
       } finally {
         el('loader')?.classList.add('hidden');
       }
     }
 
-    function renderGrid() {
+    function updateChatSub_() {
+      const s = el('chat-sub');
+      if (!s) return;
+      const t = turnoNow_();
+      const j = state.jornada?.activa ? `Jornada activa (${state.jornada.turno})` : `Sin jornada`;
+      s.textContent = `${t} · ${j}`;
+    }
+
+    function renderGridSkeleton_() {
       const g = el('zones-grid'); if (!g) return;
       g.innerHTML = '';
+      for (let i=0;i<6;i++){
+        const d = document.createElement('div');
+        d.className = 'p-4 rounded-2xl border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm skeleton h-28';
+        g.appendChild(d);
+      }
+    }
+
+    function renderGrid(fromCache=false) {
+      const g = el('zones-grid'); if (!g) return;
+      g.innerHTML = '';
+
+      const wk = getWeekProgress_();
+      const doneMap = wk?.zones || {};
 
       (state.db.zonas || []).forEach(z => {
         const crit = Number(z.criticos || 0) > 0;
@@ -497,6 +865,10 @@
         const info = getZoneLastInfo(zName, z);
         const lastText = info?.ts ? fmtDateTime(new Date(info.ts), 'short') : '—';
         const lastMot = info?.motivo ? `· ${String(info.motivo)}` : '';
+
+        // week badge
+        const wkInfo = doneMap[zKey] || null;
+        const wkTxt = wkInfo?.ts ? `Semana: ${fmtDateTime(new Date(wkInfo.ts),'short')} · ${wkInfo.turno || ''}` : '';
 
         const d = document.createElement('div');
         d.dataset.zoneKey = zKey;
@@ -517,10 +889,18 @@
               <span class="zone-last">${escapeHtml(lastText)}</span>
               <span class="zone-last-motivo">${escapeHtml(lastMot)}</span>
             </div>
+            ${wkTxt ? `
+              <div class="text-[10px] font-black uppercase tracking-widest mt-1 text-emerald-600 dark:text-emerald-400">
+                <i class="fas fa-check-circle"></i> ${escapeHtml(wkTxt)}
+              </div>` : `
+              <div class="text-[10px] font-black uppercase tracking-widest mt-1 text-slate-400">
+                <i class="far fa-circle"></i> Semana: pendiente
+              </div>`}
           </div>
 
           <div class="sel-overlay absolute top-2 right-2 hidden"><i class="fas fa-check-circle text-blue-600 text-xl bg-white rounded-full"></i></div>
           <div class="sel-border absolute inset-0 border-2 border-blue-600 rounded-2xl hidden pointer-events-none"></div>
+          ${fromCache ? `<div class="absolute bottom-2 right-2 text-[9px] font-black uppercase tracking-widest text-slate-400">cache</div>` : ``}
         `;
         g.appendChild(d);
       });
@@ -535,7 +915,31 @@
       if (el('btn-start-lbl')) el('btn-start-lbl').innerText = `INICIAR (${c})`;
     }
 
-    function startRoute() {
+    // =========================
+    // Search client
+    // =========================
+    function searchClientById() {
+      const q = el('q-client')?.value?.trim();
+      if (!q) return;
+      const cli = (state.db?.clientes || []).find(c => String(c.id) === String(q));
+      if (!cli) return toast('No lo tengo cargado. (Cargá su zona)', 'error');
+
+      // armamos ruta por su zona y lo ponemos primero
+      state.sel = new Set([String(cli.localidad_key || cli.localidad || '').toUpperCase()]);
+      startRoute();
+      setTimeout(() => {
+        state.route.active = state.route.active.filter(c => String(c.id) !== String(q));
+        state.route.active.unshift(cli);
+        state.route.done.delete(String(q));
+        renderRoute();
+        toast(`Cliente #${q} al frente`, 'success');
+      }, 50);
+    }
+
+    // =========================
+    // Start route + jornada sync
+    // =========================
+    async function startRoute() {
       const k = Array.from(state.sel).map(x => String(x));
       if (!k.length) return;
 
@@ -543,16 +947,32 @@
       state.route.done = new Set();
       state.route.currentZones = k.map(normKey);
 
-      // filtrar clientes por zona
       const all = (state.db.clientes || []);
       const selected = new Set(k.map(normKey));
       state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
 
-      // ir a ruta y render
+      // start jornada backend (si existe)
+      // NOTE: no bloquea UI; si falla, no rompe
+      (async () => {
+        try {
+          const resp = await api('start_jornada', { vendedor: state.user.vendedor, zonas: k }, 20000);
+          if (resp && resp.activa) {
+            state.jornada = { activa:true, jornadaId: resp.jornadaId, turno: resp.turno, zonas: resp.zonas || k };
+            updateChatSub_();
+          }
+        } catch (_) {}
+      })();
+
       switchView('view-route');
       renderRoute();
+
+      // persist week as "en curso" no, solo al marcar eventos.
+      toast(`Ruta lista: ${k.length} zona(s)`, 'success');
     }
 
+    // =========================
+    // Suggestions
+    // =========================
     function showSuggestions(list) {
       const c = el('suggestions-list'); if (!c) return;
       c.innerHTML = '';
@@ -575,6 +995,9 @@
       el('modal-suggestions')?.classList.add('hidden');
     }
 
+    // =========================
+    // Route render
+    // =========================
     function renderRoute() {
       const c = el('route-container'); if (!c) return;
       c.innerHTML = '';
@@ -586,10 +1009,10 @@
 
       if (!pends.length) {
         c.innerHTML = `
-          <div class="text-center mt-20 opacity-50">
+          <div class="text-center mt-20 opacity-60">
             <i class="fas fa-clipboard-check text-6xl text-slate-300 mb-4"></i>
             <h3 class="text-xl font-bold dark:text-white">¡Ruta Completada!</h3>
-            <p class="text-xs mt-2 text-slate-400">Si te faltó alguien, usá el botón <b>No llegué</b> antes de terminar.</p>
+            <p class="text-xs mt-2 text-slate-400">Si te faltó alguien, usá el botón <b>No llegué</b> antes de finalizar.</p>
           </div>
         `;
         return;
@@ -605,7 +1028,7 @@
 
         const div = document.createElement('div'); div.id = `card-${cli.id}`;
         div.className = state.mode === 'focus'
-          ? 'h-[75vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
+          ? 'h-[70vh] flex flex-col justify-between bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
           : 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
 
         div.innerHTML = `
@@ -620,6 +1043,14 @@
           <div class="grid grid-cols-4 gap-2 mt-4 pl-3">
             <button onclick="quickSale('${escapeAttr(String(cli.id))}')" class="col-span-3 bg-slate-900 dark:bg-blue-600 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta</button>
             <button onclick="openReg('${escapeAttr(String(cli.id))}')" class="col-span-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-white rounded-xl active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
+          </div>
+          <div class="mt-3 pl-3 flex gap-2">
+            <button onclick="openChatWithClientHint('${escapeAttr(String(cli.id))}')" class="btn-press flex-1 py-2 rounded-xl font-black text-xs bg-indigo-600 text-white flex items-center justify-center gap-2">
+              <i class="fas fa-headset"></i> Pedir guión
+            </button>
+            <button onclick="openOrderFromClient('${escapeAttr(String(cli.id))}')" class="btn-press flex-1 py-2 rounded-xl font-black text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
+              <i class="fas fa-receipt"></i> Último pedido
+            </button>
           </div>
         `;
         c.appendChild(div);
@@ -654,8 +1085,15 @@
       return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
     }
 
+    function toggleViewMode() {
+      state.mode = state.mode === 'list' ? 'focus' : 'list';
+      const ic = el('icon-view-mode');
+      if (ic) ic.className = state.mode === 'list' ? 'fas fa-list' : 'fas fa-crosshairs';
+      renderRoute();
+    }
+
     // =========================
-    // REGISTROS (INSTANT UI + BACKGROUND + OUTBOX)
+    // Registros (optimistic + batch)
     // =========================
     function openReg(id) {
       state.cliId = id;
@@ -669,7 +1107,6 @@
       el('reg-info').innerHTML = info;
       el('modal-reg').classList.remove('hidden');
 
-      // reset visual selection
       document.querySelectorAll('.reason-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-blue-500'));
     }
 
@@ -696,23 +1133,26 @@
     function doRegOptimistic(id, tipo, motivo, observacion) {
       const cid = String(id);
 
-      // 1) UI instantánea
+      // UI instant
       state.route.done.add(cid);
       renderRoute();
 
-      // 2) actualizar "ÚLTIMA" de la zona (cache + ui)
+      // zona last + semana
       const cli = (state.db.clientes || []).find(x => String(x.id) === cid);
       const zKey = getClientZoneKey(cli);
-      if (zKey) touchZoneLast(zKey, tipo, motivo);
+      if (zKey) {
+        touchZoneLast(zKey, tipo, motivo);
+        markWeekZone_(zKey, motivo);
+      }
 
-      // 3) Background sync (con outbox si falla)
+      // backend / outbox
       const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
       sendInBackground('registrar_movimiento', payload);
     }
 
     async function sendInBackground(action, payload) {
       try {
-        await api(action, payload);
+        await api(action, payload, 20000);
         toast('Guardado', 'success');
         flushOutbox();
       } catch (e) {
@@ -721,6 +1161,9 @@
       }
     }
 
+    // =========================
+    // Outbox
+    // =========================
     function enqueueOutbox(action, payload) {
       const list = getOutbox();
       list.push({ action, payload, ts: Date.now() });
@@ -744,13 +1187,14 @@
 
       state.outboxFlushing = true;
       try {
-        await api('ping', {});
+        await api('ping', {}, 15000);
+
         let remaining = [...list];
         let sentCount = 0;
 
         for (const item of list) {
           try {
-            await api(item.action, item.payload);
+            await api(item.action, item.payload, 25000);
             sentCount++;
             remaining.shift();
           } catch (_) {
@@ -767,49 +1211,257 @@
       }
     }
 
-    function toggleViewMode() {
-      state.mode = state.mode === 'list' ? 'focus' : 'list';
-      const ic = el('icon-view-mode');
-      if (ic) ic.className = state.mode === 'list' ? 'fas fa-list' : 'fas fa-crosshairs';
-      renderRoute();
-    }
-
     // =========================
-    // NO LLEGUÉ (ZONA)
+    // NO LLEGUÉ ZONA (modal + batch)
     // =========================
-    function markZoneNoLlegue() {
+    function openNoLlegueZoneModal() {
       const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
       if (!pends.length) return toast('No hay pendientes', 'error');
 
-      const n = pends.length;
-      const ok = confirm(`¿Marcar ${n} clientes como "No llegué" para esta zona?\n(Queda registrado en Bitácora / offline si no hay señal)`);
-      if (!ok) return;
+      const zones = (state.route.currentZones || []).map(normKey).filter(Boolean);
+      el('nlz-count').textContent = String(pends.length);
+      el('nlz-zones').textContent = zones.length ? zones.join(', ') : '—';
+      el('nlz-sub').textContent = `Esto registra bitácora para ${pends.length} clientes pendientes.`;
 
-      // marcar done y encolar movimientos (sin spam de toasts)
-      for (const cli of pends) {
-        const cid = String(cli.id);
-        state.route.done.add(cid);
+      el('nlz-note').value = '';
+      el('modal-no-llegue-zone').classList.remove('hidden');
+      el('modal-no-llegue-zone').classList.add('flex');
+      setTimeout(()=>el('nlz-note')?.focus(), 120);
+    }
 
-        const payload = {
-          vendedor: state.user.vendedor,
-          clienteId: cid,
-          tipo: 'visita',
-          motivo: 'No llegué',
-          observacion: 'Zona'
-        };
-        enqueueOutbox('registrar_movimiento', payload);
-      }
+    function closeNoLlegueZoneModal() {
+      const m = el('modal-no-llegue-zone');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
 
-      // actualizar last por cada zona seleccionada
-      (state.route.currentZones || []).forEach(z => touchZoneLast(z, 'visita', 'No llegué'));
+    function confirmNoLlegueZone() {
+      const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
+      if (!pends.length) return closeNoLlegueZoneModal();
 
+      const note = String(el('nlz-note').value || '').trim();
+      const alsoWeek = !!el('nlz-also-week')?.checked;
+
+      // 1) UI instant
+      for (const cli of pends) state.route.done.add(String(cli.id));
       renderRoute();
-      toast(`Marcados ${n} como "No llegué"`, 'success');
-      flushOutbox();
+
+      // 2) zona last + week
+      const zones = (state.route.currentZones || []).map(normKey).filter(Boolean);
+      zones.forEach(z => {
+        touchZoneLast(z, 'visita', 'No llegué');
+        if (alsoWeek) markWeekZone_(z, 'No llegué');
+      });
+
+      // 3) backend batch (1 request) + offline outbox
+      const items = pends.map(cli => ({
+        clienteId: String(cli.id),
+        tipo: 'visita',
+        motivo: 'No llegué',
+        observacion: note ? `Zona · ${note}` : 'Zona'
+      }));
+
+      closeNoLlegueZoneModal();
+      toast(`Marcados ${items.length} como "No llegué"`, 'success');
+
+      // prefer batch endpoint (exists in GS)
+      sendInBackground('registrar_batch', { vendedor: state.user.vendedor, items });
     }
 
     // =========================
-    // CHAT (typing + oportunidades)
+    // Finalizar turno / día (jornada)
+    // =========================
+    function finalizeTurnOrDay() {
+      // UX simple: si hay jornada activa en backend, la finalizamos.
+      // Si falla o no hay, no rompe.
+      const j = state.jornada;
+      const nowTurn = turnoNow_();
+
+      // si no hay jornadaId, intentamos pedirla
+      if (!j?.jornadaId) {
+        toast('Cerrando (sin jornada id)...', 'error');
+        return;
+      }
+
+      // guardamos pendientes no tocados? (si quedan, recomendamos usar No llegué antes)
+      const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
+      const marcarPendientes = false; // acá NO marcamos auto (vos ya tenés modal No llegué)
+      const pendientes = pends.map(x => String(x.id));
+
+      el('loader')?.classList.remove('hidden');
+      (async () => {
+        try {
+          await api('finalizar_jornada', {
+            vendedor: state.user.vendedor,
+            jornadaId: j.jornadaId,
+            marcarPendientes,
+            pendientes,
+            notas: `Finalizado desde app · turno ahora ${nowTurn}`
+          }, 25000);
+
+          state.jornada = { activa:false, jornadaId:null, turno: nowTurn, zonas:[] };
+          updateChatSub_();
+          toast('Jornada finalizada', 'success');
+        } catch (e) {
+          toast('No pude finalizar (sin señal): queda para luego', 'error');
+          // dejamos en cola
+          enqueueOutbox('finalizar_jornada', {
+            vendedor: state.user.vendedor,
+            jornadaId: j.jornadaId,
+            marcarPendientes,
+            pendientes,
+            notas: `Finalizado offline · turno ahora ${nowTurn}`
+          });
+        } finally {
+          el('loader')?.classList.add('hidden');
+          flushOutbox();
+        }
+      })();
+    }
+
+    // =========================
+    // Semana modal
+    // =========================
+    function openWeekModal() {
+      const wk = getWeekProgress_();
+      const zonesDone = wk.zones || {};
+      const allZones = (state.db?.zonas || []).map(z => normKey(z.nombre)).filter(Boolean);
+
+      const doneKeys = Object.keys(zonesDone);
+      const doneCount = doneKeys.length;
+      const pendingCount = Math.max(0, allZones.length - doneCount);
+
+      el('week-sub').textContent = `Semana ${wk.weekId} · Turno ahora: ${turnoNow_()}`;
+      el('week-done').textContent = String(doneCount);
+      el('week-pending').textContent = String(pendingCount);
+
+      const list = el('week-list');
+      list.innerHTML = '';
+
+      // Build combined list
+      const merged = [];
+      for (const z of allZones) {
+        const i = zonesDone[z] || null;
+        merged.push({
+          zona: z,
+          done: !!i,
+          ts: i?.ts || null,
+          turno: i?.turno || '',
+          motivo: i?.motivo || ''
+        });
+      }
+      merged.sort((a,b)=> Number(b.done)-Number(a.done) || (Number(b.ts||0)-Number(a.ts||0)) || a.zona.localeCompare(b.zona));
+
+      merged.forEach(x => {
+        const row = document.createElement('div');
+        row.className = 'p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-between gap-3';
+
+        const left = document.createElement('div');
+        left.className = 'min-w-0';
+        left.innerHTML = `
+          <div class="font-black uppercase text-sm truncate ${x.done ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200'}">
+            ${x.done ? '<i class="fas fa-check-circle"></i>' : '<i class="far fa-circle"></i>'} ${escapeHtml(x.zona)}
+          </div>
+          <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+            ${x.done ? `${escapeHtml(fmtDateTime(new Date(x.ts),'short'))} · ${escapeHtml(x.turno || '')}${x.motivo ? ' · ' + escapeHtml(x.motivo) : ''}` : 'Pendiente esta semana'}
+          </div>
+        `;
+
+        const btn = document.createElement('button');
+        btn.className = 'btn-press px-3 py-2 rounded-xl font-black text-xs bg-blue-600 text-white shrink-0';
+        btn.innerHTML = `<i class="fas fa-location-arrow"></i> Ir`;
+        btn.onclick = () => {
+          closeWeekModal();
+          state.sel = new Set([x.zona]);
+          startRoute();
+        };
+
+        row.appendChild(left);
+        row.appendChild(btn);
+        list.appendChild(row);
+      });
+
+      el('modal-week').classList.remove('hidden');
+      el('modal-week').classList.add('flex');
+    }
+
+    function closeWeekModal() {
+      const m = el('modal-week');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function resetWeekProgress() {
+      const ok = confirm('¿Resetear semana? (Solo borra la persistencia local)');
+      if (!ok) return;
+      const wk = { weekId: weekId_(), zones: {} };
+      setWeekProgress_(wk);
+      toast('Semana reseteada', 'success');
+      closeWeekModal();
+      renderGrid(false);
+    }
+
+    function askAIWeekPlan() {
+      closeWeekModal();
+      toggleAIChat(true);
+      setTimeout(() => {
+        const wk = getWeekProgress_();
+        const done = Object.keys(wk.zones || {}).slice(0, 30).join(', ') || '(ninguna)';
+        const msg =
+`Quiero plan para esta semana.
+Semana: ${wk.weekId}
+Zonas hechas: ${done}
+Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
+        el('chat-in').value = msg;
+      }, 250);
+    }
+
+    // =========================
+    // Onboarding (first time) -> se manda al chat para que quede LOG
+    // =========================
+    function maybeShowOnboard_() {
+      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+      const done = localStorage.getItem(ONBOARD_KEY(v));
+      if (done) return;
+      // show
+      el('modal-onboard').classList.remove('hidden');
+      el('modal-onboard').classList.add('flex');
+      setTimeout(()=>el('ob-name')?.focus(), 150);
+    }
+
+    async function closeOnboard(save) {
+      const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+      el('modal-onboard').classList.add('hidden');
+      el('modal-onboard').classList.remove('flex');
+
+      localStorage.setItem(ONBOARD_KEY(v), '1');
+
+      if (!save) return;
+
+      const name = String(el('ob-name').value || '').trim() || (state.user?.user || '').toUpperCase();
+      const style = String(el('ob-style').value || 'directo');
+      const shift = String(el('ob-shift').value || 'doble');
+      const pain = String(el('ob-pain').value || '').trim();
+
+      // Guardamos local (para UI)
+      try {
+        localStorage.setItem(`ml_profile_${CACHE_VER}_${String(v).toUpperCase()}`, JSON.stringify({ name, style, shift, pain, ts: Date.now() }));
+      } catch (_) {}
+
+      // Enviamos al chatbot como mensaje "perfil" (queda registrado en IA_ChatLog para hilo)
+      try {
+        await api('chatbot', {
+          vendedor: state.user.vendedor,
+          mensaje: `Perfil vendedor (para recordarlo): Me llamo ${name}. Estilo preferido: ${style}. Turnos: ${shift}. Lo que más me cuesta: ${pain || '—'}.`
+        }, 25000);
+        toast('Perfil guardado (hilo)', 'success');
+      } catch (_) {
+        // si no hay señal, no es grave
+      }
+    }
+
+    // =========================
+    // CHAT (typing + oportunidades + prompts rápidos)
     // =========================
     function toggleAIChat(s) {
       const m = el('modal-chat'), p = el('chat-panel');
@@ -824,6 +1476,26 @@
       }
     }
 
+    function openChatWithClientHint(id) {
+      const cli = (state.db?.clientes || []).find(c => String(c.id) === String(id));
+      const name = cli ? displayName(cli) : `#${id}`;
+      toggleAIChat(true);
+      setTimeout(()=> {
+        el('chat-in').value = `Estoy por entrar a ${name} (#${id}). Dame un guión corto si me dice: "ya tengo proveedor" y qué registrar después.`;
+      }, 250);
+    }
+
+    function openOrderFromClient(id) {
+      const cli = (state.db?.clientes || []).find(c => String(c.id) === String(id));
+      const name = cli ? displayName(cli) : `#${id}`;
+      // pedimos al chat el ticket (backend determinístico). Mostrará ticket.
+      toggleAIChat(true);
+      setTimeout(()=> {
+        el('chat-in').value = `Último pedido del cliente ${name} #${id}`;
+        sendChat();
+      }, 260);
+    }
+
     async function sendChat() {
       const i = el('chat-in');
       const t = i?.value?.trim();
@@ -835,7 +1507,7 @@
       const typingEl = addTyping();
 
       try {
-        const res = await api('chatbot', { vendedor: state.user.vendedor, mensaje: t });
+        const res = await api('chatbot', { vendedor: state.user.vendedor, mensaje: t }, 30000);
         const r = res?.respuesta || {};
 
         removeTyping(typingEl);
