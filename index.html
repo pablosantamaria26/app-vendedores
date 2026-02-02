@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Mercado Limpio App</title>
+  <title>Mercado Limpio Ventas</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -97,6 +97,24 @@
 
     /* better focus for inputs */
     input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,.25); border-color: rgba(59,130,246,.7) !important; }
+
+    /* ====== NUEVO: dropdown search ====== */
+    .search-dd {
+      position: absolute;
+      left: 0; right: 0;
+      top: calc(100% + 8px);
+      z-index: 40;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,.35);
+      backdrop-filter: blur(10px);
+    }
+    html:not(.dark) .search-dd { background: rgba(255,255,255,.98); }
+    html.dark .search-dd { background: rgba(15,23,42,.98); border-color: rgba(51,65,85,.9); }
+    .search-dd-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; cursor:pointer; }
+    .search-dd-row:hover { background: rgba(59,130,246,.08); }
+    .search-dd-title { font-weight: 900; font-size: 12px; text-transform: uppercase; }
+    .search-dd-sub { font-size: 11px; opacity: .8; margin-top: 2px; }
   </style>
 </head>
 
@@ -150,14 +168,23 @@
 
     <div class="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
       <div class="flex gap-2">
-        <div class="flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <i class="fas fa-magnifying-glass text-slate-400"></i>
-          <input id="q-client" type="text" inputmode="numeric" placeholder="Buscar cliente por ID..." class="flex-1 bg-transparent border-0 text-sm dark:text-white outline-none" />
-          <button class="btn-press px-3 py-2 rounded-xl bg-blue-600 text-white font-black text-xs" onclick="searchClientById()">IR</button>
+        <div class="flex-1 relative">
+          <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <i class="fas fa-magnifying-glass text-slate-400"></i>
+            <input id="q-client" type="text" inputmode="numeric" placeholder="Buscar cliente por ID..." class="flex-1 bg-transparent border-0 text-sm dark:text-white outline-none" />
+            <button class="btn-press px-3 py-2 rounded-xl bg-blue-600 text-white font-black text-xs" onclick="searchClientById()">IR</button>
+            <!-- NUEVO: abre el modal de búsqueda si querés (opcional, no rompe) -->
+            <button class="btn-press px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-100 font-black text-xs" onclick="openClientSearchModal()">
+              <i class="fas fa-list"></i>
+            </button>
+          </div>
+
+          <!-- NUEVO: dropdown live results -->
+          <div id="q-dd" class="search-dd hidden"></div>
         </div>
       </div>
       <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-        Carga instantánea: cache local + refresh en segundo plano
+        
       </p>
     </div>
 
@@ -463,6 +490,103 @@
     </div>
   </div>
 
+  <!-- ✅ NUEVO: MODAL CLIENTE (BUSCADOR) -->
+  <div id="modal-client" class="fixed inset-0 z-[85] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div class="min-w-0">
+          <p class="text-[10px] font-black uppercase tracking-widest text-blue-500">Cliente</p>
+          <h3 id="client-title" class="text-lg font-black dark:text-white truncate">—</h3>
+          <p id="client-sub" class="text-xs mt-1 text-slate-500 dark:text-slate-400 truncate">—</p>
+        </div>
+        <button onclick="closeClientModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">ID</div>
+          <div id="client-id" class="text-2xl font-black mt-1">—</div>
+        </div>
+        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Zona</div>
+          <div id="client-zone" class="text-sm font-black mt-1 truncate">—</div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Dirección</div>
+        <div id="client-address" class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold text-slate-700 dark:text-slate-200">
+          —
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Último pedido</div>
+        <div class="ticket-box">
+          <div id="client-ticket" style="white-space: pre-wrap;"></div>
+        </div>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <button onclick="clientGoTo()" class="btn-press py-3 rounded-xl font-black bg-green-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-location-crosshairs"></i> Ir a cliente
+        </button>
+        <button onclick="clientOpenTicket()" class="btn-press py-3 rounded-xl font-black bg-blue-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-receipt"></i> Ver ticket
+        </button>
+      </div>
+
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <button onclick="clientCopyAddress()" class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
+          <i class="fas fa-copy"></i> Copiar dirección
+        </button>
+        <button onclick="closeClientModal()" class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ NUEVO: MODAL BUSCADOR (lista grande, opcional) -->
+  <div id="modal-client-search" class="fixed inset-0 z-[84] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-indigo-500">Buscador</p>
+          <h3 class="text-lg font-black dark:text-white">Buscar cliente</h3>
+          <p class="text-xs mt-1 text-slate-500 dark:text-slate-400">Escribí nombre, dirección o ID (en vivo).</p>
+        </div>
+        <button onclick="closeClientSearchModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-magnifying-glass text-slate-400"></i>
+          <input id="q-client-modal" type="text" placeholder="Ej: 1234 / almacén / calle..." class="flex-1 bg-transparent border-0 text-sm dark:text-white outline-none" />
+          <button class="btn-press px-3 py-2 rounded-xl bg-blue-600 text-white font-black text-xs" onclick="clientModalSearchNow()">BUSCAR</button>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Resultados</div>
+        <div id="client-search-list" class="max-h-72 overflow-y-auto no-scrollbar space-y-2"></div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button onclick="closeClientSearchModal()" class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Cerrar
+        </button>
+        <button onclick="closeClientSearchModal()" class="btn-press py-3 rounded-xl font-black bg-indigo-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-check"></i> Listo
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================
     // CONFIG / STATE
@@ -490,7 +614,11 @@
       location: null,
       currentOrder: { title: '', ticket: '' },
       outboxFlushing: false,
-      jornada: { activa:false, jornadaId:null, turno:null, zonas:[] }
+      jornada: { activa:false, jornadaId:null, turno:null, zonas:[] },
+
+      // ✅ NUEVO: buscador + cliente modal
+      search: { ddOpen:false, ddItems:[], lastQ:'', busy:false, t:null },
+      clientView: { id:null, cliente:null, ultimoPedido:null, ticket:'' }
     };
 
     const el = id => document.getElementById(id);
@@ -531,6 +659,9 @@
 
       // chat enter
       el('chat-in')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+
+      // ✅ NUEVO: buscador en vivo (dropdown + modal)
+      initClientSearchUX_();
 
       // geoloc
       if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
@@ -916,24 +1047,371 @@
     }
 
     // =========================
-    // Search client
+    // ✅ NUEVO: buscador live + lookup + modales
     // =========================
-    function searchClientById() {
+    function initClientSearchUX_() {
+      const inp = el('q-client');
+      const dd = el('q-dd');
+
+      // Enter en buscador -> IR
+      inp?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') searchClientById(); });
+
+      // Live search (debounce)
+      inp?.addEventListener('input', () => {
+        const q = String(inp.value || '').trim();
+        state.search.lastQ = q;
+        if (state.search.t) clearTimeout(state.search.t);
+
+        state.search.t = setTimeout(async () => {
+          await liveSearchRender_(q);
+        }, 180);
+      });
+
+      // Click fuera -> cerrar dropdown
+      document.addEventListener('click', (ev) => {
+        const t = ev.target;
+        const root = inp?.closest('.relative');
+        if (!root) return;
+        if (root.contains(t)) return;
+        hideSearchDropdown_();
+      });
+
+      // Modal search input
+      el('q-client-modal')?.addEventListener('input', () => {
+        const q = String(el('q-client-modal').value || '').trim();
+        if (state.search.t) clearTimeout(state.search.t);
+        state.search.t = setTimeout(async () => {
+          await renderClientSearchList_(q);
+        }, 180);
+      });
+      el('q-client-modal')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') clientModalSearchNow(); });
+    }
+
+    async function liveSearchRender_(q) {
+      const dd = el('q-dd');
+      if (!dd) return;
+
+      const query = String(q || '').trim();
+      if (!query || query.length < 2) return hideSearchDropdown_();
+
+      // Si es solo números y >=4, igual hacemos live (devuelve 1-2)
+      let items = [];
+      try {
+        // Online -> backend
+        if (navigator.onLine && state.user?.vendedor) {
+          const res = await api('clientes_search', { vendedor: state.user.vendedor, q: query, limit: 8 }, 12000);
+          items = res?.items || [];
+        } else {
+          // Offline -> fallback local (cache)
+          items = localSearchFallback_(query, 8);
+        }
+      } catch (_) {
+        // fallback local
+        items = localSearchFallback_(query, 8);
+      }
+
+      if (!items.length) return hideSearchDropdown_();
+
+      dd.innerHTML = '';
+      items.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'search-dd-row';
+        row.onclick = () => {
+          hideSearchDropdown_();
+          lookupAndOpenClient_(String(it.id || '').trim());
+        };
+
+        const title = `#${String(it.id||'')} ${String(it.nombre_full || it.nombre || '').trim() || 'SIN NOMBRE'}`;
+        const sub = `${String(it.direccion || '').trim()} · ${String(it.localidad || '').trim()}`;
+
+        row.innerHTML = `
+          <div class="min-w-0">
+            <div class="search-dd-title truncate">${escapeHtml(title)}</div>
+            <div class="search-dd-sub truncate">${escapeHtml(sub)}</div>
+          </div>
+          <div class="text-blue-600 dark:text-blue-400 font-black text-xs"><i class="fas fa-arrow-right"></i></div>
+        `;
+        dd.appendChild(row);
+      });
+
+      dd.classList.remove('hidden');
+      state.search.ddOpen = true;
+    }
+
+    function hideSearchDropdown_() {
+      const dd = el('q-dd');
+      if (!dd) return;
+      dd.classList.add('hidden');
+      dd.innerHTML = '';
+      state.search.ddOpen = false;
+    }
+
+    function localSearchFallback_(q, limit=8) {
+      const query = _normText_(String(q||''));
+      if (!query) return [];
+      const list = state.db?.clientes || [];
+      const out = [];
+      for (const c of list) {
+        const hay = _normText_(`${c.id} ${c.nombre_full || ''} ${c.nombre || ''} ${c.apellido || ''} ${c.direccion || ''} ${c.localidad || ''}`);
+        if (!hay.includes(query)) continue;
+        out.push({
+          id: c.id,
+          nombre_full: c.nombre_full,
+          nombre: c.nombre,
+          apellido: c.apellido,
+          direccion: c.direccion,
+          localidad: c.localidad
+        });
+        if (out.length >= limit) break;
+      }
+      return out;
+    }
+
+    async function lookupAndOpenClient_(clienteId) {
+      const cid = String(clienteId || '').trim();
+      if (!cid) return;
+
+      el('loader')?.classList.remove('hidden');
+      try {
+        // Prefer backend lookup (seguro por vendedor + ticket)
+        const res = await api('cliente_lookup', { vendedor: state.user.vendedor, clienteId: cid }, 20000);
+        const cli = res?.cliente || null;
+        const ult = res?.ultimoPedido || null;
+        const ticket = String(res?.ticket || '');
+
+        // ✅ Inyectamos en cache local para poder "Ir a cliente"
+        if (cli) upsertClientInLocalDB_(cli);
+
+        openClientModal_(cid, cli, ult, ticket);
+      } catch (e) {
+        // Fallback: buscar en cache local (sin ticket seguro)
+        const cli = (state.db?.clientes || []).find(c => String(c.id) === cid) || null;
+        if (!cli) {
+          toast(e?.message || 'No pude buscar (sin señal / no está en cache)', 'error');
+          return;
+        }
+        openClientModal_(cid, cli, null, '');
+        toast('Modo offline: sin ticket (podés pedirlo al chat)', 'error');
+      } finally {
+        el('loader')?.classList.add('hidden');
+      }
+    }
+
+    function upsertClientInLocalDB_(cli) {
+      if (!cli) return;
+      if (!state.db) state.db = {};
+      if (!Array.isArray(state.db.clientes)) state.db.clientes = [];
+
+      // normalizamos shape mínimo como el resto del front
+      const normalized = {
+        id: String(cli.id || cli.NumeroCliente || cli.numeroCliente || cli.Numero || cli.numero || cli.clienteId || cli.ClienteId || ''),
+        nombre: cli.nombre || cli.Nombre || '',
+        apellido: cli.apellido || cli.Apellido || '',
+        nombre_full: cli.nombre_full || cli.nombreFull || cli.NombreCompleto || cli.nombreCompleto || cli.nombre || '',
+        direccion: cli.direccion || cli.Domicilio || cli.domicilio || '',
+        localidad: cli.localidad || cli.Localidad || '',
+        localidad_key: normKey(cli.localidad_key || cli.localidad || cli.Localidad || ''),
+        lat: cli.lat ?? cli.Lat ?? '',
+        lng: cli.lng ?? cli.Lng ?? '',
+        vendedor: cli.vendedor || cli.Vendedor || ''
+      };
+
+      if (!normalized.id) return;
+
+      const idx = state.db.clientes.findIndex(x => String(x.id) === String(normalized.id));
+      if (idx >= 0) state.db.clientes[idx] = { ...state.db.clientes[idx], ...normalized };
+      else state.db.clientes.unshift(normalized);
+    }
+
+    function openClientModal_(cid, cli, ult, ticket) {
+      state.clientView = { id: String(cid||''), cliente: cli || null, ultimoPedido: ult || null, ticket: String(ticket||'') };
+
+      const name = cli ? displayName(cli) : `#${cid}`;
+      const loc = cli?.localidad || cli?.Localidad || '';
+      const dir = cli?.direccion || cli?.Domicilio || cli?.domicilio || '';
+
+      el('client-title').textContent = String(name || '').toUpperCase();
+      el('client-sub').textContent = loc ? `Zona: ${String(loc).toUpperCase()}` : '—';
+
+      el('client-id').textContent = `#${cid}`;
+      el('client-zone').textContent = String(loc || '—').toUpperCase();
+      el('client-address').textContent = String(dir || '—');
+
+      let t = String(ticket || '').trim();
+      if (!t) {
+        // si no hay ticket pero hay ultimo pedido
+        if (ult?.fechaFmt || ult?.fechaISO || ult?.productos) {
+          const fecha = ult?.fechaFmt || ult?.fechaISO || '';
+          const prod = ult?.productos || '';
+          t = `🧾 ÚLTIMO PEDIDO\nCliente: #${cid} ${name}\nLocalidad: ${loc}\nFecha: ${fecha}\n\n${prod || '(Sin detalle de productos)'}`;
+        } else {
+          t = '(Sin ticket disponible. Si estás offline, pedilo por el chat.)';
+        }
+      }
+      el('client-ticket').textContent = t;
+
+      const m = el('modal-client');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeClientModal() {
+      const m = el('modal-client');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function clientGoTo() {
+      const id = String(state.clientView?.id || '').trim();
+      if (!id) return;
+      closeClientModal();
+      goToClient(id);
+    }
+
+    function clientOpenTicket() {
+      const id = String(state.clientView?.id || '').trim();
+      const cli = state.clientView?.cliente || null;
+      const name = cli ? displayName(cli) : `#${id}`;
+      const ticket = String(state.clientView?.ticket || el('client-ticket')?.textContent || '');
+
+      // si no hay ticket real, disparo chat
+      if (!ticket || ticket.includes('Sin ticket')) {
+        closeClientModal();
+        toggleAIChat(true);
+        setTimeout(()=> {
+          el('chat-in').value = `Último pedido del cliente ${name} #${id}`;
+          sendChat();
+        }, 250);
+        return;
+      }
+
+      openOrderModal(`#${id} ${name}`, ticket);
+    }
+
+    function clientCopyAddress() {
+      const txt = String(el('client-address')?.textContent || '').trim();
+      if (!txt || txt === '—') return toast('Sin dirección', 'error');
+      copyPlainText(txt);
+      toast('Dirección copiada', 'success');
+    }
+
+    function openClientSearchModal() {
+      const m = el('modal-client-search');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      setTimeout(()=> el('q-client-modal')?.focus(), 150);
+
+      // precarga con lo que ya escribió
+      const q = String(el('q-client')?.value || '').trim();
+      if (q) {
+        el('q-client-modal').value = q;
+        renderClientSearchList_(q);
+      } else {
+        renderClientSearchList_('');
+      }
+    }
+
+    function closeClientSearchModal() {
+      const m = el('modal-client-search');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function clientModalSearchNow() {
+      const q = String(el('q-client-modal')?.value || '').trim();
+      renderClientSearchList_(q);
+    }
+
+    async function renderClientSearchList_(q) {
+      const list = el('client-search-list');
+      if (!list) return;
+
+      const query = String(q || '').trim();
+      list.innerHTML = '';
+
+      if (!query || query.length < 2) {
+        list.innerHTML = `
+          <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold text-slate-500 dark:text-slate-300">
+            Escribí al menos 2 letras o números.
+          </div>`;
+        return;
+      }
+
+      let items = [];
+      try {
+        if (navigator.onLine) {
+          const res = await api('clientes_search', { vendedor: state.user.vendedor, q: query, limit: 20 }, 15000);
+          items = res?.items || [];
+        } else {
+          items = localSearchFallback_(query, 20);
+        }
+      } catch (_) {
+        items = localSearchFallback_(query, 20);
+      }
+
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-bold text-slate-500 dark:text-slate-300">
+            No encontré resultados.
+          </div>`;
+        return;
+      }
+
+      items.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-between gap-3 cursor-pointer btn-press';
+        row.onclick = () => {
+          closeClientSearchModal();
+          lookupAndOpenClient_(String(it.id||'').trim());
+        };
+
+        const title = `#${String(it.id||'')} ${(String(it.nombre_full || it.nombre || '').trim() || 'SIN NOMBRE').toUpperCase()}`;
+        const sub = `${String(it.direccion || '').trim()} · ${String(it.localidad || '').trim()}`;
+
+        row.innerHTML = `
+          <div class="min-w-0">
+            <div class="font-black text-sm truncate dark:text-white">${escapeHtml(title)}</div>
+            <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">${escapeHtml(sub)}</div>
+          </div>
+          <div class="text-blue-600 dark:text-blue-400 font-black text-xs"><i class="fas fa-arrow-right"></i></div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    // =========================
+    // Search client (MISMA FUNCIÓN, ahora mejor)
+    // =========================
+    async function searchClientById() {
       const q = el('q-client')?.value?.trim();
       if (!q) return;
-      const cli = (state.db?.clientes || []).find(c => String(c.id) === String(q));
-      if (!cli) return toast('No lo tengo cargado. (Cargá su zona)', 'error');
 
-      // armamos ruta por su zona y lo ponemos primero
-      state.sel = new Set([String(cli.localidad_key || cli.localidad || '').toUpperCase()]);
-      startRoute();
-      setTimeout(() => {
-        state.route.active = state.route.active.filter(c => String(c.id) !== String(q));
-        state.route.active.unshift(cli);
-        state.route.done.delete(String(q));
-        renderRoute();
-        toast(`Cliente #${q} al frente`, 'success');
-      }, 50);
+      // ✅ 1) Si parece ID (4-6 dígitos), uso lookup seguro (backend)
+      if (/^\d{4,6}$/.test(q) && state.user?.vendedor) {
+        hideSearchDropdown_();
+        await lookupAndOpenClient_(q);
+        return;
+      }
+
+      // ✅ 2) Si no es sólo ID, abro modal de búsqueda con query
+      openClientSearchModal();
+      el('q-client-modal').value = q;
+      renderClientSearchList_(q);
+
+      // -----------------------
+      // LEGACY (no lo borro):
+      // -----------------------
+      // const cli = (state.db?.clientes || []).find(c => String(c.id) === String(q));
+      // if (!cli) return toast('No lo tengo cargado. (Cargá su zona)', 'error');
+      // state.sel = new Set([String(cli.localidad_key || cli.localidad || '').toUpperCase()]);
+      // startRoute();
+      // setTimeout(() => {
+      //   state.route.active = state.route.active.filter(c => String(c.id) !== String(q));
+      //   state.route.active.unshift(cli);
+      //   state.route.done.delete(String(q));
+      //   renderRoute();
+      //   toast(`Cliente #${q} al frente`, 'success');
+      // }, 50);
     }
 
     // =========================
@@ -1080,8 +1558,7 @@
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
-              * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
       return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).toFixed(1);
     }
 
@@ -1670,7 +2147,7 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
 
       const cli = (state.db?.clientes || []).find(c => String(c.id) === id);
       if (!cli) {
-        addMsg(`No tengo ese cliente cargado ahora. (Cargá la zona donde está #${id})`, 'bot');
+        addMsg(`No tengo ese cliente cargado ahora. (Usá el buscador para traerlo: #${id})`, 'bot');
         return;
       }
 
@@ -1747,6 +2224,15 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
 
     function escapeAttr(str) {
       return String(str || '').replaceAll("'", "\\'").replaceAll('"', '&quot;');
+    }
+
+    function _normText_(s) {
+      return String(s || "")
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
   </script>
 </body>
