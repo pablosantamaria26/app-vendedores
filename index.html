@@ -1028,8 +1028,11 @@ async function init() {
     setAppCache_(vend, state.db);
     renderGrid(false);
 
-    // ✅ Auto-resume: si había ruta restaurada hoy, volvemos a la ruta y aplicamos doneIds
-    if (restored && state.sel && state.sel.size > 0) {
+    // ✅ Determinar si hay ruta en progreso (restaurada hoy)
+    const routeInProgress = !!(restored && state.sel && state.sel.size > 0);
+
+    // ✅ (A) Auto-resume: si había ruta restaurada hoy, volvemos a la ruta y aplicamos doneIds
+    if (routeInProgress) {
       const all = (state.db.clientes || []);
       const selected = new Set(Array.from(state.sel).map(normKey));
       state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
@@ -1038,9 +1041,14 @@ async function init() {
       renderRoute();
     }
 
-    // sugerencias IA
-    if (d?.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
-      showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+    // ✅ (B) Plan sugerido: SOLO si NO hay ruta en progreso
+    //     y SOLO 1 vez por turno (mañana/tarde)
+    const sugg = d?.sugerencia_ia?.sugerencias?.rutas_sugeridas || [];
+    if (!routeInProgress && sugg.length) {
+      const turn = turnoNow_();
+      if (!hasSeenSuggestions_(turn)) {
+        showSuggestions(sugg); // markSuggestionsSeen_() se llama dentro de showSuggestions()
+      }
     }
 
     // jornada activa backend
@@ -1066,6 +1074,7 @@ async function init() {
     el('loader')?.classList.add('hidden');
   }
 }
+
 
 
     function updateChatSub_() {
@@ -1542,6 +1551,7 @@ async function init() {
         c.appendChild(b);
       });
       el('modal-suggestions')?.classList.remove('hidden');
+      markSuggestionsSeen_(turnoNow_()); // ✅ 1 vez por turno
     }
 
     function applySuggestions() {
@@ -2321,6 +2331,23 @@ function restoreRouteState_() {
 
 function clearRouteState_() {
   try { localStorage.removeItem(ROUTE_KEY_()); } catch (_) {}
+}
+
+// =========================
+// ✅ SUGGESTIONS (Plan Sugerido) — 1 vez por día y por turno
+// =========================
+function SUGG_SEEN_KEY_(turno) {
+  const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+  const t = String(turno || turnoNow_()).toUpperCase();
+  return `ml_sugg_seen_${CACHE_VER}_${String(v).toUpperCase()}_${todayKey_()}_${t}`;
+}
+
+function hasSeenSuggestions_(turno) {
+  try { return localStorage.getItem(SUGG_SEEN_KEY_(turno)) === '1'; } catch (_) { return false; }
+}
+
+function markSuggestionsSeen_(turno) {
+  try { localStorage.setItem(SUGG_SEEN_KEY_(turno), '1'); } catch (_) {}
 }
 
 
