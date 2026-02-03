@@ -1,5 +1,5 @@
 /* service-worker.js — Mercado Limpio Ventas (PWA) */
-const CACHE_VERSION = 'ml-pwa-v4';
+const CACHE_VERSION = 'ml-pwa-v5';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
