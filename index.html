@@ -1120,6 +1120,56 @@ async function init() {
       }
     }
 
+    function renderRouteSkeleton_() {
+  const c = el('route-container');
+  if (!c) return;
+
+  c.innerHTML = '';
+
+  // contador arriba (mientras carga)
+  const rc = el('route-count');
+  if (rc) rc.innerText = '...';
+
+  const count = (state.mode === 'focus') ? 1 : 6;
+
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+
+    d.className = (state.mode === 'focus')
+      ? 'h-[70vh] flex flex-col justify-between card-soft p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl skeleton'
+      : 'card-soft p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm skeleton';
+
+    d.innerHTML = `
+      <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-slate-300/40 dark:bg-slate-600/40"></div>
+
+      <div class="pl-3">
+        <div class="flex justify-between mb-2">
+          <div class="h-3 w-16 rounded bg-slate-200/70 dark:bg-slate-700/70"></div>
+          <div class="h-3 w-20 rounded bg-slate-200/70 dark:bg-slate-700/70"></div>
+        </div>
+
+        <div class="h-6 w-3/4 rounded bg-slate-200/70 dark:bg-slate-700/70 mb-2"></div>
+        <div class="h-3 w-11/12 rounded bg-slate-200/60 dark:bg-slate-700/60"></div>
+
+        <div class="h-4 w-40 rounded bg-slate-200/60 dark:bg-slate-700/60 mt-4"></div>
+
+        <div class="grid grid-cols-4 gap-2 mt-4">
+          <div class="col-span-3 h-11 rounded-xl bg-slate-200/70 dark:bg-slate-700/70"></div>
+          <div class="col-span-1 h-11 rounded-xl bg-slate-200/70 dark:bg-slate-700/70"></div>
+        </div>
+
+        <div class="mt-3 flex gap-2">
+          <div class="flex-1 h-10 rounded-xl bg-slate-200/70 dark:bg-slate-700/70"></div>
+          <div class="flex-1 h-10 rounded-xl bg-slate-200/70 dark:bg-slate-700/70"></div>
+        </div>
+      </div>
+    `;
+
+    c.appendChild(d);
+  }
+}
+
+
     function renderGrid(fromCache=false) {
       const g = el('zones-grid'); if (!g) return;
       g.innerHTML = '';
@@ -1676,21 +1726,7 @@ function updateDistances(pos) {
 }
 
 
-    function updateDistances(pos) {
-      if (pos) state.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      if (!state.location) return;
 
-      document.querySelectorAll('[id^="dist-"]').forEach(node => {
-        const lat = node.getAttribute('data-lat'), lng = node.getAttribute('data-lng');
-        if (lat && lng && isFinite(Number(lat)) && isFinite(Number(lng))) {
-          const km = parseFloat(getKm(state.location.lat, state.location.lng, Number(lat), Number(lng)));
-          if (!isFinite(km)) { node.innerHTML = ''; return; }
-          node.innerHTML = `<i class="fas fa-route"></i> ${km.toFixed(1)} km <span class="text-slate-400 font-normal ml-2">~${Math.round((km / 20) * 60)} min</span>`;
-        } else {
-          node.innerHTML = '';
-        }
-      });
-    }
 
     function getKm(lat1, lon1, lat2, lon2) {
       const R = 6371;
