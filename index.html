@@ -753,7 +753,19 @@
       initClientSearchUX_();
 
       // geoloc
-      if (navigator.geolocation) navigator.geolocation.watchPosition(updateDistances, null, { enableHighAccuracy: true });
+      
+
+      if (navigator.geolocation) {
+  navigator.geolocation.watchPosition(
+    updateDistances,
+    () => {}, // no-op
+    {
+      enableHighAccuracy: false,   // ✅ menor consumo / menos callbacks
+      maximumAge: 15000,           // ✅ usa cache 15s
+      timeout: 10000
+    }
+  );
+}
 
       // fast offline sync
       window.addEventListener('online', () => flushOutbox());
@@ -1000,7 +1012,7 @@
       }, 120000);
     }
 
-  // =========================
+ // =========================
 // INIT (instant cache + refresh)
 // =========================
 async function init() {
@@ -1032,8 +1044,10 @@ async function init() {
     renderGridSkeleton_();
   }
 
-  // 2) Refresh en background
-  el('loader')?.classList.remove('hidden');
+  // 2) Refresh en background (⚠️ NO TAPAR RUTA ACTIVA CON LOADER FULLSCREEN)
+  const shouldBlockUI = !routeInProgress; // ✅ clave
+  if (shouldBlockUI) el('loader')?.classList.remove('hidden');
+
   try {
     const d = await api('get_app_data', { vendedor: vend }, 25000);
     state.db = d || {};
@@ -1060,6 +1074,7 @@ async function init() {
       const selected = new Set(Array.from(state.sel).map(normKey));
       state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
 
+      // re-render solo si estoy mirando la ruta
       if (state.view === 'view-route') renderRoute();
     }
 
@@ -1079,11 +1094,13 @@ async function init() {
     // ✅ Sync offline outbox
     flushOutbox();
   } catch (e) {
+    // Si estoy en ruta, NO rompo la UX con overlay; solo aviso
     toast('Error cargando (usando cache)', 'error');
   } finally {
-    el('loader')?.classList.add('hidden');
+    if (shouldBlockUI) el('loader')?.classList.add('hidden');
   }
 }
+
 
 
  function renderRouteSkeleton_() {
@@ -1650,6 +1667,32 @@ async function init() {
 
       updateDistances();
     }
+
+    let _distT = 0;
+function updateDistances(pos) {
+  // ✅ Solo recalcular si estoy en la vista de ruta
+  if (state.view !== 'view-route') return;
+
+  // ✅ Throttle (cada 1200ms)
+  const now = Date.now();
+  if (now - _distT < 1200) return;
+  _distT = now;
+
+  if (pos) state.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+  if (!state.location) return;
+
+  document.querySelectorAll('[id^="dist-"]').forEach(node => {
+    const lat = node.getAttribute('data-lat'), lng = node.getAttribute('data-lng');
+    if (lat && lng && isFinite(Number(lat)) && isFinite(Number(lng))) {
+      const km = parseFloat(getKm(state.location.lat, state.location.lng, Number(lat), Number(lng)));
+      if (!isFinite(km)) { node.innerHTML = ''; return; }
+      node.innerHTML = `<i class="fas fa-route"></i> ${km.toFixed(1)} km <span class="text-slate-400 font-normal ml-2">~${Math.round((km / 20) * 60)} min</span>`;
+    } else {
+      node.innerHTML = '';
+    }
+  });
+}
+
 
     function updateDistances(pos) {
       if (pos) state.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
