@@ -1013,7 +1013,7 @@
     }
 
  // =========================
-// INIT (instant cache + refresh)
+// INIT (instant cache + refresh)  
 // =========================
 async function init() {
   switchView('view-dashboard');
@@ -1044,9 +1044,8 @@ async function init() {
     renderGridSkeleton_();
   }
 
-  // 2) Refresh en background (⚠️ NO TAPAR RUTA ACTIVA CON LOADER FULLSCREEN)
-  const shouldBlockUI = !routeInProgress; // ✅ clave
-  if (shouldBlockUI) el('loader')?.classList.remove('hidden');
+  // 2) Refresh en background (✅ ACÁ vuelve el overlay SIEMPRE, como antes)
+  el('loader')?.classList.remove('hidden');
 
   try {
     const d = await api('get_app_data', { vendedor: vend }, 25000);
@@ -1094,27 +1093,10 @@ async function init() {
     // ✅ Sync offline outbox
     flushOutbox();
   } catch (e) {
-    // Si estoy en ruta, NO rompo la UX con overlay; solo aviso
     toast('Error cargando (usando cache)', 'error');
   } finally {
-    if (shouldBlockUI) el('loader')?.classList.add('hidden');
+    el('loader')?.classList.add('hidden');
   }
-}
-
-
-
- function renderRouteSkeleton_() {
-  const box = el('route-container');
-  if (!box) return;
-
-  box.innerHTML = `
-    <div class="card-soft p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm skeleton">
-      <div class="h-4 w-2/3 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
-      <div class="h-3 w-full rounded-lg bg-slate-200 dark:bg-slate-800 mt-3"></div>
-      <div class="h-3 w-5/6 rounded-lg bg-slate-200 dark:bg-slate-800 mt-2"></div>
-      <div class="h-10 w-full rounded-xl bg-slate-200 dark:bg-slate-800 mt-4"></div>
-    </div>
-  `;
 }
 
 
