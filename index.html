@@ -791,45 +791,54 @@
     })();
 
     // =========================
-    // BOOT
-    // =========================
-    document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('ml_theme') === 'light') document.documentElement.classList.remove('dark');
+// BOOT
+// =========================
+document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('ml_theme') === 'light') document.documentElement.classList.remove('dark');
 
-      // Enter para login
-      el('login-user')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') el('login-pass')?.focus(); });
-      el('login-pass')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') handleLogin(); });
+  // =========================
+  // ✅ Micro vibración al tocar botones (Android / PWA)
+  // =========================
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target.closest('button, a, [role="button"], .btn, .mini-chip');
+    if (!t) return;
+    if (t.disabled || t.getAttribute('aria-disabled') === 'true') return;
+    haptic_(12);
+  }, { passive: true });
 
-      // chat enter
-      el('chat-in')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+  // Enter para login
+  el('login-user')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') el('login-pass')?.focus(); });
+  el('login-pass')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') handleLogin(); });
 
-      // ✅ NUEVO: buscador en vivo (dropdown + modal)
-      initClientSearchUX_();
+  // chat enter
+  el('chat-in')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
 
-      // geoloc
-      
+  // ✅ NUEVO: buscador en vivo (dropdown + modal)
+  initClientSearchUX_();
 
-      if (navigator.geolocation) {
-  navigator.geolocation.watchPosition(
-    updateDistances,
-    () => {}, // no-op
-    {
-      enableHighAccuracy: false,   // ✅ menor consumo / menos callbacks
-      maximumAge: 15000,           // ✅ usa cache 15s
-      timeout: 10000
-    }
-  );
-}
+  // geoloc
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+      updateDistances,
+      () => {}, // no-op
+      {
+        enableHighAccuracy: false,   // ✅ menor consumo / menos callbacks
+        maximumAge: 15000,           // ✅ usa cache 15s
+        timeout: 10000
+      }
+    );
+  }
 
-      // fast offline sync
-      window.addEventListener('online', () => flushOutbox());
-      setTimeout(() => flushOutbox(), 1200);
+  // fast offline sync
+  window.addEventListener('online', () => flushOutbox());
+  setTimeout(() => flushOutbox(), 1200);
 
-      // daily boundary
-      ensureDailyBoundaryReset_();
+  // daily boundary
+  ensureDailyBoundaryReset_();
 
-      if (state.user) init(); else switchView('view-login');
-    });
+  if (state.user) init(); else switchView('view-login');
+});
+
 
     // =========================
     // Utils: Dates / Keys
@@ -863,6 +872,16 @@
         ? `<i class="fas fa-moon"></i> TURNO: TARDE`
         : `<i class="fas fa-sun"></i> TURNO: MAÑANA`;
     }
+
+    // =========================
+    // ✅ HAPTIC / VIBRACIÓN
+   // =========================
+    function haptic_(ms = 12) {
+     try {
+      if ('vibrate' in navigator) navigator.vibrate(ms);
+     } catch (_) {}
+    }
+
 
     function parseDateValue(v) {
       if (v == null) return null;
