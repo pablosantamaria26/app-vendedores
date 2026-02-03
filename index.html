@@ -1005,6 +1005,9 @@
       switchView('view-dashboard');
       el('lbl-saludo').innerText = (state.user?.user || '').toUpperCase();
       setTurnoChip_();
+      // ✅ Si el vendedor ya tenía ruta empezada hoy, restauramos progreso local
+      const restored = restoreRouteState_();
+
 
       // 1) instant render from cache if exists
       const vend = state.user?.vendedor;
@@ -1024,6 +1027,17 @@
         state.db = d || {};
         setAppCache_(vend, state.db);
         renderGrid(false);
+
+        if (restored && state.sel && state.sel.size > 0) {
+     // reconstruye route.active desde db + filtros de done
+       const all = (state.db.clientes || []);
+      const selected = new Set(Array.from(state.sel).map(normKey));
+      state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
+    // refrescamos ruta para que se aplique doneIds
+      switchView('view-route');
+      renderRoute();
+     }
+
 
         // sugerencias IA
         if (d?.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
@@ -1503,6 +1517,7 @@
 
       switchView('view-route');
       renderRoute();
+      saveRouteState_(); // ✅ guarda ruta + doneIds (aunque esté vacío al empezar)
 
       toast(`Ruta lista: ${k.length} zona(s)`, 'success');
     }
@@ -1673,6 +1688,7 @@
 
       state.route.done.add(cid);
       renderRoute();
+      saveRouteState_(); // ✅ persiste el avance
 
       const cli = (state.db.clientes || []).find(x => String(x.id) === cid);
       const zKey = getClientZoneKey(cli);
@@ -1779,6 +1795,7 @@
 
       for (const cli of pends) state.route.done.add(String(cli.id));
       renderRoute();
+      saveRouteState_(); // ✅ persiste el cierre por zona
 
       const zones = (state.route.currentZones || []).map(normKey).filter(Boolean);
       zones.forEach(z => {
@@ -1799,51 +1816,60 @@
       sendInBackground('registrar_batch', { vendedor: state.user.vendedor, items });
     }
 
-    // =========================
-    // Finalizar turno / día (jornada)
-    // =========================
-    function finalizeTurnOrDay() {
-      const j = state.jornada;
-      const nowTurn = turnoNow_();
+// =========================
+// Finalizar turno / día (jornada)
+// =========================
+    
+function finalizeTurnOrDay() {
+  const j = state.jornada;
+  const nowTurn = turnoNow_();
 
-      if (!j?.jornadaId) {
-        toast('Cerrando (sin jornada id)...', 'error');
-        return;
-      }
+  // si no hay jornadaId, intentamos pedirla
+  if (!j?.jornadaId) {
+    toast('Cerrando (sin jornada id)...', 'error');
+    return;
+  }
 
-      const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
-      const marcarPendientes = false;
-      const pendientes = pends.map(x => String(x.id));
+  // guardamos pendientes no tocados? (si quedan, recomendamos usar No llegué antes)
+  const pends = (state.route.active || []).filter(x => !state.route.done.has(String(x.id)));
+  const marcarPendientes = false; // acá NO marcamos auto (vos ya tenés modal No llegué)
+  const pendientes = pends.map(x => String(x.id));
 
-      el('loader')?.classList.remove('hidden');
-      (async () => {
-        try {
-          await api('finalizar_jornada', {
-            vendedor: state.user.vendedor,
-            jornadaId: j.jornadaId,
-            marcarPendientes,
-            pendientes,
-            notas: `Finalizado desde app · turno ahora ${nowTurn}`
-          }, 25000);
+  el('loader')?.classList.remove('hidden');
+  (async () => {
+    try {
+      await api('finalizar_jornada', {
+        vendedor: state.user.vendedor,
+        jornadaId: j.jornadaId,
+        marcarPendientes,
+        pendientes,
+        notas: `Finalizado desde app · turno ahora ${nowTurn}`
+      }, 25000);
 
-          state.jornada = { activa:false, jornadaId:null, turno: nowTurn, zonas:[] };
-          updateChatSub_();
-          toast('Jornada finalizada', 'success');
-        } catch (e) {
-          toast('No pude finalizar (sin señal): queda para luego', 'error');
-          enqueueOutbox('finalizar_jornada', {
-            vendedor: state.user.vendedor,
-            jornadaId: j.jornadaId,
-            marcarPendientes,
-            pendientes,
-            notas: `Finalizado offline · turno ahora ${nowTurn}`
-          });
-        } finally {
-          el('loader')?.classList.add('hidden');
-          flushOutbox();
-        }
-      })();
+      state.jornada = { activa:false, jornadaId:null, turno: nowTurn, zonas:[] };
+      updateChatSub_();
+
+      clearRouteState_(); // ✅ deja la app limpia para el próximo turno
+
+      toast('Jornada finalizada', 'success');
+    } catch (e) {
+      toast('No pude finalizar (sin señal): queda para luego', 'error');
+      // dejamos en cola
+      enqueueOutbox('finalizar_jornada', {
+        vendedor: state.user.vendedor,
+        jornadaId: j.jornadaId,
+        marcarPendientes,
+        pendientes,
+        notas: `Finalizado offline · turno ahora ${nowTurn}`
+      });
+    } finally {
+      el('loader')?.classList.add('hidden');
+      flushOutbox();
     }
+  })();
+}
+
+
 
     // =========================
     // Semana modal
@@ -2235,6 +2261,66 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
       copyPlainText(state.currentOrder.ticket || '');
       toast('Pedido copiado', 'success');
     }
+
+    // =========================
+// ✅ ROUTE PERSIST (fix: no reaparecen visitados al reabrir)
+// =========================
+function ROUTE_KEY_() {
+  const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+  return `ml_route_state_${CACHE_VER}_${String(v).toUpperCase()}`;
+}
+
+function saveRouteState_() {
+  try {
+    const vend = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+    const obj = {
+      day: todayKey_(),
+      vendedor: String(vend).toUpperCase(),
+      modo: state.mode || 'list',
+      zonas: Array.from(state.sel || []).map(String),
+      currentZones: (state.route?.currentZones || []).map(String),
+      doneIds: Array.from(state.route?.done || []).map(String),
+      jornadaId: state.jornada?.jornadaId || null,
+      jornadaTurno: state.jornada?.turno || null
+    };
+    localStorage.setItem(ROUTE_KEY_(), JSON.stringify(obj));
+  } catch (_) {}
+}
+
+function restoreRouteState_() {
+  try {
+    const raw = localStorage.getItem(ROUTE_KEY_());
+    if (!raw) return false;
+
+    const obj = JSON.parse(raw || '{}');
+    if (!obj || obj.day !== todayKey_()) return false;
+
+    // zonas seleccionadas
+    const zonas = Array.isArray(obj.zonas) ? obj.zonas : [];
+    state.sel = new Set(zonas.map(String));
+
+    // modo
+    if (obj.modo === 'focus' || obj.modo === 'list') state.mode = obj.modo;
+
+    // doneIds
+    const doneIds = Array.isArray(obj.doneIds) ? obj.doneIds : [];
+    state.route.done = new Set(doneIds.map(String));
+
+    // currentZones
+    const cz = Array.isArray(obj.currentZones) ? obj.currentZones : [];
+    state.route.currentZones = cz.map(String);
+
+    // (No forzamos jornada activa: eso ya viene del backend en init)
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function clearRouteState_() {
+  try { localStorage.removeItem(ROUTE_KEY_()); } catch (_) {}
+}
+
 
     // =========================
     // UTILS
