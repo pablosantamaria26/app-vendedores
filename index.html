@@ -998,7 +998,7 @@
       }, 120000);
     }
 
-// =========================
+    // =========================
 // INIT (instant cache + refresh)
 // =========================
 async function init() {
@@ -1006,17 +1006,30 @@ async function init() {
   el('lbl-saludo').innerText = (state.user?.user || '').toUpperCase();
   setTurnoChip_();
 
-  // ✅ Si el vendedor ya tenía ruta empezada hoy, restauramos progreso local
+  // ✅ Restaurar estado de ruta local (si existía hoy)
   const restored = restoreRouteState_();
+
+  // ✅ Ruta en curso = hay restore + hay selección persistida (state.sel)
+  const routeInProgress = !!(restored && state.sel && state.sel.size > 0);
+
+  // ✅ INSTANT ROUTE OPEN (sin esperar backend)
+  if (routeInProgress) {
+    switchView('view-route');
+
+    // Si todavía no hay clientes cargados en route.active (por ejemplo, recién abrió),
+    // mostramos un skeleton en lugar de una ruta vacía.
+    if ((state.route?.active || []).length) renderRoute();
+    else renderRouteSkeleton_();
+  }
 
   // 1) instant render from cache if exists
   const vend = state.user?.vendedor;
   const cached = getAppCache_(vend);
+
   if (cached && cached.zonas && cached.clientes) {
     state.db = cached;
     renderGrid(true);
   } else {
-    // skeleton
     renderGridSkeleton_();
   }
 
@@ -1028,18 +1041,49 @@ async function init() {
     setAppCache_(vend, state.db);
     renderGrid(false);
 
-    // ✅ Determinar si hay ruta en progreso (restaurada hoy)
-    const routeInProgress = !!(restored && state.sel && state.sel.size > 0);
-
-    // ✅ (A) Auto-resume: si había ruta restaurada hoy, volvemos a la ruta y aplicamos doneIds
+    // ✅ Auto-resume: completa route.active con data fresca
     if (routeInProgress) {
       const all = (state.db.clientes || []);
       const selected = new Set(Array.from(state.sel).map(normKey));
       state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
 
-      switchView('view-route');
-      renderRoute();
+      // Si estamos en la vista route, re-render; si no, no cambiamos de vista.
+      if (state.view === 'view-route') renderRoute();
     }
+
+    // ✅ Jornada activa backend
+    if (d?.jornada_activa?.activa) {
+      state.jornada = {
+        activa: true,
+        jornadaId: d.jornada_activa.jornadaId,
+        turno: d.jornada_activa.turno,
+        zonas: d.jornada_activa.zonas || []
+      };
+    } else {
+      state.jornada = { activa: false, jornadaId: null, turno: turnoNow_(), zonas: [] };
+    }
+    updateChatSub_();
+
+    // ✅ Mostrar "Plan sugerido" solo cuando corresponde:
+    // - Si NO hay ruta en curso (mañana al abrir, o después de finalizar)
+    // - Y si hay sugerencias disponibles
+    if (!routeInProgress && d?.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
+      showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+    }
+
+    // ✅ Onboard first time
+    maybeShowOnboard_();
+
+    // ✅ Sync offline outbox
+    flushOutbox();
+  } catch (e) {
+    toast('Error cargando (usando cache)', 'error');
+  } finally {
+    el('loader')?.classList.add('hidden');
+  }
+}
+
+
 
     // ✅ (B) Plan sugerido: SOLO si NO hay ruta en progreso
     //     y SOLO 1 vez por turno (mañana/tarde)
@@ -1073,6 +1117,18 @@ async function init() {
   } finally {
     el('loader')?.classList.add('hidden');
   }
+}
+
+    function renderRouteSkeleton_() {
+  const box = el('route-list') || el('route-container') || null; // ajustá al id real
+  if (!box) return;
+  box.innerHTML = `
+    <div class="card skeleton" style="padding:14px;margin:10px;">
+      <div style="height:14px;width:60%;border-radius:8px;" class="sk"></div>
+      <div style="height:12px;width:90%;border-radius:8px;margin-top:10px;" class="sk"></div>
+      <div style="height:12px;width:75%;border-radius:8px;margin-top:10px;" class="sk"></div>
+    </div>
+  `;
 }
 
 
