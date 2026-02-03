@@ -93,6 +93,14 @@
     html.dark .mini-chip { border-color:#334155; background:#0b1224; color:#cbd5e1; }
     html:not(.dark) .mini-chip { border-color:#e2e8f0; background:#ffffff; color:#334155; }
 
+    .mini-chip { cursor: pointer; }
+    .mini-chip--on{
+    border-color: #4f46e5 !important;
+    background: #4f46e5 !important;
+    color: #fff !important;
+  }
+
+
     /* subtle skeleton */
     .skeleton { position: relative; overflow: hidden; }
     .skeleton:before {
@@ -1170,24 +1178,55 @@ function getTardePlan_() {
   return Array.isArray(state._tardePlan) ? state._tardePlan : [];
 }
 
+// selección de 1 zona para la tarde
+function setTardePick_(zone) {
+  state._tardePick = zone ? String(zone).toUpperCase() : '';
+}
+function getTardePick_() {
+  return String(state._tardePick || '');
+}
+
+function paintTardeChips_() {
+  const wrap = el('tt-zones');
+  const pick = getTardePick_();
+  [...wrap.querySelectorAll('[data-tt-zone]')].forEach(chip => {
+    const z = String(chip.getAttribute('data-tt-zone') || '').toUpperCase();
+    chip.classList.toggle('mini-chip--on', z === pick);
+  });
+}
+
 function openTurnoTardeModal_(zones, subtitle) {
   setTardePlan_(zones);
 
-  el('tt-sub').textContent = subtitle || 'Te propongo arrancar la tarde con estas zonas:';
+  el('tt-sub').textContent = subtitle || 'Elegí 1 zona para esta tarde (podés abrir “Semana” si querés manual).';
 
   const wrap = el('tt-zones');
   wrap.innerHTML = '';
 
   const plan = getTardePlan_();
+
   if (!plan.length) {
+    setTardePick_('');
     wrap.innerHTML = `<span class="text-xs font-bold text-slate-500 dark:text-slate-300">No tengo sugerencias. Abrí “Semana” y elegí manual.</span>`;
   } else {
+    // default: primera sugerencia seleccionada
+    setTardePick_(plan[0]);
+
     plan.forEach(z => {
-      const chip = document.createElement('span');
+      const zUp = String(z).toUpperCase();
+      const chip = document.createElement('button');
+      chip.type = 'button';
       chip.className = 'mini-chip';
-      chip.textContent = String(z).toUpperCase();
+      chip.textContent = zUp;
+      chip.setAttribute('data-tt-zone', zUp);
+      chip.addEventListener('click', () => {
+        setTardePick_(zUp);
+        paintTardeChips_();
+      });
       wrap.appendChild(chip);
     });
+
+    paintTardeChips_();
   }
 
   const m = el('modal-turno-tarde');
@@ -1208,18 +1247,23 @@ function openWeekFromTarde() {
 
 function confirmTardePlan() {
   const plan = getTardePlan_();
+  const pick = getTardePick_();
+
   closeTurnoTardeModal();
 
   if (!plan.length) {
-    // si no hay plan, lo llevo a semana
     openWeekModal();
     return;
   }
 
+  // seguridad: si por algo no hay pick, tomo la primera
+  const chosen = (pick && pick.trim()) ? pick : String(plan[0]).toUpperCase();
+
   // seteo selección y arranco ruta con el flujo normal
-  state.sel = new Set(plan.map(x => String(x).toUpperCase()));
+  state.sel = new Set([chosen]);
   startRoute();
 }
+
 
 // Decide si corresponde mostrar el modal (se usa en init y al finalizar mañana)
 function maybeShowTardeModal_(backendData) {
