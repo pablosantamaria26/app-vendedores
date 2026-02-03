@@ -384,6 +384,52 @@
     </div>
   </div>
 
+  <!-- MODAL TURNO TARDE -->
+<div id="modal-turno-tarde" data-close="modal-turno-tarde"
+  class="fixed inset-0 z-[95] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+  <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-[10px] font-black uppercase tracking-widest text-indigo-500">Turno tarde</p>
+        <h3 class="text-lg font-black dark:text-white">¿Arrancamos la TARDE?</h3>
+        <p id="tt-sub" class="text-xs mt-1 text-slate-500 dark:text-slate-400">—</p>
+      </div>
+      <button onclick="closeTurnoTardeModal()"
+        class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="mt-4 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+      <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Plan sugerido para la tarde</div>
+      <div id="tt-zones" class="mt-2 flex flex-wrap gap-2"></div>
+      <p class="text-[11px] mt-3 text-slate-500 dark:text-slate-400">
+        Podés confirmar el plan sugerido o abrir “Semana” para elegir manual.
+      </p>
+    </div>
+
+    <div class="mt-5 grid grid-cols-2 gap-3">
+      <button onclick="openWeekFromTarde()"
+        class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+        <i class="fas fa-calendar-week"></i> Ver semana
+      </button>
+
+      <button onclick="confirmTardePlan()"
+        class="btn-press py-3 rounded-xl font-black bg-indigo-600 text-white flex items-center justify-center gap-2">
+        <i class="fas fa-play"></i> Confirmar y arrancar
+      </button>
+    </div>
+
+    <div class="mt-3">
+      <button onclick="closeTurnoTardeModal()"
+        class="btn-press w-full py-3 rounded-xl font-black bg-transparent text-slate-500 dark:text-slate-400">
+        Ahora no
+      </button>
+    </div>
+  </div>
+</div>
+
+
   <!-- MODAL ONBOARDING -->
   <div id="modal-onboard" data-close="modal-onboard" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
     <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card">
@@ -1066,6 +1112,9 @@ async function init() {
       state.jornada = { activa: false, jornadaId: null, turno: turnoNow_(), zonas: [] };
     }
     updateChatSub_();
+    // ✅ Si ya es tarde y no hay jornada activa, ofrecer modal de tarde
+    maybeShowTardeModal_(d);
+
 
     // ✅ Auto-resume: completar route.active con data fresca (y re-render si estamos en ruta)
     if (routeInProgress) {
@@ -1098,6 +1147,114 @@ async function init() {
     el('loader')?.classList.add('hidden');
   }
 }
+
+    // =========================
+// ✅ TURNO TARDE MODAL (mínimo)
+// =========================
+const TT_KEY = (v) => `ml_tarde_prompt_${CACHE_VER}_${String(v||'GEN').toUpperCase()}_${todayKey_()}`;
+
+function getTardePromptState_() {
+  const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+  try { return JSON.parse(localStorage.getItem(TT_KEY(v)) || '{}'); } catch(_) { return {}; }
+}
+function setTardePromptState_(obj) {
+  const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+  try { localStorage.setItem(TT_KEY(v), JSON.stringify(obj || {})); } catch(_) {}
+}
+
+// Guarda el plan sugerido temporalmente para el modal
+function setTardePlan_(zones) {
+  state._tardePlan = Array.isArray(zones) ? zones.filter(Boolean) : [];
+}
+function getTardePlan_() {
+  return Array.isArray(state._tardePlan) ? state._tardePlan : [];
+}
+
+function openTurnoTardeModal_(zones, subtitle) {
+  setTardePlan_(zones);
+
+  el('tt-sub').textContent = subtitle || 'Te propongo arrancar la tarde con estas zonas:';
+
+  const wrap = el('tt-zones');
+  wrap.innerHTML = '';
+
+  const plan = getTardePlan_();
+  if (!plan.length) {
+    wrap.innerHTML = `<span class="text-xs font-bold text-slate-500 dark:text-slate-300">No tengo sugerencias. Abrí “Semana” y elegí manual.</span>`;
+  } else {
+    plan.forEach(z => {
+      const chip = document.createElement('span');
+      chip.className = 'mini-chip';
+      chip.textContent = String(z).toUpperCase();
+      wrap.appendChild(chip);
+    });
+  }
+
+  const m = el('modal-turno-tarde');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+
+function closeTurnoTardeModal() {
+  const m = el('modal-turno-tarde');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+function openWeekFromTarde() {
+  closeTurnoTardeModal();
+  openWeekModal();
+}
+
+function confirmTardePlan() {
+  const plan = getTardePlan_();
+  closeTurnoTardeModal();
+
+  if (!plan.length) {
+    // si no hay plan, lo llevo a semana
+    openWeekModal();
+    return;
+  }
+
+  // seteo selección y arranco ruta con el flujo normal
+  state.sel = new Set(plan.map(x => String(x).toUpperCase()));
+  startRoute();
+}
+
+// Decide si corresponde mostrar el modal (se usa en init y al finalizar mañana)
+function maybeShowTardeModal_(backendData) {
+  const nowTurn = turnoNow_();
+  if (nowTurn !== 'Tarde') return;
+
+  // si ya hay jornada activa, NO mostrar
+  if (state.jornada?.activa) return;
+
+  // no mostrar 2 veces por día
+  const ps = getTardePromptState_();
+  if (ps?.shown) return;
+
+  // 1) Intento sacar sugerencias desde backend (si existen)
+  const d = backendData || {};
+  const planFromBackend =
+    d?.sugerencia_tarde?.zonas ||
+    d?.sugerencia_tarde?.sugerencias ||
+    d?.sugerencia_ia?.sugerencias?.tarde ||
+    d?.sugerencia_ia?.sugerencias?.rutas_sugeridas_tarde ||
+    [];
+
+  // 2) Fallback: si no viene nada, reutilizo las rutas_sugeridas (las tuyas)
+  const fallbackPlan = d?.sugerencia_ia?.sugerencias?.rutas_sugeridas || [];
+
+  const plan = (Array.isArray(planFromBackend) && planFromBackend.length) ? planFromBackend : fallbackPlan;
+
+  openTurnoTardeModal_(
+    plan,
+    'Turno tarde disponible. Confirmá y arrancamos con un plan sugerido (o abrí Semana).'
+  );
+
+  setTardePromptState_({ shown: true, ts: Date.now() });
+}
+
 
 
 
@@ -1949,6 +2106,19 @@ function finalizeTurnOrDay() {
       updateChatSub_();
 
       clearRouteState_(); // ✅ deja la app limpia para el próximo turno
+
+      // ✅ Si lo que acabo de cerrar fue la MAÑANA, preparo el prompt para la TARDE
+  const endedTurn = String(j?.turno || '').toLowerCase();
+  if (endedTurn.includes('mañ') || endedTurn.includes('man')) {
+  // marco para que, cuando corresponda, lo muestre (y no repetir)
+  const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
+  try { localStorage.removeItem(TT_KEY(v)); } catch(_) {}
+  // si ya es tarde en ese momento, lo muestro directo (si no, init lo mostrará cuando corresponda)
+  if (turnoNow_() === 'Tarde') {
+    maybeShowTardeModal_(state.db || {});
+  }
+}
+
 
       toast('Jornada finalizada', 'success');
     } catch (e) {
