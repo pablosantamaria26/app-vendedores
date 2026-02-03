@@ -954,9 +954,11 @@
     }
 
     function switchView(id) {
-      document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-      el(id)?.classList.add('active');
-    }
+  state.view = id; // ✅ importante para lógica tipo: si estoy en route, re-render
+  document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+  el(id)?.classList.add('active');
+}
+
 
     async function handleLogin() {
       const u = el('login-user')?.value?.trim(), p = el('login-pass')?.value?.trim();
@@ -998,7 +1000,7 @@
       }, 120000);
     }
 
-    // =========================
+  // =========================
 // INIT (instant cache + refresh)
 // =========================
 async function init() {
@@ -1008,21 +1010,18 @@ async function init() {
 
   // ✅ Restaurar estado de ruta local (si existía hoy)
   const restored = restoreRouteState_();
-
-  // ✅ Ruta en curso = hay restore + hay selección persistida (state.sel)
   const routeInProgress = !!(restored && state.sel && state.sel.size > 0);
 
   // ✅ INSTANT ROUTE OPEN (sin esperar backend)
   if (routeInProgress) {
     switchView('view-route');
 
-    // Si todavía no hay clientes cargados en route.active (por ejemplo, recién abrió),
-    // mostramos un skeleton en lugar de una ruta vacía.
+    // Si ya tenemos clientes en memoria, render normal; si no, skeleton
     if ((state.route?.active || []).length) renderRoute();
     else renderRouteSkeleton_();
   }
 
-  // 1) instant render from cache if exists
+  // 1) Render instantáneo con cache si existe
   const vend = state.user?.vendedor;
   const cached = getAppCache_(vend);
 
@@ -1033,23 +1032,14 @@ async function init() {
     renderGridSkeleton_();
   }
 
-  // 2) refresh in background (fast)
+  // 2) Refresh en background
   el('loader')?.classList.remove('hidden');
   try {
     const d = await api('get_app_data', { vendedor: vend }, 25000);
     state.db = d || {};
     setAppCache_(vend, state.db);
+
     renderGrid(false);
-
-    // ✅ Auto-resume: completa route.active con data fresca
-    if (routeInProgress) {
-      const all = (state.db.clientes || []);
-      const selected = new Set(Array.from(state.sel).map(normKey));
-      state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
-
-      // Si estamos en la vista route, re-render; si no, no cambiamos de vista.
-      if (state.view === 'view-route') renderRoute();
-    }
 
     // ✅ Jornada activa backend
     if (d?.jornada_activa?.activa) {
@@ -1064,11 +1054,23 @@ async function init() {
     }
     updateChatSub_();
 
-    // ✅ Mostrar "Plan sugerido" solo cuando corresponde:
-    // - Si NO hay ruta en curso (mañana al abrir, o después de finalizar)
-    // - Y si hay sugerencias disponibles
-    if (!routeInProgress && d?.sugerencia_ia?.sugerencias?.rutas_sugeridas?.length) {
-      showSuggestions(d.sugerencia_ia.sugerencias.rutas_sugeridas);
+    // ✅ Auto-resume: completar route.active con data fresca (y re-render si estamos en ruta)
+    if (routeInProgress) {
+      const all = (state.db.clientes || []);
+      const selected = new Set(Array.from(state.sel).map(normKey));
+      state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
+
+      if (state.view === 'view-route') renderRoute();
+    }
+
+    // ✅ Plan sugerido: SOLO si NO hay ruta en progreso y solo 1 vez por turno
+    const sugg = d?.sugerencia_ia?.sugerencias?.rutas_sugeridas || [];
+    if (!routeInProgress && sugg.length) {
+      const turn = turnoNow_();
+      if (!hasSeenSuggestions_(turn)) {
+        showSuggestions(sugg);
+        markSuggestionsSeen_(turn);
+      }
     }
 
     // ✅ Onboard first time
@@ -1084,52 +1086,20 @@ async function init() {
 }
 
 
-
-    // ✅ (B) Plan sugerido: SOLO si NO hay ruta en progreso
-    //     y SOLO 1 vez por turno (mañana/tarde)
-    const sugg = d?.sugerencia_ia?.sugerencias?.rutas_sugeridas || [];
-    if (!routeInProgress && sugg.length) {
-      const turn = turnoNow_();
-      if (!hasSeenSuggestions_(turn)) {
-        showSuggestions(sugg); // markSuggestionsSeen_() se llama dentro de showSuggestions()
-      }
-    }
-
-    // jornada activa backend
-    if (d?.jornada_activa?.activa) {
-      state.jornada = {
-        activa: true,
-        jornadaId: d.jornada_activa.jornadaId,
-        turno: d.jornada_activa.turno,
-        zonas: d.jornada_activa.zonas || []
-      };
-    } else {
-      state.jornada = { activa:false, jornadaId:null, turno: turnoNow_(), zonas: [] };
-    }
-    updateChatSub_();
-
-    // onboard first time
-    maybeShowOnboard_();
-
-    flushOutbox();
-  } catch (e) {
-    toast('Error cargando (usando cache)', 'error');
-  } finally {
-    el('loader')?.classList.add('hidden');
-  }
-}
-
-    function renderRouteSkeleton_() {
-  const box = el('route-list') || el('route-container') || null; // ajustá al id real
+ function renderRouteSkeleton_() {
+  const box = el('route-container');
   if (!box) return;
+
   box.innerHTML = `
-    <div class="card skeleton" style="padding:14px;margin:10px;">
-      <div style="height:14px;width:60%;border-radius:8px;" class="sk"></div>
-      <div style="height:12px;width:90%;border-radius:8px;margin-top:10px;" class="sk"></div>
-      <div style="height:12px;width:75%;border-radius:8px;margin-top:10px;" class="sk"></div>
+    <div class="card-soft p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm skeleton">
+      <div class="h-4 w-2/3 rounded-lg bg-slate-200 dark:bg-slate-800"></div>
+      <div class="h-3 w-full rounded-lg bg-slate-200 dark:bg-slate-800 mt-3"></div>
+      <div class="h-3 w-5/6 rounded-lg bg-slate-200 dark:bg-slate-800 mt-2"></div>
+      <div class="h-10 w-full rounded-xl bg-slate-200 dark:bg-slate-800 mt-4"></div>
     </div>
   `;
 }
+
 
 
 
