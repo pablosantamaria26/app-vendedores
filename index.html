@@ -1153,15 +1153,17 @@ async function init() {
       if (state.view === 'view-route') renderRoute();
     }
 
-    // ✅ Plan sugerido: SOLO si NO hay ruta en progreso y solo 1 vez por turno
-    const sugg = d?.sugerencia_ia?.sugerencias?.rutas_sugeridas || [];
-    if (!routeInProgress && sugg.length) {
-      const turn = turnoNow_();
-      if (!hasSeenSuggestions_(turn)) {
-        showSuggestions(sugg);
-        markSuggestionsSeen_(turn);
-      }
-    }
+    // ✅ Plan sugerido (MODAL VIEJO): SOLO MAÑANA, y solo si NO hay ruta en progreso
+const sugg = d?.sugerencia_ia?.sugerencias?.rutas_sugeridas || [];
+const turn = turnoNow_();
+
+if (turn !== 'Tarde' && !routeInProgress && sugg.length) {
+  if (!hasSeenSuggestions_(turn)) {
+    showSuggestions(sugg);
+    markSuggestionsSeen_(turn);
+  }
+}
+
 
     // ✅ Onboard first time
     maybeShowOnboard_();
@@ -1832,6 +1834,7 @@ function maybeShowTardeModal_(backendData) {
     // Suggestions
     // =========================
     function showSuggestions(list) {
+      if (turnoNow_() === 'Tarde') return; // ⛔ nunca mostrar modal viejo en tarde
       const c = el('suggestions-list'); if (!c) return;
       c.innerHTML = '';
       list.forEach(loc => {
