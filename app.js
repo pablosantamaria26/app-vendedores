@@ -1,7 +1,5 @@
 // ==========================================
-// 🚀 APP.JS - MERCADO LIMPIO SMART (V10 FIXED + BLINDADO)
-// Compatible con TU HTML actual (onclicks en HTML + vistas .view-section/.active)
-// No quita funciones: solo corrige fallas de carga, exporta globals y agrega defensas.
+// 🚀 APP.JS - MERCADO LIMPIO SMART (V11 — Worker v3 + IA Soporte)
 // ==========================================
 
 const WORKER_URL = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
@@ -12,7 +10,7 @@ const state = {
   userLocation: null,
 
   // Datos crudos
-  db: { clients: [], zones: [], ia_data: null },
+  db: { clients: [], zones: [], cobertura: null },
 
   // Sesión de ruta
   route: { activeClients: [], completedIds: new Set(), startTime: null },
@@ -21,7 +19,11 @@ const state = {
   viewMode: 'list',
   currentTheme: 'dark',
   currentClient: null,
-  selection: { selectedZones: new Set() }
+  selection: { selectedZones: new Set() },
+
+  // Chat IA
+  chatHistory: [],           // [{ role: 'user'|'bot', text }]
+  chatClienteId: null        // cliente en foco al abrir el chat
 };
 
 // --- TEMAS ---
@@ -37,24 +39,18 @@ const el = (id) => document.getElementById(id);
 const toggleLoader = (s) => el('loader')?.classList.toggle('hidden', !s);
 
 // ==========================================
-// 🔥 DEBUG (opcional pero útil)
+// 🔥 DEBUG
 // ==========================================
-window.addEventListener('error', (e) => {
-  console.error('JS ERROR:', e);
-});
-window.addEventListener('unhandledrejection', (e) => {
-  console.error('PROMISE ERROR:', e?.reason || e);
-});
-console.log('APP.JS CARGADO OK');
+window.addEventListener('error', (e) => { console.error('JS ERROR:', e); });
+window.addEventListener('unhandledrejection', (e) => { console.error('PROMISE ERROR:', e?.reason || e); });
+console.log('APP.JS V11 CARGADO OK');
 
 // ==========================================
-// 1️⃣ INICIALIZACIÓN (FIXED - evita freeze por Lucide + MutationObserver)
+// 1️⃣ INICIALIZACIÓN
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  // ✅ Iconos Lucide (blindado: evita loop infinito por mutaciones del DOM)
   if (window.lucide) {
     try {
-      // Ejecuta createIcons como máximo 1 vez por frame
       const safeCreateIcons = (() => {
         let scheduled = false;
         return () => {
@@ -67,14 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
       })();
 
-      // Primera pasada
       safeCreateIcons();
-
-      // Observer con debounce (no llama createIcons directo)
       const observer = new MutationObserver(() => safeCreateIcons());
       observer.observe(document.body, { childList: true, subtree: true });
-
-      // Extra: por si Tailwind/Lucide tardan en cargar o hay render tardío
       setTimeout(safeCreateIcons, 50);
       setTimeout(safeCreateIcons, 250);
       setTimeout(safeCreateIcons, 800);
@@ -84,25 +75,26 @@ document.addEventListener('DOMContentLoaded', () => {
   initClock();
   initGeo();
   applyTheme(localStorage.getItem('ml_theme') || 'dark');
+  initFCM();
 
-  // Vistas
   if (state.user) {
     initApp();
   } else {
-    // Tu HTML ya tiene login "active", pero lo dejamos consistente
     window.switchView('view-login');
   }
 
-  // Listeners (blindados)
   el('btn-login')?.addEventListener('click', handleLogin);
   el('btn-theme-toggle')?.addEventListener('click', cycleTheme);
   el('ai-input')?.addEventListener('keydown', (e) => e.key === 'Enter' && window.handleAISend());
   el('fab-focus-mode')?.addEventListener('click', window.toggleViewMode);
+  el('login-pass')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(e); });
 
-  // Tip: si el usuario aprieta Enter en password, loguea
-  el('login-pass')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleLogin(e);
-  });
+  // Guardar memoria al cerrar modal de chat
+  const chatModal = el('modal-chat') || document.querySelector('[id*="chat"]');
+  if (chatModal) {
+    const closeBtns = chatModal.querySelectorAll('[onclick*="closeChat"], [onclick*="close-chat"], [data-close-chat]');
+    closeBtns.forEach(btn => btn.addEventListener('click', () => saveChatMemory()));
+  }
 });
 
 function initApp() {
@@ -110,49 +102,21 @@ function initApp() {
   loadAppData();
 }
 
-
 // ==========================================
-// 2️⃣ API (con headers correctos)
+// 2️⃣ WORKER API — Worker v3
+// Envía objeto plano con { accion, ...campos }
 // ==========================================
-async function apiCall(action, payload) {
+async function workerPost(body) {
   const res = await fetch(WORKER_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, payload })
+    body: JSON.stringify(body)
   });
-
-  // Si el worker devuelve HTML por error, esto lo detecta más claro
   const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); } catch (e) {
-    throw new Error('Respuesta no JSON del servidor/worker. Revisa Worker y doPost. Texto: ' + text.slice(0, 200));
-  }
-
-  if (json.status !== 'success') throw new Error(json.message || 'Error desconocido en servidor');
-  return json.data;
-}
-
-async function loadAppData() {
-  toggleLoader(true);
   try {
-    const data = await apiCall('get_app_data', { vendedor: state.user.vendedor });
-
-    state.db.clients = data?.clientes || [];
-    state.db.zones = data?.zonas || [];
-    state.db.ia_data = data?.sugerencia_ia || null;
-
-    renderZoneDashboard();
-
-    // IA sugerencia
-    if (state.db.ia_data && state.db.ia_data.sugerencias) {
-      showIASuggestion(state.db.ia_data);
-    }
-
+    return JSON.parse(text);
   } catch (e) {
-    alert('Error iniciando app: ' + (e.message || e));
-    console.error(e);
-  } finally {
-    toggleLoader(false);
+    throw new Error('Respuesta no JSON del Worker: ' + text.slice(0, 200));
   }
 }
 
@@ -164,13 +128,17 @@ async function handleLogin(e) {
 
   const u = (el('login-user')?.value || '').trim();
   const p = (el('login-pass')?.value || '').trim();
-  if (!u || !p) return alert('Ingrese usuario y contraseña');
+  if (!u || !p) return alert('Ingrese usuario y PIN');
 
   toggleLoader(true);
   try {
-    const res = await apiCall('login', { user: u, pass: p });
-    state.user = res;
-    localStorage.setItem('ml_user', JSON.stringify(res));
+    const res = await workerPost({ accion: 'login', username: u, pin: p });
+
+    if (!res.exito) throw new Error(res.error || 'Usuario o PIN incorrecto');
+
+    // Guardar en estado y localStorage
+    state.user = { vendedor: res.vendedor, username: res.username, id: res.id };
+    localStorage.setItem('ml_user', JSON.stringify(state.user));
     initApp();
   } catch (e) {
     alert(e.message || e);
@@ -180,10 +148,81 @@ async function handleLogin(e) {
 }
 
 // ==========================================
-// 4️⃣ DASHBOARD (MIS ZONAS)
-// - Botón por localidad (zona.nombre)
-// - Muestra cantidad clientes y críticos
-// - Permite seleccionar 1+ zonas y luego iniciar ruta
+// 4️⃣ CARGA DATOS + COBERTURA
+// ==========================================
+async function loadAppData() {
+  toggleLoader(true);
+  try {
+    const [dataRes, coberturaRes] = await Promise.all([
+      workerPost({ accion: 'get_app_data', vendedor: state.user.vendedor }),
+      workerPost({ accion: 'get_cobertura', vendedor: state.user.vendedor })
+    ]);
+
+    if (!dataRes.exito) throw new Error(dataRes.error || 'Error cargando datos');
+
+    state.db.clients = dataRes.clientes || [];
+    state.db.zones   = dataRes.zonas   || [];
+    state.db.cobertura = coberturaRes || null;
+
+    renderZoneDashboard();
+    renderCoberturaBanner();
+
+  } catch (e) {
+    alert('Error iniciando app: ' + (e.message || e));
+    console.error(e);
+  } finally {
+    toggleLoader(false);
+  }
+}
+
+// Banner de cobertura — muestra clientes críticos pendientes de visitar
+function renderCoberturaBanner() {
+  const container = el('zones-grid')?.parentElement;
+  if (!container) return;
+
+  // Limpiar banner anterior
+  const prev = el('cobertura-banner');
+  if (prev) prev.remove();
+
+  const resumen = state.db.cobertura?.resumen;
+  if (!resumen) return;
+
+  const criticos = Number(resumen.criticos || 0);
+  const abandonados = Number(resumen.abandonados || 0);
+  const urgentes = criticos + abandonados;
+
+  if (urgentes === 0) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'cobertura-banner';
+  banner.className = 'mx-4 mb-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-sm text-red-400';
+  banner.innerHTML = `
+    <div class="flex items-start gap-3">
+      <span class="text-lg">⚠️</span>
+      <div class="flex-1">
+        <div class="font-bold text-red-300 mb-1">Clientes sin visitar</div>
+        <div class="opacity-90">
+          ${criticos > 0 ? `<b>${criticos}</b> críticos (más de 30 días)` : ''}
+          ${criticos > 0 && abandonados > 0 ? ' · ' : ''}
+          ${abandonados > 0 ? `<b>${abandonados}</b> abandonados` : ''}
+        </div>
+        <div class="text-[11px] mt-1 opacity-70">Cobertura: ${resumen.pct_cobertura ?? '?'}%</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" class="text-red-400 opacity-60 hover:opacity-100 text-lg leading-none">×</button>
+    </div>
+  `;
+
+  // Insertar antes de la grilla de zonas
+  const zonesGrid = el('zones-grid');
+  if (zonesGrid) {
+    container.insertBefore(banner, zonesGrid);
+  } else {
+    container.prepend(banner);
+  }
+}
+
+// ==========================================
+// 5️⃣ DASHBOARD
 // ==========================================
 function renderZoneDashboard() {
   const container = el('zones-grid');
@@ -192,7 +231,7 @@ function renderZoneDashboard() {
   container.innerHTML = '';
 
   const lbl = el('lbl-saludo');
-  if (lbl && state.user?.user) lbl.innerText = `HOLA, ${String(state.user.user).toUpperCase()}`;
+  if (lbl && state.user?.vendedor) lbl.innerText = `HOLA, ${String(state.user.vendedor).toUpperCase()}`;
 
   state.db.zones.forEach(zona => {
     const btn = document.createElement('button');
@@ -201,21 +240,18 @@ function renderZoneDashboard() {
     btn.className = `p-4 rounded-xl border transition-all text-left relative overflow-hidden group
       ${isCritical ? 'border-red-500/50 bg-red-500/10' : 'border-slate-700 bg-slate-800 hover:bg-slate-700'}`;
 
-    // Nota: Si en backend luego agregás dias_sin_visitar_localidad, acá se muestra automáticamente
     const diasZona = (zona.dias_sin_visitar_localidad !== undefined && zona.dias_sin_visitar_localidad !== null)
       ? `<p class="text-[10px] mt-1 opacity-80">Última vez: <b>${zona.dias_sin_visitar_localidad}</b> días</p>`
       : '';
 
     btn.innerHTML = `
       <div class="relative z-10">
-        <h3 class="font-bold text-lg uppercase text-white">${zona.nombre}</h3>
+        <h3 class="font-bold text-lg uppercase text-white">${escapeHtml(zona.nombre)}</h3>
         <p class="text-xs text-slate-400">${zona.total_clientes} Clientes</p>
         ${diasZona}
-        ${
-          isCritical
-            ? `<span class="inline-block mt-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">⚠️ ${zona.criticos} Críticos</span>`
-            : ''
-        }
+        ${isCritical
+          ? `<span class="inline-block mt-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded-full font-bold">⚠️ ${zona.criticos} Críticos</span>`
+          : ''}
       </div>
       <div class="absolute inset-0 bg-blue-600 opacity-0 group-[.selected]:opacity-20 transition-opacity"></div>
     `;
@@ -239,7 +275,6 @@ function toggleZoneSelection(zoneKey, btnElement) {
   const count = state.selection.selectedZones.size;
   const startBtn = el('btn-start-route');
   const label = el('btn-start-label');
-
   if (!startBtn) return;
 
   if (count > 0) {
@@ -251,42 +286,25 @@ function toggleZoneSelection(zoneKey, btnElement) {
   }
 }
 
-// ⚠️ Necesario porque tu HTML lo llama con onclick="startRoute()"
 window.startRoute = () => {
   if (state.selection.selectedZones.size === 0) return;
-
   const selectedKeys = Array.from(state.selection.selectedZones);
-
-  // Clientes ya vienen con localidad_key desde backend
   state.route.activeClients = state.db.clients.filter(c => selectedKeys.includes(c.localidad_key));
-
   initRouteView();
 };
 
-// IA -> aceptar ruta sugerida
 window.acceptIARoute = () => {
-  const zonasIA = state.db.ia_data?.sugerencias?.rutas_sugeridas || [];
-  if (!Array.isArray(zonasIA) || zonasIA.length === 0) return alert('La IA no tiene datos suficientes hoy.');
-
-  // Se intenta matchear por localidad_key (NORMALIZADA) usando includes/upper
-  const iaKeys = zonasIA.map(z => String(z).toUpperCase().trim());
-  state.route.activeClients = state.db.clients.filter(c => {
-    const k = String(c.localidad_key || '').toUpperCase();
-    return iaKeys.some(z => k.includes(z));
-  });
-
-  initRouteView();
+  // Sin sugerencia IA automática en v11 — abrir IA para consultar
+  alert('Usá el chat de Soporte para pedir sugerencias de ruta.');
 };
 
 // ==========================================
-// 5️⃣ VISTA RUTA (RUTA DEL DÍA)
+// 6️⃣ RUTA DEL DÍA
 // ==========================================
 function initRouteView() {
   state.route.startTime = new Date();
   state.route.completedIds.clear();
-
   window.switchView('view-route');
-
   renderRouteList();
   updateProgressCircle();
 }
@@ -321,7 +339,6 @@ function renderClientCard(c, container) {
   const dias = Number(c.dias_sin_comprar ?? 999);
   const statusColor = getStatusColor(dias);
 
-  // GEO
   let geoInfo = '';
   const hasCoords = c.lat !== null && c.lat !== '' && c.lng !== null && c.lng !== '';
   if (state.userLocation && hasCoords) {
@@ -332,39 +349,33 @@ function renderClientCard(c, container) {
     }
   }
 
-  const nombre = String(c.nombre || 'Cliente');
+  const nombre    = String(c.nombre    || 'Cliente');
   const localidad = String(c.localidad || '');
   const direccion = String(c.direccion || 'Sin dirección');
-  const id = String(c.id || '');
+  const id        = String(c.id        || '');
 
   div.innerHTML = `
-    <span class="absolute -right-2 -bottom-6 text-[6rem] font-black text-white opacity-[0.03] pointer-events-none select-none z-0">
-      ${id}
-    </span>
-
+    <span class="absolute -right-2 -bottom-6 text-[6rem] font-black text-white opacity-[0.03] pointer-events-none select-none z-0">${id}</span>
     <div class="relative z-10">
       <div class="flex justify-between items-start mb-2">
         <div>
           <span class="text-[10px] font-bold opacity-60 uppercase tracking-wider flex items-center">
-            ${localidad} ${geoInfo}
+            ${escapeHtml(localidad)} ${geoInfo}
           </span>
           <h2 class="text-xl font-black leading-tight mt-1 text-white">${escapeHtml(nombre)}</h2>
         </div>
         <span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase border border-white/5 ${statusColor.bg} ${statusColor.text}">
-          ${Number.isFinite(dias) ? dias : 999} Días
+          ${Number.isFinite(dias) ? dias : '?'} Días
         </span>
       </div>
-
       <div class="flex items-center gap-2 mb-5 opacity-70 text-sm">
         <i class="fas fa-map-pin text-xs"></i> ${escapeHtml(direccion)}
       </div>
-
       <div class="grid grid-cols-4 gap-2">
-        <button onclick="quickRegister('${id}', 'COMPRA')"
+        <button onclick="quickRegister('${id}')"
           class="col-span-3 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-blue-900/30 flex items-center justify-center gap-2 text-sm">
           <i class="fas fa-check"></i> VENTA OK
         </button>
-
         <button onclick="openNoteModal('${id}')"
           class="col-span-1 bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-white font-bold py-3.5 rounded-2xl flex items-center justify-center border border-white/5">
           <i class="fas fa-ellipsis-v"></i>
@@ -381,28 +392,26 @@ function renderFocusCard(c, container) {
 }
 
 // ==========================================
-// 6️⃣ REGISTRO (MOVIMIENTOS)
+// 7️⃣ REGISTRO DE VISITAS
 // ==========================================
-window.quickRegister = async (id, tipo) => {
+window.quickRegister = async (id) => {
   try { if (navigator.vibrate) navigator.vibrate(50); } catch (_) {}
 
   const sid = String(id);
   state.route.completedIds.add(sid);
-
   renderRouteList();
   updateProgressCircle();
 
-  try {
-    await apiCall('registrar_movimiento', {
-      vendedor: state.user.vendedor,
-      clienteId: sid,
-      tipo: 'pedido',
-      motivo: 'Venta exitosa',
-      observacion: 'Registro rápido app'
-    });
-  } catch (e) {
-    alert('⚠️ Error conexión. El movimiento podría no haberse guardado.');
-  }
+  // Fire-and-forget
+  workerPost({
+    accion:     'registrar_visita',
+    cliente_id: sid,
+    vendedor:   state.user.vendedor,
+    tipo:       'venta',
+    nota:       'Venta registrada desde ruta',
+    lat:        state.userLocation?.lat || null,
+    lng:        state.userLocation?.lng || null,
+  }).catch(() => {});
 };
 
 window.openNoteModal = (id) => {
@@ -421,10 +430,19 @@ window.openNoteModal = (id) => {
   if (obs) obs.value = '';
 };
 
+// Mapa de motivos a tipo de visita para el Worker
+const TIPO_VISITA = {
+  'No estaba':   'no_llegue',
+  'No compró':   'no_compro',
+  'Visita':      'visita',
+  'Nota':        'visita',
+  'default':     'visita',
+};
+
 window.saveVisit = async (motivo) => {
   if (!state.currentClient) return;
 
-  const id = String(state.currentClient.id);
+  const id  = String(state.currentClient.id);
   const obs = el('input-visit-obs')?.value || '';
 
   el('modal-options')?.classList.add('hidden');
@@ -433,23 +451,164 @@ window.saveVisit = async (motivo) => {
   renderRouteList();
   updateProgressCircle();
 
-  try {
-    await apiCall('registrar_movimiento', {
-      vendedor: state.user.vendedor,
-      clienteId: id,
-      tipo: 'visita',
-      motivo: String(motivo || 'Nota'),
-      observacion: obs
-    });
-  } catch (e) {
-    alert('⚠️ Error guardando visita: ' + (e.message || e));
-  }
+  const tipo = TIPO_VISITA[motivo] || TIPO_VISITA['default'];
+
+  workerPost({
+    accion:     'registrar_visita',
+    cliente_id: id,
+    vendedor:   state.user.vendedor,
+    tipo,
+    nota:       obs || motivo || 'Visita',
+    lat:        state.userLocation?.lat || null,
+    lng:        state.userLocation?.lng || null,
+  }).catch(() => {});
 };
 
 window.closeModal = () => el('modal-options')?.classList.add('hidden');
 
 // ==========================================
-// 7️⃣ UI HELPERS (PROGRESO, RELOJ, TEMAS)
+// 8️⃣ CHATBOT IA — con historial y memoria
+// ==========================================
+window.openChat = (clienteId = null) => {
+  state.chatClienteId = clienteId ? String(clienteId) : null;
+  state.chatHistory = [];
+  const msgs = el('chat-msgs');
+  if (msgs) msgs.innerHTML = '';
+  el('modal-chat')?.classList.remove('hidden');
+};
+
+window.closeChat = () => {
+  saveChatMemory();
+  el('modal-chat')?.classList.add('hidden');
+  state.chatHistory = [];
+  state.chatClienteId = null;
+};
+
+window.handleAISend = async () => {
+  const input = el('ai-input');
+  if (!input) return;
+
+  const txt = input.value.trim();
+  if (!txt) return;
+
+  appendChatMsg('user', txt);
+  input.value = '';
+
+  // Agregar al historial local
+  state.chatHistory.push({ role: 'user', text: txt });
+
+  // Mostrar indicador de escritura
+  const typingId = 'typing-' + Date.now();
+  const typingDiv = document.createElement('div');
+  typingDiv.id = typingId;
+  typingDiv.className = 'p-3 my-2 rounded-2xl text-sm bg-slate-700 text-slate-400 rounded-tl-none max-w-[85%]';
+  typingDiv.innerText = '...';
+  el('chat-msgs')?.appendChild(typingDiv);
+  el('chat-msgs').scrollTop = el('chat-msgs').scrollHeight;
+
+  try {
+    const res = await workerPost({
+      accion:     'chatbot_ia',
+      vendedor:   state.user.vendedor,
+      cliente_id: state.chatClienteId,
+      mensaje:    txt,
+      historial:  state.chatHistory.slice(-6),
+    });
+
+    // Quitar indicador de escritura
+    document.getElementById(typingId)?.remove();
+
+    const respuesta = res.text || '(sin respuesta)';
+    appendChatMsg('bot', respuesta);
+    state.chatHistory.push({ role: 'bot', text: respuesta });
+
+    // Notificar acciones ejecutadas por la IA
+    if (Array.isArray(res.acciones) && res.acciones.length > 0) {
+      const accionesTexto = res.acciones
+        .filter(a => a.resultado?.ok)
+        .map(a => `✅ ${a.nombre.replace(/_/g, ' ')}`)
+        .join(' · ');
+      if (accionesTexto) {
+        appendChatMsg('system', accionesTexto);
+      }
+    }
+
+  } catch (e) {
+    document.getElementById(typingId)?.remove();
+    appendChatMsg('bot', 'Error al contactar al asistente. Revisá tu conexión.');
+    console.error(e);
+  }
+};
+
+function appendChatMsg(role, text) {
+  const container = el('chat-msgs');
+  if (!container) return;
+
+  const div = document.createElement('div');
+
+  if (role === 'system') {
+    div.className = 'text-[11px] text-center text-slate-500 my-1 italic';
+    div.textContent = text;
+  } else {
+    const isUser = role === 'user';
+    div.className = `p-3 my-2 rounded-2xl text-sm max-w-[85%] ${
+      isUser ? 'bg-blue-600 text-white ml-auto rounded-tr-none' : 'bg-slate-700 text-slate-200 rounded-tl-none'
+    }`;
+    div.innerHTML = escapeHtml(String(text || '')).replace(/\n/g, '<br>');
+  }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Guarda resumen de la conversación en Supabase (fire-and-forget)
+async function saveChatMemory() {
+  if (state.chatHistory.length < 2) return;
+  if (!state.user?.vendedor) return;
+
+  // Resumen sencillo: últimos 2 mensajes
+  const ultimos = state.chatHistory.slice(-4);
+  const resumen = ultimos
+    .map(m => `${m.role === 'user' ? 'Vendedor' : 'IA'}: ${m.text.slice(0, 80)}`)
+    .join(' | ');
+
+  workerPost({
+    accion:          'guardar_memoria',
+    vendedor:        state.user.vendedor,
+    cliente_id:      state.chatClienteId,
+    resumen,
+    turno_count:     state.chatHistory.length,
+    acciones_tomadas: [],
+  }).catch(() => {});
+}
+
+// ==========================================
+// 9️⃣ FCM — Push Notifications
+// ==========================================
+async function initFCM() {
+  try {
+    if (!('serviceWorker' in navigator) || !window.firebase?.messaging) return;
+
+    const messaging = firebase.messaging();
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const token = await messaging.getToken();
+    if (!token || !state.user?.vendedor) return;
+
+    workerPost({
+      accion:      'save_fcm_token',
+      vendedor:    state.user.vendedor,
+      token,
+      dispositivo: navigator.userAgent.slice(0, 100),
+    }).catch(() => {});
+  } catch (_) {
+    // FCM no disponible — silencioso
+  }
+}
+
+// ==========================================
+// 10️⃣ UI HELPERS
 // ==========================================
 function updateProgressCircle() {
   const total = state.route.activeClients.length;
@@ -461,27 +620,24 @@ function updateProgressCircle() {
 
   const radius = 16;
   const circumference = radius * 2 * Math.PI;
-
   circle.style.strokeDasharray = `${circumference} ${circumference}`;
   const offset = circumference - (percent / 100) * circumference;
   circle.style.strokeDashoffset = offset;
 
-  if (percent < 30) circle.style.stroke = '#ef4444';
-  else if (percent < 70) circle.style.stroke = '#eab308';
+  if (percent < 30)       circle.style.stroke = '#ef4444';
+  else if (percent < 70)  circle.style.stroke = '#eab308';
   else if (percent < 100) circle.style.stroke = '#10b981';
-  else circle.style.stroke = '#3b82f6';
+  else                    circle.style.stroke = '#3b82f6';
 }
 
 function initClock() {
   const update = () => {
     const elDate = el('header-date');
     if (!elDate) return;
-
-    const now = new Date();
+    const now  = new Date();
     const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
     elDate.innerText = `${dias[now.getDay()]} ${now.getDate()} - ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
   };
-
   setInterval(update, 1000);
   update();
 }
@@ -495,11 +651,8 @@ function cycleTheme() {
 function applyTheme(t) {
   state.currentTheme = t;
   localStorage.setItem('ml_theme', t);
-
   const cfg = THEMES[t];
   document.body.className = `${cfg.bg} ${cfg.text} transition-colors duration-500 overflow-hidden`;
-
-  // refrescar ruta si está activa
   if (state.route.activeClients.length > 0) renderRouteList();
 }
 
@@ -508,51 +661,13 @@ function getThemeCardClass() {
 }
 
 function getStatusColor(dias) {
-  if (dias > 60) return { bg: 'bg-red-500/20', text: 'text-red-500' };
-  if (dias > 30) return { bg: 'bg-orange-500/20', text: 'text-orange-500' };
-  return { bg: 'bg-emerald-500/20', text: 'text-emerald-500' };
+  if (dias > 60) return { bg: 'bg-red-500/20',     text: 'text-red-500' };
+  if (dias > 30) return { bg: 'bg-orange-500/20',  text: 'text-orange-500' };
+  return              { bg: 'bg-emerald-500/20',  text: 'text-emerald-500' };
 }
 
-function showIASuggestion(iaData) {
-  const box = el('ia-suggestion-box');
-  if (!box) return;
-
-  box.classList.remove('hidden');
-
-  const rutas = iaData?.sugerencias?.rutas_sugeridas || [];
-  const alertas = iaData?.sugerencias?.alertas_entrega || [];
-
-  const suggestionText = rutas.length
-    ? `Hoy deberías visitar: <b>${rutas.map(escapeHtml).join(', ')}</b>.`
-    : `Hoy no hay ruta sugerida por patrón.`;
-
-  const extra = alertas.length
-    ? `<div class="text-[11px] opacity-90 mt-2">Entregas/alertas: <b>${alertas.map(escapeHtml).join(', ')}</b></div>`
-    : '';
-
-  box.innerHTML = `
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 text-white p-5">
-      <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="sparkles" class="w-20 h-20"></i></div>
-      <div class="relative z-10">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="bg-white/20 p-1.5 rounded-lg"><i class="fas fa-robot text-yellow-300 animate-pulse"></i></div>
-          <span class="text-xs font-bold uppercase tracking-wider">Sugerencia IA</span>
-        </div>
-
-        <div class="text-sm font-medium leading-relaxed opacity-95">
-          ${suggestionText}
-          ${extra}
-        </div>
-
-        <button onclick="acceptIARoute()" class="mt-4 w-full bg-white text-blue-700 font-extrabold py-3 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-md">
-          ACEPTAR RUTA <i class="fas fa-arrow-right"></i>
-        </button>
-      </div>
-    </div>
-  `;
-
-  // Re-render icons
-  try { window.lucide && lucide.createIcons(); } catch (_) {}
+function showIASuggestion() {
+  // En v11 las sugerencias se piden al chat IA directamente
 }
 
 function showRouteFinished() {
@@ -574,54 +689,16 @@ function showRouteFinished() {
 }
 
 // ==========================================
-// 8️⃣ CHATBOT IA
-// ==========================================
-window.handleAISend = async () => {
-  const input = el('ai-input');
-  if (!input) return;
-
-  const txt = input.value.trim();
-  if (!txt) return;
-
-  appendChatMsg('user', txt);
-  input.value = '';
-
-  try {
-    const res = await apiCall('chatbot', { vendedor: state.user.vendedor, mensaje: txt });
-    appendChatMsg('bot', res?.respuesta || '(sin respuesta)');
-  } catch (e) {
-    appendChatMsg('bot', 'Error IA: ' + (e.message || e));
-  }
-};
-
-function appendChatMsg(role, text) {
-  const container = el('chat-msgs');
-  if (!container) return;
-
-  const div = document.createElement('div');
-  const isUser = role === 'user';
-
-  div.className = `p-3 my-2 rounded-2xl text-sm max-w-[85%] ${
-    isUser ? 'bg-blue-600 text-white ml-auto rounded-tr-none' : 'bg-slate-700 text-slate-200 rounded-tl-none'
-  }`;
-
-  div.innerHTML = escapeHtml(String(text || '')).replace(/\n/g, '<br>');
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-// ==========================================
-// 9️⃣ GEO (DISTANCIA + TIEMPO)
+// 11️⃣ GEO
 // ==========================================
 function initGeo() {
   if (!('geolocation' in navigator)) return;
-
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       if (state.route.activeClients.length > 0) renderRouteList();
     },
-    (err) => console.log('Sin permiso GPS o error:', err),
+    (err) => console.log('GPS:', err),
     { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
   );
 }
@@ -641,22 +718,19 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 function getTravelTime(km) {
   if (!km) return '';
-  const speed = 20; // km/h promedio en ciudad
+  const speed = 20;
   const mins = Math.round((km / speed) * 60);
   return mins > 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins} min`;
 }
 
 // ==========================================
-// 10️⃣ VISTAS (CRÍTICO: exportar a window para onclick en HTML)
+// 12️⃣ VISTAS
 // ==========================================
 window.switchView = (id) => {
-  // Ocultar todas
   document.querySelectorAll('.view-section').forEach(v => {
     v.classList.remove('active');
     v.style.display = 'none';
   });
-
-  // Mostrar target
   const view = el(id);
   if (view) {
     view.style.display = 'flex';
@@ -664,16 +738,13 @@ window.switchView = (id) => {
   }
 };
 
-// ==========================================
-// 11️⃣ MODO FOCO
-// ==========================================
 window.toggleViewMode = () => {
   state.viewMode = state.viewMode === 'list' ? 'focus' : 'list';
   renderRouteList();
 };
 
 // ==========================================
-// 12️⃣ UTILS
+// 13️⃣ UTILS
 // ==========================================
 function escapeHtml(str) {
   return String(str)
