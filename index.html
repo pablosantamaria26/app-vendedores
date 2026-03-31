@@ -732,10 +732,52 @@
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), timeoutMs);
       try {
-        const r = await fetch(WORKER, { method: 'POST', body: JSON.stringify({ action: act, payload: pl }), signal: ctrl.signal });
+        // === BRIDGE Worker v3 ===
+        // login / get_app_data / chatbot / registrar → Worker v3 (accion format)
+        // Todo lo demás → GAS proxy (action/payload format, sin cambio)
+        let body, parseResp;
+
+        if (act === 'login') {
+          body = { accion: 'login', username: pl.user, pin: pl.pass };
+          parseResp = (j) => {
+            if (!j.exito) throw new Error(j.error || 'Usuario o PIN incorrecto');
+            return { user: j.vendedor, vendedor: j.vendedor, username: j.username, id: j.id };
+          };
+        } else if (act === 'get_app_data') {
+          body = { accion: 'get_app_data', vendedor: pl.vendedor };
+          parseResp = (j) => {
+            if (!j.exito) throw new Error(j.error || 'Error cargando datos');
+            return { clientes: j.clientes || [], zonas: j.zonas || [], sugerencia_ia: null, jornada_activa: null };
+          };
+        } else if (act === 'registrar_movimiento') {
+          body = { accion: 'registrar_visita', vendedor: pl.vendedor, cliente_id: pl.clienteId,
+                   tipo: pl.motivo || pl.tipo || 'visita', nota: pl.observacion || '' };
+          parseResp = () => ({});
+        } else if (act === 'registrar_batch') {
+          const items = pl.items || [];
+          Promise.all(items.map(item => fetch(WORKER, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion: 'registrar_visita', vendedor: pl.vendedor,
+              cliente_id: item.clienteId, tipo: item.motivo || 'visita', nota: item.observacion || '' })
+          }).catch(() => {}))).catch(() => {});
+          return {};
+        } else if (act === 'chatbot') {
+          body = { accion: 'chatbot_ia', vendedor: pl.vendedor, mensaje: pl.mensaje,
+                   historial: [], cliente_id: null };
+          parseResp = (j) => ({ respuesta: { type: 'text', text: j.text || 'Sin respuesta' } });
+        } else {
+          // Fallback: GAS proxy — comportamiento original sin cambios
+          body = { action: act, payload: pl };
+          parseResp = (j) => {
+            if (j.status !== 'success') throw new Error(j.message || 'Error');
+            return j.data;
+          };
+        }
+
+        const r = await fetch(WORKER, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body), signal: ctrl.signal });
         const j = await r.json();
-        if (j.status !== 'success') throw new Error(j.message || 'Error');
-        return j.data;
+        return parseResp(j);
       } finally {
         clearTimeout(to);
       }
