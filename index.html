@@ -732,7 +732,21 @@
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), timeoutMs);
       try {
-        // Todo va por GAS (comportamiento original — sin cambios visibles para vendedores)
+        // LOGIN → Supabase (credenciales iguales a GAS, respuesta compatible)
+        if (act === 'login') {
+          const r = await fetch(WORKER, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion: 'login', username: pl.user, pin: pl.pass }),
+            signal: ctrl.signal
+          });
+          const j = await r.json();
+          if (!j.exito) throw new Error(j.error || 'Usuario o PIN incorrecto');
+          // Devuelve el mismo shape que GAS: { user, vendedor }
+          return { user: j.username, vendedor: j.vendedor, id: j.id };
+        }
+
+        // Todo lo demás → GAS (sin cambios para vendedores)
         const r = await fetch(WORKER, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -742,7 +756,7 @@
         const j = await r.json();
         if (j.status !== 'success') throw new Error(j.message || 'Error');
 
-        // Dual-write silencioso: registrar visitas también en Supabase (para historial de IA)
+        // Dual-write silencioso: visitas también en Supabase (historial para IA)
         if (act === 'registrar_movimiento') {
           _syncVisitaSupabase_(pl.vendedor, pl.clienteId, pl.motivo || pl.tipo, pl.observacion);
         } else if (act === 'registrar_batch' && Array.isArray(pl.items)) {
