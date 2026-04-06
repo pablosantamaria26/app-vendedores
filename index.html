@@ -1214,7 +1214,7 @@ async function init() {
     if (routeInProgress) {
       const all = (state.db.clientes || []);
       const selected = new Set(Array.from(state.sel).map(normKey));
-      state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
+      state.route.active = all.filter(c => selected.has(normKey(c.localidad)));
 
       // re-render solo si estoy mirando la ruta
       if (state.view === 'view-route') renderRoute();
@@ -1878,7 +1878,7 @@ function maybeShowTardeModal_(backendData) {
 
       const all = (state.db.clientes || []);
       const selected = new Set(k.map(normKey));
-      state.route.active = all.filter(c => selected.has(normKey(c.localidad_key)));
+      state.route.active = all.filter(c => selected.has(normKey(c.localidad)));
 
       (async () => {
         try {
