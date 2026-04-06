@@ -289,7 +289,9 @@ function toggleZoneSelection(zoneKey, btnElement) {
 window.startRoute = () => {
   if (state.selection.selectedZones.size === 0) return;
   const selectedKeys = Array.from(state.selection.selectedZones);
-  state.route.activeClients = state.db.clients.filter(c => selectedKeys.includes(c.localidad_key));
+  state.route.activeClients = state.db.clients.filter(c =>
+    selectedKeys.some(k => k.toLowerCase() === (c.localidad || '').toLowerCase())
+  );
   initRouteView();
 };
 
