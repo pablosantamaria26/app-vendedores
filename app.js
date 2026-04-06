@@ -292,6 +292,8 @@ window.startRoute = () => {
   state.route.activeClients = state.db.clients.filter(c =>
     selectedKeys.some(k => k.toLowerCase() === (c.localidad || '').toLowerCase())
   );
+  console.log('[startRoute] zonas seleccionadas:', selectedKeys);
+  console.log('[startRoute] clientes totales:', state.db.clients.length, '| clientes en ruta:', state.route.activeClients.length);
   initRouteView();
 };
 
