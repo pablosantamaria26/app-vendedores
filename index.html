@@ -163,6 +163,34 @@
     #chat-panel{
       padding-bottom: calc(8px + var(--safe-bottom));
     }
+
+    /* ===== PUERTA FRÍA ===== */
+    .pf-zone-card {
+      background: linear-gradient(135deg, #fff7ed, #fffbeb);
+      border-color: #fdba74;
+    }
+    html.dark .pf-zone-card {
+      background: linear-gradient(135deg, #431407, #1c0a00);
+      border-color: #9a3412;
+    }
+    .pf-zone-card:hover { border-color: #f97316 !important; }
+
+    .pf-prospect-card {
+      border-left: 4px solid #f97316;
+    }
+    .pf-gps-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      flex: 1; padding: 10px 8px; border-radius: 12px; font-weight: 900;
+      font-size: 11px; text-decoration: none; border: 1px solid transparent;
+      transition: 0.15s;
+    }
+    .pf-gps-maps { background: #1a73e8; color: white; }
+    .pf-gps-waze { background: #33ccff; color: #1a1a2e; }
+
+    /* modal add client — vendedor selector */
+    .ac-vendedor-btn { transition: 0.15s; }
+    .ac-vendedor-btn.selected-ramiro { background: #f97316 !important; color: white !important; border-color: #ea580c !important; }
+    .ac-vendedor-btn.selected-martin { background: #3b82f6 !important; color: white !important; border-color: #2563eb !important; }
   </style>
 </head>
 
@@ -346,6 +374,75 @@
         </button>
         <button onclick="confirmNoLlegueZone()" class="btn-press py-3 rounded-xl font-black bg-red-600 text-white flex items-center justify-center gap-2">
           <i class="fas fa-ban"></i> Confirmar No llegué
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AGREGAR CLIENTE NUEVO (Puerta Fría) -->
+  <div id="modal-add-client" class="fixed inset-0 z-[80] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-orange-200 dark:border-orange-900 modal-card">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">
+            <i class="fas fa-door-open"></i> Puerta Fría
+          </p>
+          <h3 class="text-lg font-black dark:text-white">Agregar Cliente Nuevo</h3>
+        </div>
+        <button onclick="closeAddClientModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Dirección del punto</label>
+          <input id="ac-direccion" type="text" readonly
+            class="w-full mt-1 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xl p-3 text-xs font-semibold text-orange-700 dark:text-orange-300" />
+        </div>
+
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nombre del cliente *</label>
+          <input id="ac-nombre" type="text" placeholder="Ej: Almacén Don Juan, Kiosco Los Pinos..."
+            class="w-full mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white" />
+        </div>
+
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Teléfono (opcional)</label>
+          <input id="ac-tel" type="tel" placeholder="Ej: 11-4567-8901"
+            class="w-full mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm dark:text-white" />
+        </div>
+
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Asignar a vendedor *</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="ac-btn-ramiro" onclick="selVendedorAC('RAMIRO')"
+              class="ac-vendedor-btn py-3 rounded-xl font-black text-sm border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300">
+              <i class="fas fa-user"></i> RAMIRO
+            </button>
+            <button id="ac-btn-martin" onclick="selVendedorAC('MARTIN')"
+              class="ac-vendedor-btn py-3 rounded-xl font-black text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              <i class="fas fa-user"></i> MARTÍN
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nota (opcional)</label>
+          <textarea id="ac-nota" rows="2"
+            class="w-full mt-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 text-sm resize-none dark:text-white"
+            placeholder="Ej: Kiosco, le interesó gaseosas. Volver jueves."></textarea>
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button onclick="closeAddClientModal()"
+          class="btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+          Cancelar
+        </button>
+        <button id="ac-submit-btn" onclick="submitAddClient()"
+          class="btn-press py-3 rounded-xl font-black bg-orange-500 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-user-plus"></i> Guardar
         </button>
       </div>
     </div>
@@ -714,6 +811,24 @@
       search: { ddOpen:false, ddItems:[], lastQ:'', busy:false, t:null },
       clientView: { id:null, cliente:null, ultimoPedido:null, ticket:'' }
     };
+
+    // ===== PUERTA FRÍA: puntos a prospectar =====
+    // Depósito: Languenheim 1095, Longchamps (-34.8581759, -58.3764553)
+    // Ordenados por distancia desde el depósito (de más cerca a más lejos)
+    const PUERTA_FRIA_PUNTOS = [
+      { id:'pf_1',  empresa:'',    dir:'Calle 580 Nº900',          loc:'Gobernador Costa', full:'Calle 580 Nº900, Gobernador Costa, Buenos Aires',         lat:-34.8245820, lng:-58.2918316, dist_dep:8.58 },
+      { id:'pf_2',  empresa:'BIW', dir:'Calle 556 Nº1133',         loc:'Gobernador Costa', full:'Calle 556 Nº1133, Gobernador Costa, Buenos Aires',        lat:-34.8141531, lng:-58.2915511, dist_dep:9.17 },
+      { id:'pf_3',  empresa:'DMM', dir:'Bucarest 1143',            loc:'Santa Rosa',       full:'Bucarest 1143, Santa Rosa, Florencio Varela',             lat:-34.8291441, lng:-58.2798789, dist_dep:9.39 },
+      { id:'pf_4',  empresa:'',    dir:'Milan 19',                 loc:'Santa Rosa',       full:'Milan 19, Santa Rosa, Buenos Aires',                      lat:-34.825644,  lng:-58.2793142, dist_dep:9.57 },
+      { id:'pf_5',  empresa:'',    dir:'Av. Eva Perón 6024',       loc:'Villa Vatteone',   full:'Av. Eva Perón 6024, Villa Vatteone, Buenos Aires',         lat:-34.8229272, lng:-58.2770953, dist_dep:9.88 },
+      { id:'pf_6',  empresa:'',    dir:'Av. Sarmiento 4060',       loc:'Florencio Varela', full:'Av. Sarmiento 4060, Florencio Varela, Buenos Aires',       lat:-34.8163898, lng:-58.2772298, dist_dep:10.18 },
+      { id:'pf_7',  empresa:'',    dir:'Bartolomé Mitre 654',      loc:'Florencio Varela', full:'Bartolomé Mitre 654, Florencio Varela, Buenos Aires',      lat:-34.8088881, lng:-58.2745608, dist_dep:10.79 },
+      { id:'pf_8',  empresa:'FUN', dir:'Rosario 614',              loc:'Villa Vatteone',   full:'Rosario 614, Villa Vatteone, Buenos Aires',                lat:-34.8134612, lng:-58.2639645, dist_dep:11.41 },
+      { id:'pf_9',  empresa:'ABB', dir:'Av. 12 de Octubre 1445',  loc:'Florencio Varela', full:'Av. 12 de Octubre 1445, Florencio Varela, Buenos Aires',  lat:-34.8116417, lng:-58.2633901, dist_dep:11.54 },
+      { id:'pf_10', empresa:'',    dir:'Luján 1407',               loc:'Bosques',          full:'Luján 1407, Bosques, Buenos Aires',                        lat:-34.8328157, lng:-58.2327439, dist_dep:13.41 },
+      { id:'pf_11', empresa:'',    dir:'RP36 5756',                loc:'Bosques',          full:'RP36 5756, Bosques, Buenos Aires',                         lat:-34.8118341, lng:-58.23016,   dist_dep:14.31 },
+      { id:'pf_12', empresa:'',    dir:'Av. Bosques 2755',         loc:'Bosques',          full:'Av. Bosques 2755, Bosques, Buenos Aires',                  lat:-34.8080847, lng:-58.2271891, dist_dep:14.72 },
+    ];
 
     const el = id => document.getElementById(id);
 
@@ -1515,6 +1630,53 @@ function maybeShowTardeModal_(backendData) {
         `;
         g.appendChild(d);
       });
+
+      // ===== PUERTA FRÍA card (siempre al final del grid) =====
+      const pfDiv = document.createElement('div');
+      pfDiv.id = 'card-pf-zone';
+      pfDiv.dataset.zoneKey = 'PUERTA_FRIA';
+      pfDiv.className = 'col-span-2 p-4 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden pf-zone-card';
+      pfDiv.onclick = () => toggleSelPF(pfDiv);
+
+      const pfLocs = [...new Set(PUERTA_FRIA_PUNTOS.map(p => p.loc))];
+      pfDiv.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">
+              <i class="fas fa-star"></i> ZONA NUEVA · PUERTA FRÍA
+            </div>
+            <h3 class="font-black text-base uppercase text-orange-700 dark:text-orange-300">Captación de Clientes</h3>
+            <p class="text-xs text-orange-500 dark:text-orange-400 mt-0.5 font-semibold">
+              ${PUERTA_FRIA_PUNTOS.length} puntos para prospectar
+            </p>
+          </div>
+          <div class="text-4xl text-orange-300 dark:text-orange-700 opacity-70">
+            <i class="fas fa-door-open"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex gap-1.5 flex-wrap">
+          ${pfLocs.map(l => `<span class="text-[9px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">${escapeHtml(l)}</span>`).join('')}
+        </div>
+        <div class="sel-overlay absolute top-2 right-2 hidden">
+          <i class="fas fa-check-circle text-orange-500 text-xl bg-white dark:bg-slate-900 rounded-full"></i>
+        </div>
+        <div class="sel-border absolute inset-0 border-2 border-orange-500 rounded-2xl hidden pointer-events-none"></div>
+      `;
+      g.appendChild(pfDiv);
+    }
+
+    function toggleSelPF(div) {
+      const ov = div.querySelector('.sel-overlay'), bd = div.querySelector('.sel-border');
+      if (state.sel.has('PUERTA_FRIA')) {
+        state.sel.delete('PUERTA_FRIA');
+        ov.classList.add('hidden'); bd.classList.add('hidden');
+      } else {
+        state.sel.add('PUERTA_FRIA');
+        ov.classList.remove('hidden'); bd.classList.remove('hidden');
+      }
+      const c = state.sel.size;
+      el('footer-dashboard')?.classList.toggle('hidden', c === 0);
+      if (el('btn-start-lbl')) el('btn-start-lbl').innerText = `INICIAR (${c})`;
     }
 
     function toggleSel(n, div) {
@@ -1877,8 +2039,28 @@ function maybeShowTardeModal_(backendData) {
       state.route.currentZones = k.map(normKey);
 
       const all = (state.db.clientes || []);
-      const selected = new Set(k.map(normKey));
+      // Excluir 'PUERTA_FRIA' del filtro de clientes reales
+      const zonasSinPF = k.filter(x => normKey(x) !== 'PUERTA_FRIA');
+      const selected = new Set(zonasSinPF.map(normKey));
       state.route.active = all.filter(c => selected.has(normKey(c.localidad)));
+
+      // Inyectar puntos de puerta fría si fue seleccionada
+      if (state.sel.has('PUERTA_FRIA')) {
+        const pfProspectos = PUERTA_FRIA_PUNTOS.map(p => ({
+          id: p.id,
+          nombre: p.empresa || p.dir,
+          apellido: '',
+          nombre_full: p.empresa ? `${p.empresa} · ${p.dir}` : p.dir,
+          direccion: p.full,
+          localidad: p.loc,
+          localidad_key: 'PUERTA_FRIA',
+          lat: String(p.lat),
+          lng: String(p.lng),
+          es_prospecto: true,
+          pf_data: p
+        }));
+        state.route.active = [...state.route.active, ...pfProspectos];
+      }
 
       (async () => {
         try {
@@ -1950,12 +2132,56 @@ function maybeShowTardeModal_(backendData) {
       const list = state.mode === 'focus' ? [pends[0]] : pends;
 
       list.forEach((cli) => {
+        const div = document.createElement('div'); div.id = `card-${cli.id}`;
+
+        // ===== TARJETA PUERTA FRÍA =====
+        if (cli.es_prospecto) {
+          const p = cli.pf_data;
+          const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving`;
+          const wazeUrl = `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`;
+          div.className = state.mode === 'focus'
+            ? 'h-[70vh] flex flex-col justify-between bg-orange-50 dark:bg-orange-950/40 p-6 rounded-3xl border-2 border-orange-300 dark:border-orange-800 relative overflow-hidden shadow-xl pf-prospect-card'
+            : 'bg-orange-50 dark:bg-orange-950/40 p-4 rounded-2xl border border-orange-200 dark:border-orange-800 relative shadow-sm pf-prospect-card';
+          div.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-[9px] font-black uppercase tracking-widest bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-700">
+                <i class="fas fa-door-open"></i> ${escapeHtml(p.loc)}
+              </span>
+              ${p.empresa ? `<span class="text-[10px] font-black text-orange-500">${escapeHtml(p.empresa)}</span>` : ''}
+            </div>
+            <h2 class="${state.mode === 'focus' ? 'text-2xl' : 'text-base'} font-black leading-tight text-orange-800 dark:text-orange-200 mt-1">${escapeHtml(p.dir)}</h2>
+            <p class="text-orange-600 dark:text-orange-400 text-xs mt-1 flex items-center gap-1">
+              <i class="fas fa-location-dot"></i> ${escapeHtml(p.full)}
+            </p>
+            <div id="dist-${escapeHtml(cli.id)}" class="text-xs font-bold text-orange-500 mt-2 h-4" data-lat="${p.lat}" data-lng="${p.lng}">
+              <i class="fas fa-route"></i> ~${p.dist_dep} km desde depósito
+            </div>
+            <div class="flex gap-2 mt-4">
+              <a href="${mapsUrl}" target="_blank" rel="noopener" class="pf-gps-btn pf-gps-maps btn-press">
+                <i class="fab fa-google"></i> Maps
+              </a>
+              <a href="${wazeUrl}" target="_blank" rel="noopener" class="pf-gps-btn pf-gps-waze btn-press">
+                <i class="fas fa-car"></i> Waze
+              </a>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <button onclick="openAddClientModal('${escapeAttr(cli.id)}')" class="btn-press py-3 rounded-xl font-black text-sm bg-orange-500 text-white flex items-center justify-center gap-2 active:scale-95">
+                <i class="fas fa-user-plus"></i> Nuevo Cliente
+              </button>
+              <button onclick="pfDone('${escapeAttr(cli.id)}')" class="btn-press py-3 rounded-xl font-black text-sm bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 active:scale-95">
+                <i class="fas fa-times"></i> Sin interés
+              </button>
+            </div>
+          `;
+          c.appendChild(div);
+          return;
+        }
+
+        // ===== TARJETA CLIENTE NORMAL =====
         const days = Number(cli.dias_sin_comprar ?? 999);
         let col = days > 60 ? 'bg-red-500' : (days > 30 ? 'bg-yellow-500' : 'bg-green-500');
 
         const name = displayName(cli).toUpperCase();
-
-        const div = document.createElement('div'); div.id = `card-${cli.id}`;
 
         // ✅ cambio pedido: card-soft para contraste
         div.className = state.mode === 'focus'
@@ -2869,6 +3095,110 @@ function markSuggestionsSeen_(turno) {
     const btn = document.getElementById('pwa-install-btn');
     if (btn) btn.style.display = 'none';
     if (typeof toast === 'function') toast('App instalada', 'success');
+  });
+
+  // ===== PUERTA FRÍA: marcar sin interés =====
+  function pfDone(id) {
+    state.route.done.add(String(id));
+    const card = el(`card-${id}`);
+    if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
+    setTimeout(() => renderRoute(), 400);
+    toast('Marcado como sin interés', 'success');
+  }
+
+  // ===== MODAL AGREGAR CLIENTE NUEVO =====
+  let _acPfId = null;
+  let _acVendedor = 'RAMIRO'; // default a Ramiro (estos son sus puntos)
+
+  function openAddClientModal(pfId) {
+    _acPfId = pfId;
+    _acVendedor = 'RAMIRO'; // reset a Ramiro por defecto
+
+    // Buscar datos del punto
+    const p = PUERTA_FRIA_PUNTOS.find(x => x.id === pfId);
+
+    const inp = el('ac-direccion');
+    if (inp && p) inp.value = p.full;
+
+    const nombre = el('ac-nombre');
+    if (nombre) nombre.value = '';
+
+    const tel = el('ac-tel');
+    if (tel) tel.value = '';
+
+    const nota = el('ac-nota');
+    if (nota) nota.value = '';
+
+    // Poner Ramiro seleccionado por defecto
+    selVendedorAC('RAMIRO');
+
+    el('modal-add-client')?.classList.remove('hidden');
+    el('modal-add-client')?.classList.add('flex');
+    setTimeout(() => el('ac-nombre')?.focus(), 100);
+  }
+
+  function closeAddClientModal() {
+    el('modal-add-client')?.classList.add('hidden');
+    el('modal-add-client')?.classList.remove('flex');
+  }
+
+  function selVendedorAC(v) {
+    _acVendedor = v;
+    const btnR = el('ac-btn-ramiro');
+    const btnM = el('ac-btn-martin');
+    if (!btnR || !btnM) return;
+    btnR.className = btnR.className.replace(/selected-\w+/g, '').trim();
+    btnM.className = btnM.className.replace(/selected-\w+/g, '').trim();
+    if (v === 'RAMIRO') btnR.classList.add('ac-vendedor-btn', 'selected-ramiro');
+    else btnM.classList.add('ac-vendedor-btn', 'selected-martin');
+  }
+
+  async function submitAddClient() {
+    const nombre = el('ac-nombre')?.value?.trim();
+    if (!nombre) { toast('Ingresá el nombre del cliente', 'error'); return; }
+
+    const p = PUERTA_FRIA_PUNTOS.find(x => x.id === _acPfId);
+    if (!p) return;
+
+    const payload = {
+      accion: 'agregar_prospecto',
+      vendedor: state.user?.vendedor,
+      nombre,
+      telefono: el('ac-tel')?.value?.trim() || '',
+      direccion: p.full,
+      localidad: p.loc,
+      lat: p.lat,
+      lng: p.lng,
+      asignar_a: _acVendedor,
+      nota: el('ac-nota')?.value?.trim() || '',
+      origen: 'puerta_fria'
+    };
+
+    const btn = el('ac-submit-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+
+    try {
+      await api('agregar_prospecto', payload, 15000);
+      toast(`¡Cliente agregado a ${_acVendedor}!`, 'success');
+      closeAddClientModal();
+      // Marcar el punto como visitado/hecho
+      pfDone(_acPfId);
+    } catch (e) {
+      // Guardar en outbox si falla
+      const outbox = JSON.parse(localStorage.getItem('ml_outbox_v1') || '[]');
+      outbox.push({ action: 'agregar_prospecto', payload, ts: Date.now() });
+      localStorage.setItem('ml_outbox_v1', JSON.stringify(outbox));
+      toast(`Guardado localmente → se enviará cuando haya señal`, 'success');
+      closeAddClientModal();
+      pfDone(_acPfId);
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Guardar'; }
+    }
+  }
+
+  // Cerrar modal-add-client al tocar fuera
+  el('modal-add-client')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAddClientModal();
   });
 
   // iOS: hint manual
