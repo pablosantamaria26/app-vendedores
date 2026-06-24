@@ -825,9 +825,6 @@
       { id:'pf_7',  empresa:'',    dir:'Bartolomé Mitre 654',      loc:'Florencio Varela', full:'Bartolomé Mitre 654, Florencio Varela, Buenos Aires',      lat:-34.8088881, lng:-58.2745608, dist_dep:10.79 },
       { id:'pf_8',  empresa:'FUN', dir:'Rosario 614',              loc:'Villa Vatteone',   full:'Rosario 614, Villa Vatteone, Buenos Aires',                lat:-34.8134612, lng:-58.2639645, dist_dep:11.41 },
       { id:'pf_9',  empresa:'ABB', dir:'Av. 12 de Octubre 1445',  loc:'Florencio Varela', full:'Av. 12 de Octubre 1445, Florencio Varela, Buenos Aires',  lat:-34.8116417, lng:-58.2633901, dist_dep:11.54 },
-      { id:'pf_10', empresa:'',    dir:'Luján 1407',               loc:'Bosques',          full:'Luján 1407, Bosques, Buenos Aires',                        lat:-34.8328157, lng:-58.2327439, dist_dep:13.41 },
-      { id:'pf_11', empresa:'',    dir:'RP36 5756',                loc:'Bosques',          full:'RP36 5756, Bosques, Buenos Aires',                         lat:-34.8118341, lng:-58.23016,   dist_dep:14.31 },
-      { id:'pf_12', empresa:'',    dir:'Av. Bosques 2755',         loc:'Bosques',          full:'Av. Bosques 2755, Bosques, Buenos Aires',                  lat:-34.8080847, lng:-58.2271891, dist_dep:14.72 },
     ];
 
     const el = id => document.getElementById(id);
@@ -2130,6 +2127,23 @@ function maybeShowTardeModal_(backendData) {
       }
 
       const list = state.mode === 'focus' ? [pends[0]] : pends;
+
+      // Mensaje motivador si hay prospectos de puerta fría en la ruta
+      const hayProspectos = pends.some(x => x.es_prospecto);
+      if (hayProspectos && state.mode !== 'focus') {
+        const tip = document.createElement('div');
+        tip.className = 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex gap-3 items-start';
+        tip.innerHTML = `
+          <div class="text-2xl mt-0.5">👀</div>
+          <div>
+            <p class="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-1">Tip del día</p>
+            <p class="text-sm font-semibold text-amber-800 dark:text-amber-200 leading-snug">
+              Mientras vas a estos puntos, si en el camino ves una <strong>perfumería</strong>, <strong>súper chino</strong>, kiosco o almacén — ¡bajá e intentá conseguirlos como clientes nuevos!
+            </p>
+          </div>
+        `;
+        c.appendChild(tip);
+      }
 
       list.forEach((cli) => {
         const div = document.createElement('div'); div.id = `card-${cli.id}`;
