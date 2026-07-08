@@ -721,8 +721,8 @@
       </div>
 
       <div class="mt-4 grid grid-cols-2 gap-3">
-        <button onclick="clientGoTo()" class="btn-press py-3 rounded-xl font-black bg-green-600 text-white flex items-center justify-center gap-2">
-          <i class="fas fa-location-crosshairs"></i> Ir a cliente
+        <button onclick="openClientMaps(state.clientView && state.clientView.id)" class="btn-press py-3 rounded-xl font-black bg-blue-600 text-white flex items-center justify-center gap-2">
+          <i class="fas fa-location-arrow"></i> Cómo llegar
         </button>
         <button onclick="clientOpenTicket()" class="btn-press py-3 rounded-xl font-black bg-blue-600 text-white flex items-center justify-center gap-2">
           <i class="fas fa-receipt"></i> Ver ticket
@@ -737,6 +737,27 @@
           Cerrar
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL MONITOR -->
+  <div id="modal-monitor" data-close="modal-monitor" class="fixed inset-0 z-[86] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-5 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Monitor de clientes</p>
+          <h3 class="text-lg font-black dark:text-white">A quién hace rato no le pasás</h3>
+        </div>
+        <button onclick="closeMonitor()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 mt-3">
+        <button data-mon-filter="urgentes" onclick="setMonitorFilter('urgentes')" class="mon-tab flex-1 py-2 rounded-lg text-xs font-black">Urgentes</button>
+        <button data-mon-filter="todos" onclick="setMonitorFilter('todos')" class="mon-tab flex-1 py-2 rounded-lg text-xs font-black">Todos</button>
+        <button data-mon-filter="aldia" onclick="setMonitorFilter('aldia')" class="mon-tab flex-1 py-2 rounded-lg text-xs font-black">Al día</button>
+      </div>
+      <div id="monitor-list" class="mt-3 overflow-y-auto no-scrollbar space-y-2 pr-1"></div>
     </div>
   </div>
 
@@ -1200,6 +1221,148 @@ document.addEventListener('DOMContentLoaded', () => {
     function getClientZoneKey(cli) { return normKey(cli?.localidad_key || cli?.localidad || ''); }
 
     // =========================
+    // Cliente: copiar nº, mapa, seguimiento local  (rediseño Tanda 1)
+    // =========================
+    function copyClientNum(id, btn) {
+      copyPlainText(String(id));
+      try { if (navigator.vibrate) navigator.vibrate(30); } catch (_) {}
+      toast('Nº ' + id + ' copiado', 'success');
+      const f = btn && btn.querySelector('.copied-flash');
+      if (f) { f.style.opacity = '1'; setTimeout(() => { f.style.opacity = '0'; }, 1200); }
+    }
+
+    function openClientMaps(id) {
+      const cli = (state.db.clientes || []).find(x => String(x.id) === String(id));
+      if (!cli) return toast('Cliente no encontrado', 'error');
+      const lat = Number(cli.lat), lng = Number(cli.lng);
+      let dest;
+      if (cli.lat && cli.lng && isFinite(lat) && isFinite(lng)) {
+        dest = lat + ',' + lng;
+      } else {
+        const q = [cli.direccion, cli.localidad].filter(Boolean).join(', ').trim();
+        if (!q) return toast('Sin dirección ni GPS', 'error');
+        dest = encodeURIComponent(q);
+      }
+      window.open('https://www.google.com/maps/dir/?api=1&destination=' + dest + '&travelmode=driving', '_blank', 'noopener');
+    }
+
+    // Registro local del último movimiento por cliente (para mostrar seguimiento sin backend nuevo)
+    const CLIENT_LAST_KEY = 'ml_client_last';
+    function getClientLastMap() { try { return JSON.parse(localStorage.getItem(CLIENT_LAST_KEY)) || {}; } catch (_) { return {}; } }
+    function getClientLast(id) { const m = getClientLastMap(); return m[String(id)] || null; }
+    function touchClientLast(id, tipo, motivo, obs) {
+      try {
+        const m = getClientLastMap();
+        m[String(id)] = { ts: Date.now(), tipo: String(tipo || ''), motivo: String(motivo || ''), obs: String(obs || '') };
+        localStorage.setItem(CLIENT_LAST_KEY, JSON.stringify(m));
+      } catch (_) {}
+    }
+
+    function timeAgo(ts) {
+      const s = Math.floor((Date.now() - Number(ts)) / 1000);
+      if (!isFinite(s)) return '';
+      const d = Math.floor(s / 86400); if (d > 0) return 'hace ' + d + (d > 1 ? ' días' : ' día');
+      const h = Math.floor(s / 3600);  if (h > 0) return 'hace ' + h + ' h';
+      const mi = Math.floor(s / 60);   if (mi > 0) return 'hace ' + mi + ' min';
+      return 'recién';
+    }
+
+    function buildSeguimientoHtml(cli, days) {
+      const items = [];
+      const last = getClientLast(cli.id);
+      if (last && last.motivo) {
+        const obs = last.obs ? ' — ' + escapeHtml(String(last.obs)) : '';
+        const mk = /venta|pedido/i.test((last.tipo || '') + (last.motivo || '')) ? 'bg-emerald-500' : 'bg-amber-500';
+        items.push(
+          '<li class="grid grid-cols-[10px_1fr] gap-2 items-start">' +
+            '<span class="w-2 h-2 rounded-full ' + mk + ' mt-1.5"></span>' +
+            '<span><span class="text-[12px] font-semibold dark:text-slate-200"><b class="font-black">' + escapeHtml(String(last.motivo)) + '</b>' + obs + '</span><br>' +
+            '<span class="text-[10px] text-slate-400 font-semibold">' + timeAgo(last.ts) + '</span></span></li>'
+        );
+      }
+      const compraMk = days > 60 ? 'bg-red-500' : (days > 30 ? 'bg-amber-500' : 'bg-emerald-500');
+      const compraTxt = days >= 999 ? 'sin registro' : ('hace ' + days + (days === 1 ? ' día' : ' días'));
+      items.push(
+        '<li class="grid grid-cols-[10px_1fr] gap-2 items-start">' +
+          '<span class="w-2 h-2 rounded-full ' + compraMk + ' mt-1.5"></span>' +
+          '<span><span class="text-[12px] font-semibold dark:text-slate-200"><b class="font-black">Última compra</b></span><br>' +
+          '<span class="text-[10px] text-slate-400 font-semibold">' + compraTxt + '</span></span></li>'
+      );
+      return (
+        '<div class="mt-3 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">' +
+          '<div class="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black tracking-widest uppercase text-slate-400 border-b border-slate-200 dark:border-slate-700"><i class="fas fa-clock-rotate-left"></i> Seguimiento</div>' +
+          '<ul class="px-3 py-2 space-y-2 list-none m-0">' + items.join('') + '</ul>' +
+        '</div>'
+      );
+    }
+
+    // =========================
+    // Monitor de clientes (rediseño Tanda 2)
+    // =========================
+    function openMonitor() {
+      state.monitorFilter = 'urgentes';
+      const m = el('modal-monitor');
+      if (!m) return;
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      renderMonitor();
+    }
+    function closeMonitor() {
+      const m = el('modal-monitor');
+      if (!m) return;
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function setMonitorFilter(f) { state.monitorFilter = f; renderMonitor(); }
+    function renderMonitor() {
+      const list = el('monitor-list');
+      if (!list) return;
+      const f = state.monitorFilter || 'urgentes';
+
+      document.querySelectorAll('.mon-tab').forEach(t => {
+        const on = t.getAttribute('data-mon-filter') === f;
+        t.className = 'mon-tab flex-1 py-2 rounded-lg text-xs font-black ' + (on ? 'bg-blue-600 text-white' : 'text-slate-500 dark:text-slate-400');
+      });
+
+      let arr = (state.db.clientes || []).map(c => ({ c, d: Number(c.dias_sin_comprar ?? 999) }));
+      if (f === 'urgentes') arr = arr.filter(x => x.d > 30 && x.d < 99999);
+      else if (f === 'aldia') arr = arr.filter(x => x.d <= 30);
+      arr.sort((a, b) => b.d - a.d);
+      arr = arr.slice(0, 150);
+
+      if (!arr.length) {
+        list.innerHTML = '<div class="p-6 text-center text-sm font-bold text-slate-400">Sin clientes en esta lista.</div>';
+        return;
+      }
+
+      list.innerHTML = arr.map(({ c, d }) => {
+        const col  = d > 60 ? 'border-red-500'  : (d > 30 ? 'border-amber-500'  : 'border-emerald-500');
+        const dcol = d > 60 ? 'text-red-500'     : (d > 30 ? 'text-amber-500'     : 'text-emerald-500');
+        const name = displayName(c) || 'SIN NOMBRE';
+        const loc  = c.localidad || c.Localidad || '';
+        const dTxt = d >= 999 ? '—' : String(d);
+        return (
+          '<button type="button" onclick="monitorOpenClient(\'' + escapeAttr(String(c.id)) + '\')" ' +
+          'class="w-full text-left bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-l-4 ' + col + ' rounded-xl p-3 flex items-center gap-3 active:scale-[0.99] transition-transform">' +
+            '<div class="text-lg font-black tabular-nums leading-none dark:text-white flex-none"><span class="text-xs text-slate-400">#</span>' + escapeHtml(String(c.id)) + '</div>' +
+            '<div class="min-w-0 flex-1">' +
+              '<div class="text-xs font-black uppercase truncate dark:text-white">' + escapeHtml(String(name)) + '</div>' +
+              '<div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold truncate">' + escapeHtml(String(loc)) + '</div>' +
+            '</div>' +
+            '<div class="text-right flex-none">' +
+              '<div class="text-lg font-black tabular-nums leading-none ' + dcol + '">' + escapeHtml(dTxt) + '</div>' +
+              '<div class="text-[9px] font-black uppercase tracking-widest text-slate-400">días</div>' +
+            '</div>' +
+          '</button>'
+        );
+      }).join('');
+    }
+    function monitorOpenClient(id) {
+      closeMonitor();
+      if (typeof lookupAndOpenClient_ === 'function') lookupAndOpenClient_(String(id));
+    }
+
+    // =========================
     // Base
     // =========================
     function displayName(cli) {
@@ -1578,6 +1741,24 @@ function maybeShowTardeModal_(backendData) {
       const wk = getWeekProgress_();
       const doneMap = wk?.zones || {};
 
+      // Banner de alerta: clientes que hace mucho no le comprás (>30 días)
+      const urgentes = (state.db.clientes || []).filter(c => Number(c.dias_sin_comprar ?? 0) > 30);
+      if (urgentes.length > 0) {
+        const ab = document.createElement('button');
+        ab.type = 'button';
+        ab.className = 'col-span-2 p-4 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 flex items-center gap-3 text-left active:scale-[0.99] transition-transform';
+        ab.onclick = () => openMonitor();
+        ab.innerHTML = `
+          <div class="w-11 h-11 rounded-xl bg-red-500 text-white grid place-items-center text-xl font-black flex-none"><i class="fas fa-exclamation"></i></div>
+          <div class="flex-1 min-w-0">
+            <div class="text-lg font-black text-red-600 dark:text-red-400 leading-tight">${urgentes.length} te necesitan</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 font-semibold">hace +30 días sin comprarte · tocá para ver</div>
+          </div>
+          <i class="fas fa-chevron-right text-red-400 text-lg flex-none"></i>
+        `;
+        g.appendChild(ab);
+      }
+
       (state.db.zonas || []).forEach(z => {
         const crit = Number(z.criticos || 0) > 0;
         const zName = String(z.nombre || '');
@@ -1599,11 +1780,16 @@ function maybeShowTardeModal_(backendData) {
         d.onclick = () => toggleSel(zName, d);
 
         d.innerHTML = `
-          <h3 class="font-bold text-sm uppercase dark:text-white truncate">${escapeHtml(zName)}</h3>
+          <h3 class="font-black text-sm uppercase dark:text-white truncate">${escapeHtml(zName)}</h3>
 
-          <div class="flex justify-between items-end mt-3">
-            <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg">${escapeHtml(String(z.total_clientes || 0))} Clientes</span>
-            ${crit ? '<i class="fas fa-exclamation-circle text-red-500 animate-pulse"></i>' : '<i class="fas fa-map-pin text-slate-300"></i>'}
+          <div class="flex justify-between items-end mt-1.5">
+            <div class="leading-none">
+              <span class="text-4xl font-black tabular-nums dark:text-white">${escapeHtml(String(z.total_clientes || 0))}</span>
+              <span class="text-[11px] font-bold text-slate-400 ml-1">clientes</span>
+            </div>
+            ${crit
+              ? `<span class="text-[10px] font-black uppercase bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap"><i class="fas fa-exclamation-circle"></i> ${escapeHtml(String(z.criticos))} críticos</span>`
+              : `<span class="text-[10px] font-black uppercase bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 px-2 py-1 rounded-lg flex items-center gap-1 whitespace-nowrap"><i class="fas fa-check"></i> al día</span>`}
           </div>
 
           <div class="zone-meta">
@@ -2202,26 +2388,46 @@ function maybeShowTardeModal_(backendData) {
           ? 'h-[70vh] flex flex-col justify-between card-soft p-6 rounded-3xl border border-slate-200 dark:border-slate-700 relative overflow-hidden shadow-xl'
           : 'card-soft p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm';
 
+        const badgeCls = days > 60 ? 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400'
+                       : days > 30 ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+                       : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300';
+        const numSize = state.mode === 'focus' ? 'text-6xl' : 'text-4xl';
+        const hashSize = state.mode === 'focus' ? 'text-3xl' : 'text-xl';
+        const nameSize = state.mode === 'focus' ? 'text-2xl' : 'text-lg';
+        const daysBadge = days >= 999 ? 'sin registro' : (days + ' días');
+        const segHtml = buildSeguimientoHtml(cli, days);
+
         div.innerHTML = `
           <div class="absolute left-0 top-0 bottom-0 w-1.5 ${col}"></div>
-          <div class="flex justify-between pl-3 mb-1">
-            <span class="text-[10px] font-bold text-slate-400 uppercase">#${escapeHtml(String(cli.id))}</span>
-            <span class="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 font-bold">${escapeHtml(String(days))} días</span>
-          </div>
-          <h2 class="${state.mode === 'focus' ? 'text-3xl' : 'text-lg'} font-black uppercase leading-tight dark:text-white pl-3">${escapeHtml(name)}</h2>
-          <p class="text-slate-500 text-xs mt-1 truncate pl-3 flex items-center gap-1"><i class="fas fa-location-dot text-slate-300"></i> ${escapeHtml(String(cli.direccion || ''))}</p>
-          <div id="dist-${cli.id}" class="text-xs font-bold text-blue-600 mt-3 h-4 pl-3" data-lat="${escapeHtml(String(cli.lat || ''))}" data-lng="${escapeHtml(String(cli.lng || ''))}">...</div>
-          <div class="grid grid-cols-4 gap-2 mt-4 pl-3">
-            <button onclick="quickSale('${escapeAttr(String(cli.id))}')" class="col-span-3 bg-slate-900 dark:bg-blue-600 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta</button>
-            <button onclick="openReg('${escapeAttr(String(cli.id))}')" class="col-span-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-white rounded-xl active:scale-95"><i class="fas fa-ellipsis-h"></i></button>
-          </div>
-          <div class="mt-3 pl-3 flex gap-2">
-            <button onclick="openChatWithClientHint('${escapeAttr(String(cli.id))}')" class="btn-press flex-1 py-2 rounded-xl font-black text-xs bg-indigo-600 text-white flex items-center justify-center gap-2">
-              <i class="fas fa-headset"></i> Pedir guión
-            </button>
-            <button onclick="openOrderFromClient('${escapeAttr(String(cli.id))}')" class="btn-press flex-1 py-2 rounded-xl font-black text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
-              <i class="fas fa-receipt"></i> Último pedido
-            </button>
+          <div class="pl-3">
+            <div class="flex justify-between items-start gap-2">
+              <div class="min-w-0">
+                <div class="text-[10px] font-black tracking-widest uppercase text-slate-400">Cliente</div>
+                <button type="button" onclick="copyClientNum('${escapeAttr(String(cli.id))}', this)" class="btn-press relative flex items-baseline gap-1 mt-0.5" title="Tocá para copiar el número">
+                  <span class="${hashSize} font-extrabold text-slate-400">#</span>
+                  <span class="${numSize} font-black tracking-tight tabular-nums leading-none dark:text-white">${escapeHtml(String(cli.id))}</span>
+                  <span class="copied-flash absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none z-20 text-[10px] font-black text-white bg-emerald-500 px-2 py-0.5 rounded-full whitespace-nowrap opacity-0 transition-opacity">✓ ¡Copiado!</span>
+                </button>
+                <div class="flex items-center gap-1 text-[10px] font-black text-blue-600 dark:text-blue-400 mt-1"><i class="fas fa-copy"></i> tocá el número para copiarlo</div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-black whitespace-nowrap ${badgeCls}"><i class="fas fa-clock"></i> ${escapeHtml(daysBadge)}</span>
+            </div>
+
+            <h2 class="${nameSize} font-black uppercase leading-tight dark:text-white mt-3">${escapeHtml(name)}</h2>
+            <p class="text-slate-500 text-sm font-semibold mt-1 truncate flex items-center gap-1.5"><i class="fas fa-location-dot text-slate-400"></i> ${escapeHtml(String(cli.direccion || 'Sin dirección'))}</p>
+            <div id="dist-${cli.id}" class="text-xs font-bold text-blue-600 dark:text-blue-400 mt-2 h-4" data-lat="${escapeHtml(String(cli.lat || ''))}" data-lng="${escapeHtml(String(cli.lng || ''))}">...</div>
+
+            ${segHtml}
+
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <button onclick="quickSale('${escapeAttr(String(cli.id))}')" class="bg-emerald-600 hover:bg-emerald-500 py-3.5 rounded-xl font-black text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-check"></i> Venta OK</button>
+              <button onclick="openClientMaps('${escapeAttr(String(cli.id))}')" class="bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-black text-white shadow-md active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-location-arrow"></i> Cómo llegar</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-2">
+              <button onclick="openReg('${escapeAttr(String(cli.id))}')" class="btn-press py-2.5 rounded-xl font-black text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5"><i class="fas fa-pen"></i> Motivo</button>
+              <button onclick="openOrderFromClient('${escapeAttr(String(cli.id))}')" class="btn-press py-2.5 rounded-xl font-black text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5"><i class="fas fa-receipt"></i> Pedido</button>
+              <button onclick="openChatWithClientHint('${escapeAttr(String(cli.id))}')" class="btn-press py-2.5 rounded-xl font-black text-[11px] bg-indigo-600 text-white flex items-center justify-center gap-1.5"><i class="fas fa-headset"></i> Guión</button>
+            </div>
           </div>
         `;
         c.appendChild(div);
@@ -2325,6 +2531,7 @@ function updateDistances(pos) {
         touchZoneLast(zKey, tipo, motivo);
         markWeekZone_(zKey, motivo);
       }
+      touchClientLast(cid, tipo, motivo, observacion); // seguimiento por cliente
 
       const payload = { vendedor: state.user.vendedor, clienteId: cid, tipo, motivo, observacion };
       sendInBackground('registrar_movimiento', payload);
