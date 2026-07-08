@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#6366f1">
@@ -204,20 +204,20 @@
   <div id="toast" class="toast bg-slate-800 text-white border border-slate-600"></div>
 
   <!-- LOGIN -->
-  <section id="view-login" class="view-section active justify-center p-8 bg-slate-900 relative">
+  <section id="view-login" class="view-section active justify-center p-8 bg-slate-50 dark:bg-slate-900 relative">
     <div class="w-full max-w-sm text-center mx-auto z-10">
       <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-blue-500/30 rotate-3">
         <i class="fas fa-box text-3xl text-white"></i>
       </div>
-      <h1 class="text-3xl font-black mb-2 text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
-      <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Ventas & Logística</p>
+      <h1 class="text-3xl font-black mb-2 text-slate-900 dark:text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
+      <p class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Ventas & Logística</p>
 
-      <input id="login-user" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="USUARIO" autocomplete="username" />
-      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 mb-6 text-center font-bold uppercase placeholder-slate-500 text-white focus:border-blue-500 outline-none" placeholder="PIN" autocomplete="current-password" />
+      <input id="login-user" type="text" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:border-blue-500 outline-none" placeholder="USUARIO" autocomplete="username" />
+      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-6 text-center font-bold uppercase placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:border-blue-500 outline-none" placeholder="PIN" autocomplete="current-password" />
 
       <button id="btn-login" onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
 
-      <p class="mt-6 text-[10px] text-slate-500 font-bold uppercase tracking-[0.25em]">Tip: ENTER en el PIN</p>
+      <p class="mt-6 text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-[0.25em]">Tip: ENTER en el PIN</p>
     </div>
   </section>
 
@@ -973,7 +973,7 @@
 // BOOT
 // =========================
 document.addEventListener('DOMContentLoaded', () => {
-  if (localStorage.getItem('ml_theme') === 'light') document.documentElement.classList.remove('dark');
+  if (localStorage.getItem('ml_theme') === 'dark') document.documentElement.classList.add('dark');
 
   // =========================
   // ✅ Micro vibración al tocar botones (Android / PWA)
