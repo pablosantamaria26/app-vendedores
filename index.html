@@ -46,7 +46,10 @@
     @keyframes popIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
     .animate-pop { animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.15); }
 
-    .view-section { display: none; height: 100%; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    /* SIN -webkit-overflow-scrolling:touch — en iPhone congela el scroll
+       táctil cuando la vista se oculta y se vuelve a mostrar (display:none
+       ↔ flex). Es obsoleta: iOS moderno ya trae el momentum por defecto. */
+    .view-section { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
     .view-section.active { display: flex; }
 
     .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; }
@@ -154,7 +157,6 @@
       /* !important: gana sobre el max-h-[85vh] de Tailwind (vh falla en iframe) */
       max-height: calc(100% - (32px + var(--safe-top) + var(--safe-bottom))) !important;
       overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
     }
     /* tarjetas: claro gris, oscuro más claro que el fondo */
     html:not(.dark) .card-soft{
