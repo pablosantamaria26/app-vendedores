@@ -887,17 +887,22 @@
           return { user: j.username, vendedor: j.vendedor, id: j.id };
         }
 
-        // ── CHATBOT: sigue en GAS (lógica compleja, migrar cuando haya historial) ──
+        // ── CHATBOT: cerebro real (Worker + Gemini + contexto Supabase por
+        //    vendedor: cartera, últimos pedidos, notas, perfil y memoria) ──
         if (act === 'chatbot') {
           const r = await fetch(WORKER, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'chatbot', payload: pl }),
+            body: JSON.stringify({
+              accion: 'chatbot_ia',
+              vendedor: pl.vendedor,
+              cliente_id: pl.cliente_id || null,
+              mensaje: pl.mensaje,
+              historial: pl.historial || []
+            }),
             signal: ctrl.signal
           });
-          const j = await r.json();
-          if (j.status !== 'success') throw new Error(j.message || 'Error del servidor');
-          return j.data;
+          return await r.json();   // { text, acciones }
         }
 
         // ── Todo lo demás → Worker v3 (Supabase) ──
@@ -2825,10 +2830,22 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
     // =========================
     // Onboarding (first time) -> se manda al chat para que quede LOG
     // =========================
-    function maybeShowOnboard_() {
+    // El perfil vive en SUPABASE (perfil_vendedor): sobrevive dispositivos y
+    // versiones, y la IA lo usa en cada respuesta (tono + apodo + su "dolor").
+    // El localStorage queda solo como recuerdo local de "ya decidió".
+    async function maybeShowOnboard_() {
       const v = state.user?.vendedor ?? state.user?.user ?? 'GEN';
-      const done = localStorage.getItem(ONBOARD_KEY(v));
-      if (done) return;
+      if (localStorage.getItem(ONBOARD_KEY(v))) return;
+      // ¿Ya tiene perfil en la nube? (creado desde otro celular, p. ej.)
+      try {
+        const r = await fetch(WORKER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'get_perfil', vendedor: v })
+        });
+        const j = await r.json();
+        if (j?.perfil) { localStorage.setItem(ONBOARD_KEY(v), '1'); return; }
+      } catch (_) { /* sin red: no molestar ahora, se ofrece la próxima */ return; }
       el('modal-onboard').classList.remove('hidden');
       el('modal-onboard').classList.add('flex');
       setTimeout(()=>el('ob-name')?.focus(), 150);
@@ -2849,29 +2866,58 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
       const pain = String(el('ob-pain').value || '').trim();
 
       try {
-        localStorage.setItem(`ml_profile_${CACHE_VER}_${String(v).toUpperCase()}`, JSON.stringify({ name, style, shift, pain, ts: Date.now() }));
-      } catch (_) {}
-
-      try {
-        await api('chatbot', {
-          vendedor: state.user.vendedor,
-          mensaje: `Perfil vendedor (para recordarlo): Me llamo ${name}. Estilo preferido: ${style}. Turnos: ${shift}. Lo que más me cuesta: ${pain || '—'}.`
-        }, 25000);
-        toast('Perfil guardado (hilo)', 'success');
-      } catch (_) {}
+        const r = await fetch(WORKER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accion: 'save_perfil',
+            vendedor: state.user.vendedor,
+            apodo: name, estilo: style, turnos: shift, dolor: pain
+          })
+        });
+        const j = await r.json();
+        toast(j?.exito ? 'Perfil guardado ✔ El soporte ya te conoce' : 'No se pudo guardar el perfil', j?.exito ? 'success' : 'error');
+      } catch (_) {
+        toast('Sin conexión: el perfil no se guardó', 'error');
+      }
     }
 
     // =========================
     // CHAT (typing + oportunidades + prompts rápidos)
     // =========================
-    function toggleAIChat(s) {
+    // Memoria de conversación: historial en vivo (se manda a la IA) y
+    // resumen guardado en Supabase al cerrar (conversation_summaries).
+    let _chatHist = [];
+    let _chatCliente = null;
+
+    function toggleAIChat(s, clienteId) {
       const m = el('modal-chat'), p = el('chat-panel');
       if (!m || !p) return;
       if (s) {
+        if (clienteId !== undefined) _chatCliente = clienteId ? String(clienteId) : null;
         m.classList.remove('hidden');
         setTimeout(() => p.classList.remove('translate-y-full'), 10);
         setTimeout(() => el('chat-in')?.focus(), 250);
       } else {
+        // Guardar memoria de la charla (fire-and-forget) para el largo plazo
+        try {
+          if (_chatHist.length >= 2 && state.user?.vendedor) {
+            const resumen = _chatHist.slice(-4)
+              .map(m2 => (m2.role === 'user' ? 'Vendedor: ' : 'IA: ') + String(m2.text || '').slice(0, 90))
+              .join(' | ');
+            fetch(WORKER, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                accion: 'guardar_memoria',
+                vendedor: state.user.vendedor,
+                cliente_id: _chatCliente,
+                resumen,
+                turno_count: _chatHist.length
+              })
+            }).catch(() => {});
+          }
+        } catch (_) {}
         p.classList.add('translate-y-full');
         setTimeout(() => m.classList.add('hidden'), 300);
       }
@@ -2880,7 +2926,7 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
     function openChatWithClientHint(id) {
       const cli = (state.db?.clientes || []).find(c => String(c.id) === String(id));
       const name = cli ? displayName(cli) : `#${id}`;
-      toggleAIChat(true);
+      toggleAIChat(true, id);
       setTimeout(()=> {
         el('chat-in').value = `Estoy por entrar a ${name} (#${id}). Dame un guión corto si me dice: "ya tengo proveedor" y qué registrar después.`;
       }, 250);
@@ -2889,7 +2935,7 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
     function openOrderFromClient(id) {
       const cli = (state.db?.clientes || []).find(c => String(c.id) === String(id));
       const name = cli ? displayName(cli) : `#${id}`;
-      toggleAIChat(true);
+      toggleAIChat(true, id);
       setTimeout(()=> {
         el('chat-in').value = `Último pedido del cliente ${name} #${id}`;
         sendChat();
@@ -2903,24 +2949,31 @@ Decime qué zonas atacar hoy y cómo repartir entre mañana/tarde.`;
 
       addMsg(t, 'user');
       i.value = '';
+      _chatHist.push({ role: 'user', text: t });
 
       const typingEl = addTyping();
 
       try {
-        const res = await api('chatbot', { vendedor: state.user.vendedor, mensaje: t }, 30000);
-        const r = res?.respuesta || {};
+        const res = await api('chatbot', {
+          vendedor: state.user.vendedor,
+          cliente_id: _chatCliente,
+          mensaje: t,
+          historial: _chatHist.slice(-6)
+        }, 30000);
 
         removeTyping(typingEl);
 
-        if (r.type === 'ticket') {
-          addMsg(r.text || 'Listo.', 'bot');
-          addTicket(r.data || '');
-        } else if (r.type === 'route') {
-          addMsg(r.text || 'Dale.', 'bot');
-          addRouteBtn(r.data || '');
-        } else {
-          addMsg(r.text || "No entendí.", 'bot');
-          maybeRenderOpportunities(r.data);
+        const texto = res?.text || 'No pude generar una respuesta.';
+        addMsg(texto, 'bot');
+        _chatHist.push({ role: 'bot', text: texto });
+
+        // Acciones que la IA ejecutó de verdad (visita/nota/tarea registrada)
+        if (Array.isArray(res?.acciones) && res.acciones.length) {
+          const hechas = res.acciones
+            .filter(a => a?.resultado?.ok)
+            .map(a => '✅ ' + String(a.nombre || '').replace(/_/g, ' '))
+            .join(' · ');
+          if (hechas) addMsg(hechas, 'bot');
         }
       } catch (e) {
         removeTyping(typingEl);
