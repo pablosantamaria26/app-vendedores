@@ -239,6 +239,9 @@
         </div>
       </div>
       <div class="flex gap-2">
+        <button onclick="openMiCarteraModal()" title="Mi cartera y descuentos" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-percent text-xs"></i>
+        </button>
         <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
           <i class="fas fa-adjust"></i>
         </button>
@@ -810,6 +813,37 @@
           <i class="fas fa-check"></i> Listo
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL MI CARTERA + DESCUENTOS -->
+  <div id="modal-mi-cartera" data-close="modal-mi-cartera" class="fixed inset-0 z-[84] bg-black/70 hidden items-center justify-center p-4 backdrop-blur-sm modal-wrap">
+    <div class="bg-white dark:bg-slate-900 w-full sm:max-w-lg rounded-3xl p-6 shadow-2xl animate-pop border border-slate-200 dark:border-slate-700 modal-card flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Mi cartera</p>
+          <h3 class="text-lg font-black dark:text-white">Clientes y descuentos</h3>
+        </div>
+        <button onclick="closeMiCarteraModal()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="mt-4">
+        <select id="mi-cartera-orden" onchange="renderMiCarteraList_()" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-3 py-2.5 text-sm font-bold dark:text-white outline-none">
+          <option value="todos">Todos (por número)</option>
+          <option value="mas_descuento">Mayor descuento primero</option>
+          <option value="sin_descuento">Sin descuento</option>
+        </select>
+      </div>
+
+      <div class="mt-3 text-[11px] font-bold text-slate-400"><span id="mi-cartera-count">0</span> clientes</div>
+
+      <div id="mi-cartera-list" class="mt-2 flex-1 overflow-y-auto no-scrollbar space-y-2"></div>
+
+      <button onclick="closeMiCarteraModal()" class="mt-4 btn-press py-3 rounded-xl font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+        Cerrar
+      </button>
     </div>
   </div>
 
@@ -2184,6 +2218,68 @@ function maybeShowTardeModal_(backendData) {
       const m = el('modal-client-search');
       m.classList.add('hidden');
       m.classList.remove('flex');
+    }
+
+    // =========================
+    // MI CARTERA + DESCUENTOS — listado completo del vendedor
+    // =========================
+    function openMiCarteraModal() {
+      const m = el('modal-mi-cartera');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      renderMiCarteraList_();
+    }
+
+    function closeMiCarteraModal() {
+      const m = el('modal-mi-cartera');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function renderMiCarteraList_() {
+      const box = el('mi-cartera-list');
+      if (!box) return;
+
+      const orden = el('mi-cartera-orden')?.value || 'todos';
+      let clientes = (state.db?.clientes || []).slice();
+
+      const tieneDescuento = c => c.descuento !== null && c.descuento !== undefined && c.descuento !== '';
+
+      if (orden === 'sin_descuento') {
+        clientes = clientes.filter(c => !tieneDescuento(c));
+        clientes.sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
+      } else if (orden === 'mas_descuento') {
+        clientes.sort((a, b) => {
+          const da = tieneDescuento(a) ? Number(a.descuento) : -1;
+          const db_ = tieneDescuento(b) ? Number(b.descuento) : -1;
+          return db_ - da;
+        });
+      } else {
+        clientes.sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
+      }
+
+      el('mi-cartera-count').textContent = clientes.length;
+
+      if (!clientes.length) {
+        box.innerHTML = `<div class="p-6 text-center text-sm font-bold text-slate-400">No hay clientes para mostrar.</div>`;
+        return;
+      }
+
+      box.innerHTML = clientes.map(c => {
+        const tiene = tieneDescuento(c);
+        const descHtml = tiene
+          ? `<span class="px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-black text-white text-xs font-black tabular-nums whitespace-nowrap">${escapeHtml(String(Number(c.descuento)))}%</span>`
+          : `<span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-black whitespace-nowrap">Sin descuento</span>`;
+        return `
+          <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            <div class="min-w-0 flex-1">
+              <div class="font-black tabular-nums text-sm dark:text-white">#${escapeHtml(String(c.id))}</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold truncate">${escapeHtml(displayName(c))}</div>
+            </div>
+            ${descHtml}
+          </div>
+        `;
+      }).join('');
     }
 
     function clientModalSearchNow() {
