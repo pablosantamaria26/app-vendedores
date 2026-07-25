@@ -1308,16 +1308,58 @@ document.addEventListener('DOMContentLoaded', () => {
       if (f) { f.style.opacity = '1'; setTimeout(() => { f.style.opacity = '0'; }, 1200); }
     }
 
+    // Región de reparto/venta (conurbano sur) — una coordenada fuera de este recuadro
+    // se considera error de origen (base de datos sucia) y se descarta, cayendo al
+    // fallback por texto en vez de mandar al usuario a un lugar equivocado.
+    const ZONA_BOUNDS = { latMin: -35.40, latMax: -34.50, lngMin: -58.85, lngMax: -58.00 };
+    function coordEnZona_(lat, lng) {
+      return isFinite(lat) && isFinite(lng) &&
+        lat >= ZONA_BOUNDS.latMin && lat <= ZONA_BOUNDS.latMax &&
+        lng >= ZONA_BOUNDS.lngMin && lng <= ZONA_BOUNDS.lngMax;
+    }
+
+    // Localidades mal escritas o ambiguas → forma "Localidad, Partido" que Google Maps
+    // interpreta bien. Mismo diccionario usado en el geocoder del reparto.
+    const NORM_LOCALIDAD_MAP_ = {
+      'bunge': 'Ingeniero Budge, Lomas de Zamora',
+      'budge': 'Ingeniero Budge, Lomas de Zamora',
+      'ingeniero budge': 'Ingeniero Budge, Lomas de Zamora',
+      'ing budge': 'Ingeniero Budge, Lomas de Zamora',
+      'villa fiorito': 'Villa Fiorito, Lomas de Zamora',
+      'fiorito': 'Villa Fiorito, Lomas de Zamora',
+      'llavallol': 'Llavallol, Lomas de Zamora',
+      'lavallol': 'Llavallol, Lomas de Zamora',
+      'domseelar': 'Domselaar, San Vicente',
+      'domselaar': 'Domselaar, San Vicente',
+      'monte chingolo': 'Monte Chingolo, Lanús',
+      'villa celina': 'Villa Celina, La Matanza',
+      'villa madero': 'Villa Madero, La Matanza',
+      'tapiales': 'Tapiales, La Matanza',
+      'la tablada': 'La Tablada, La Matanza',
+      'aldo bonzi': 'Aldo Bonzi, La Matanza',
+      'ciudad evita': 'Ciudad Evita, La Matanza',
+      'isidro casanova': 'Isidro Casanova, La Matanza',
+      'laferrere': 'Gregorio de Laferrere, La Matanza',
+      'gregorio de laferrere': 'Gregorio de Laferrere, La Matanza',
+    };
+    function normalizarLocalidadMaps_(loc) {
+      const key = _normText_(loc);
+      if (/^florenci(o|on) varela/.test(key)) return 'Florencio Varela';
+      if (NORM_LOCALIDAD_MAP_[key]) return NORM_LOCALIDAD_MAP_[key];
+      return String(loc || '').trim();
+    }
+
     function openClientMaps(id) {
       const cli = (state.db.clientes || []).find(x => String(x.id) === String(id));
       if (!cli) return toast('Cliente no encontrado', 'error');
       const lat = Number(cli.lat), lng = Number(cli.lng);
       let dest;
-      if (cli.lat && cli.lng && isFinite(lat) && isFinite(lng)) {
+      if (cli.lat && cli.lng && coordEnZona_(lat, lng)) {
         dest = lat + ',' + lng;
       } else {
-        const q = [cli.direccion, cli.localidad].filter(Boolean).join(', ').trim();
-        if (!q) return toast('Sin dirección ni GPS', 'error');
+        const locNorm = normalizarLocalidadMaps_(cli.localidad);
+        const q = [cli.direccion, locNorm, 'Provincia de Buenos Aires', 'Argentina'].filter(Boolean).join(', ').trim();
+        if (!cli.direccion && !locNorm) return toast('Sin dirección ni GPS', 'error');
         dest = encodeURIComponent(q);
       }
       window.open('https://www.google.com/maps/dir/?api=1&destination=' + dest + '&travelmode=driving', '_blank', 'noopener');
