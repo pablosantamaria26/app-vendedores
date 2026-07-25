@@ -960,6 +960,30 @@
       }
     }
 
+    // Trae los descuentos de la cartera (get_app_data no los incluye) y los
+    // mergea en state.db.clientes por id. Fire-and-forget: no bloquea la
+    // carga de la ruta. Si cambia algo desde el Gestor de Clientes, se ve
+    // reflejado la próxima vez que se abre la app o se refresca la ruta.
+    async function loadDescuentosEnBackground_(vendedor) {
+      try {
+        const res = await api('preview_cartera', { vendedores: [vendedor] }, 15000);
+        const porId = new Map((res?.clientes || []).map(c => [String(c.id), c.descuento]));
+        if (!porId.size) return;
+
+        (state.db.clientes || []).forEach(c => {
+          if (porId.has(String(c.id))) c.descuento = porId.get(String(c.id));
+        });
+        (state.route?.active || []).forEach(c => {
+          if (porId.has(String(c.id))) c.descuento = porId.get(String(c.id));
+        });
+
+        setAppCache_(vendedor, state.db);
+        if (state.view === 'view-route') renderRoute();
+      } catch (_) {
+        // silencioso: la tarjeta simplemente no muestra el chip hasta el próximo intento
+      }
+    }
+
     // =========================
     // ✅ MODALS UX: tap fuera + ESC (sin romper tu lógica)
     // =========================
@@ -1487,6 +1511,7 @@ async function init() {
     setAppCache_(vend, state.db);
 
     renderGrid(false);
+    loadDescuentosEnBackground_(vend); // no bloquea: llega y se mergea aparte
 
     // ✅ Jornada activa backend
     if (d?.jornada_activa?.activa) {
@@ -2427,6 +2452,9 @@ function maybeShowTardeModal_(backendData) {
         const daysBadge = days >= 999 ? 'sin registro' : (days + ' días');
         const segHtml = buildSeguimientoHtml(cli, days);
 
+        const tieneDescuento = cli.descuento !== null && cli.descuento !== undefined && cli.descuento !== '';
+        const descuentoTxt = tieneDescuento ? `${Number(cli.descuento)}%` : 'Sin descuento';
+
         div.innerHTML = `
           <div class="absolute left-0 top-0 bottom-0 w-1.5 ${col}"></div>
           <div class="pl-3">
@@ -2440,7 +2468,13 @@ function maybeShowTardeModal_(backendData) {
                 </button>
                 <div class="flex items-center gap-1 text-[10px] font-black text-blue-600 dark:text-blue-400 mt-1"><i class="fas fa-copy"></i> tocá el número para copiarlo</div>
               </div>
-              <span class="px-2.5 py-1 rounded-full text-[11px] font-black whitespace-nowrap ${badgeCls}"><i class="fas fa-clock"></i> ${escapeHtml(daysBadge)}</span>
+              <div class="flex flex-col items-end gap-1 flex-none">
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-black whitespace-nowrap ${badgeCls}"><i class="fas fa-clock"></i> ${escapeHtml(daysBadge)}</span>
+                <div class="text-right">
+                  <div class="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center justify-end gap-1"><i class="fas fa-percent" style="font-size:7px"></i>Descuento</div>
+                  <div class="mt-0.5 px-2.5 py-1 rounded-lg bg-slate-900 dark:bg-black text-white text-xs font-black tabular-nums whitespace-nowrap">${escapeHtml(descuentoTxt)}</div>
+                </div>
+              </div>
             </div>
 
             <h2 class="${nameSize} font-black uppercase leading-tight dark:text-white mt-3">${escapeHtml(name)}</h2>
