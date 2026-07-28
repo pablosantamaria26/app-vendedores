@@ -3,6 +3,8 @@
 // ==========================================
 
 const WORKER_URL = 'https://frosty-term-20ea.santamariapablodaniel.workers.dev/';
+const SB_URL = 'https://gjeyvbidomxzofcdycya.supabase.co';
+const SB_ANON = 'sb_publishable_CjdA8GwtCljm_PzT8pqk3g_QIhTmUHT';
 
 // --- ESTADO GLOBAL ---
 const state = {
@@ -20,6 +22,7 @@ const state = {
   currentTheme: 'dark',
   currentClient: null,
   selection: { selectedZones: new Set() },
+  rutaCiclo: { semana: null, dia: null },
 
   // Chat IA
   chatHistory: [],           // [{ role: 'user'|'bot', text }]
@@ -166,6 +169,7 @@ async function loadAppData() {
 
     renderZoneDashboard();
     renderCoberturaBanner();
+    renderRutaCicloButton();
 
   } catch (e) {
     alert('Error iniciando app: ' + (e.message || e));
@@ -745,6 +749,186 @@ window.switchView = (id) => {
 window.toggleViewMode = () => {
   state.viewMode = state.viewMode === 'list' ? 'focus' : 'list';
   renderRouteList();
+};
+
+// ==========================================
+// 🗺️ HOJA DE RUTA — ciclo de 2 semanas
+// Calendario fijo de qué zona toca cada día. Los CLIENTES nunca se
+// hardcodean acá: la ruta se arma en vivo contra state.db.clients
+// (la cartera real de Supabase), así que si un cliente se reasigna
+// o se saca de la cartera, la ruta lo refleja solo, sin tocar código.
+// ==========================================
+const RUTA_CICLO_DIAS = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+const RUTA_CICLO_DIAS_LABEL = { LUNES: 'Lunes', MARTES: 'Martes', MIERCOLES: 'Miércoles', JUEVES: 'Jueves', VIERNES: 'Viernes' };
+
+const RUTA_CICLO_DATA = {
+  NAHUEL: {
+    '1': {
+      LUNES:     ['Canning', 'Ezeiza'],
+      MARTES:    ['Monte Grande', 'Luis Guillón', 'Adrogue'],
+      MIERCOLES: ['Villa Celina', 'Villa Fiorito', '9 de Abril'],
+      JUEVES:    ['Quilmes', 'Bernal', 'Ezpeleta'],
+      VIERNES:   ['Florencio Varela'],
+    },
+    '2': {
+      LUNES:     ['Florencio Varela', 'Claypole', 'Rafael Calzada'],
+      MARTES:    ['San Francisco Solano', 'La Florida'],
+      MIERCOLES: ['Villa Celina', 'Villa Fiorito', '9 de Abril'],
+      JUEVES:    ['Banfield', 'Lomas de Zamora', 'Temperley'],
+      VIERNES:   [], // Puerta de Hierro — zona nueva, prospección
+    },
+  },
+  // Otros vendedores: agregar acá cuando arme cada uno su hoja de ruta.
+};
+
+function rutaCicloSemanaDiaActual() {
+  const t = new Date();
+  const wd = t.getDay(); // 0=domingo..6=sábado
+  const dia = RUTA_CICLO_DIAS[(wd >= 1 && wd <= 5) ? wd - 1 : 0];
+  const jan1 = new Date(t.getFullYear(), 0, 1);
+  const wknum = Math.ceil((((t - jan1) / 86400000) + jan1.getDay() + 1) / 7);
+  const semana = (wknum % 2 === 1) ? '1' : '2';
+  return { semana, dia, esFinde: wd === 0 || wd === 6 };
+}
+
+function rutaCicloVendedorKey() {
+  return String(state.user?.vendedor || '').trim().toUpperCase();
+}
+
+function rutaCicloTieneSchedule() {
+  return !!RUTA_CICLO_DATA[rutaCicloVendedorKey()];
+}
+
+// Se llama después de cargar datos del vendedor logueado (ver loadAppData)
+function renderRutaCicloButton() {
+  const btn = el('btn-ruta-ciclo');
+  if (!btn) return;
+  btn.classList.toggle('hidden', !state.user?.vendedor);
+}
+
+window.openRutaCiclo = () => {
+  const actual = rutaCicloSemanaDiaActual();
+  state.rutaCiclo.semana = actual.semana;
+  state.rutaCiclo.dia = actual.dia;
+  window.switchView('view-ruta-ciclo');
+  renderRutaCiclo();
+};
+
+window.rutaCicloSetSemana = (w) => {
+  state.rutaCiclo.semana = w;
+  renderRutaCiclo();
+};
+
+function rutaCicloZonasDelDia() {
+  const key = rutaCicloVendedorKey();
+  const { semana, dia } = state.rutaCiclo;
+  return (RUTA_CICLO_DATA[key]?.[semana]?.[dia]) || [];
+}
+
+async function renderRutaCiclo() {
+  const { semana, dia } = state.rutaCiclo;
+  const actual = rutaCicloSemanaDiaActual();
+  const esHoy = (semana === actual.semana && dia === actual.dia);
+
+  // Tabs de semana
+  ['1', '2'].forEach(w => {
+    const b = el('rc-w' + w);
+    if (!b) return;
+    b.classList.toggle('bg-amber-500', semana === w);
+    b.classList.toggle('text-white', semana === w);
+    b.classList.toggle('text-slate-500', semana !== w);
+    b.classList.toggle('dark:text-slate-400', semana !== w);
+  });
+
+  // Chips de día
+  const diasBox = el('rc-dias');
+  if (diasBox) {
+    diasBox.innerHTML = RUTA_CICLO_DIAS.map(d => {
+      const on = d === dia;
+      const esHoyChip = (semana === actual.semana && d === actual.dia);
+      return `<button onclick="rutaCicloSetDia('${d}')" class="flex-none px-3.5 py-2 rounded-full text-xs font-black border
+        ${on ? 'bg-amber-500 text-white border-amber-500' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'}">
+        ${RUTA_CICLO_DIAS_LABEL[d]}${esHoyChip ? ' · HOY' : ''}
+      </button>`;
+    }).join('');
+  }
+
+  const card = el('rc-card');
+  if (!card) return;
+
+  if (!rutaCicloTieneSchedule()) {
+    card.innerHTML = `
+      <div class="text-center py-8">
+        <i class="fas fa-route text-3xl text-slate-300 dark:text-slate-700 mb-3"></i>
+        <p class="font-black text-slate-600 dark:text-slate-300">Todavía no armamos tu hoja de ruta</p>
+        <p class="text-xs text-slate-400 mt-1">Pronto vas a poder ver acá qué zona te toca cada día.</p>
+      </div>`;
+    return;
+  }
+
+  const zonas = rutaCicloZonasDelDia();
+  const clientesHoy = zonas.length
+    ? state.db.clients.filter(c => zonas.some(z => z.toLowerCase() === (c.localidad || '').toLowerCase()))
+    : [];
+
+  card.innerHTML = `
+    <p class="text-[10px] font-black uppercase tracking-widest text-amber-500">Semana ${semana} · ${RUTA_CICLO_DIAS_LABEL[dia]}${esHoy ? ' (hoy)' : ''}</p>
+    <h3 class="text-xl font-black mt-1 dark:text-white">${zonas.length ? zonas.join(' · ') : 'Zona nueva — prospección'}</h3>
+    <p class="text-sm text-slate-400 mt-1">${clientesHoy.length} cliente${clientesHoy.length === 1 ? '' : 's'} en tu cartera actual</p>
+    <div id="rc-cta" class="mt-4"></div>
+  `;
+
+  const cta = el('rc-cta');
+  if (!zonas.length) {
+    cta.innerHTML = `<p class="text-xs text-slate-400 italic">Día libre para prospectar zona nueva — no hay ruta armada todavía.</p>`;
+    return;
+  }
+  if (!esHoy) {
+    cta.innerHTML = `<button onclick="rutaCicloArmarRuta()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-3 rounded-xl font-black">
+      <i class="fas fa-eye mr-1"></i> Ver esta ruta igual
+    </button>`;
+    return;
+  }
+
+  cta.innerHTML = `<button disabled class="w-full bg-slate-200 dark:bg-slate-800 text-slate-400 py-3 rounded-xl font-black">Verificando…</button>`;
+  const yaHecha = await rutaCicloYaHechaHoy(zonas);
+  if (!el('rc-cta')) return; // el usuario ya navegó a otro lado
+  if (yaHecha) {
+    el('rc-cta').innerHTML = `<button disabled class="w-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 py-3 rounded-xl font-black">
+      <i class="fas fa-check mr-1"></i> Ya la hiciste hoy
+    </button>`;
+  } else {
+    el('rc-cta').innerHTML = `<button onclick="rutaCicloArmarRuta()" class="w-full bg-amber-500 hover:bg-amber-400 text-white py-3 rounded-xl font-black shadow-lg shadow-amber-500/30">
+      <i class="fas fa-location-arrow mr-1"></i> Armar ruta de hoy
+    </button>`;
+  }
+}
+
+window.rutaCicloSetDia = (d) => {
+  state.rutaCiclo.dia = d;
+  renderRutaCiclo();
+};
+
+async function rutaCicloYaHechaHoy(zonas) {
+  try {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const vendedor = encodeURIComponent(state.user.vendedor);
+    const url = `${SB_URL}/rest/v1/jornadas?vendedor=eq.${vendedor}&inicio_fecha=eq.${hoy}&estado=eq.FINALIZADA&select=zonas`;
+    const resp = await fetch(url, { headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON } });
+    const rows = await resp.json();
+    const norm = new Set(zonas.map(z => z.trim().toLowerCase()));
+    return (rows || []).some(r => (r.zonas || []).some(z => norm.has(String(z).trim().toLowerCase())));
+  } catch (e) {
+    console.error('rutaCicloYaHechaHoy error:', e);
+    return false;
+  }
+}
+
+window.rutaCicloArmarRuta = () => {
+  const zonas = rutaCicloZonasDelDia();
+  if (!zonas.length) return;
+  state.selection.selectedZones = new Set(zonas);
+  window.startRoute();
 };
 
 // ==========================================

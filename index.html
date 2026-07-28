@@ -239,6 +239,9 @@
         </div>
       </div>
       <div class="flex gap-2">
+        <button id="btn-ruta-ciclo" onclick="openRutaCiclo()" title="Hoja de ruta" class="hidden w-9 h-9 rounded-full bg-amber-500 hover:bg-amber-400 text-white flex items-center justify-center border border-amber-600 shadow-sm shadow-amber-500/30">
+          <i class="fas fa-route text-xs"></i>
+        </button>
         <button onclick="openMiCarteraModal()" title="Mi cartera y descuentos" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
           <i class="fas fa-percent text-xs"></i>
         </button>
@@ -324,6 +327,31 @@
         <i class="fas fa-flag-checkered"></i> Finalizar (turno / día)
       </button>
       <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Se guarda offline si no hay señal</p>
+    </div>
+  </section>
+
+  <!-- HOJA DE RUTA (ciclo 2 semanas) -->
+  <section id="view-ruta-ciclo" class="view-section bg-slate-100 dark:bg-slate-950">
+    <div class="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 flex items-center gap-3 shadow-sm h-16">
+      <button onclick="switchView('view-dashboard')" class="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex-none">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="min-w-0">
+        <p class="text-[10px] font-black uppercase tracking-widest text-amber-500">Hoja de ruta · ciclo 2 semanas</p>
+        <h2 class="text-sm font-black truncate dark:text-white">Mercado Limpio</h2>
+      </div>
+    </div>
+
+    <div class="px-4 py-3 flex items-center gap-2">
+      <div class="flex gap-1.5 bg-slate-200 dark:bg-slate-800 rounded-xl p-1">
+        <button id="rc-w1" onclick="rutaCicloSetSemana('1')" class="px-3 py-1.5 rounded-lg text-xs font-black">SEMANA 1</button>
+        <button id="rc-w2" onclick="rutaCicloSetSemana('2')" class="px-3 py-1.5 rounded-lg text-xs font-black">SEMANA 2</button>
+      </div>
+    </div>
+    <div id="rc-dias" class="px-4 pb-2 flex gap-2 overflow-x-auto no-scrollbar"></div>
+
+    <div class="flex-1 overflow-y-auto p-4 pb-10 no-scrollbar">
+      <div id="rc-card" class="rounded-3xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm"></div>
     </div>
   </section>
 
