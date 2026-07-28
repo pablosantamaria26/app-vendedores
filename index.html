@@ -903,7 +903,7 @@
       currentOrder: { title: '', ticket: '' },
       outboxFlushing: false,
       jornada: { activa:false, jornadaId:null, turno:null, zonas:[] },
-      rutaCiclo: { semana: null, dia: null },
+      rutaCiclo: { semana: null, dia: null, atendidosHoy: null, pendientesPrevios: null },
 
       // ✅ NUEVO: buscador + cliente modal
       search: { ddOpen:false, ddItems:[], lastQ:'', busy:false, t:null },
@@ -2644,6 +2644,7 @@ function maybeShowTardeModal_(backendData) {
         <p class="text-[10px] font-black uppercase tracking-widest text-amber-500">Semana ${semana} · ${RUTA_CICLO_DIAS_LABEL[dia]}${esHoy ? ' (hoy)' : ''}</p>
         <h3 class="text-xl font-black mt-1 dark:text-white">${zonas.length ? zonas.join(' · ') : 'Zona nueva — prospección'}</h3>
         <p class="text-sm text-slate-400 mt-1">${clientesHoy.length} cliente${clientesHoy.length === 1 ? '' : 's'} en tu cartera actual</p>
+        <div id="rc-progreso"></div>
         <div id="rc-cta" class="mt-4"></div>
       `;
 
@@ -2659,12 +2660,47 @@ function maybeShowTardeModal_(backendData) {
         return;
       }
 
-      cta.innerHTML = `<button disabled class="w-full bg-slate-200 dark:bg-slate-800 text-slate-400 py-3 rounded-xl font-black">Verificando…</button>`;
-      const yaHecha = await rutaCicloYaHechaHoy(zonas);
+      cta.innerHTML = `<button disabled class="w-full bg-slate-200 dark:bg-slate-800 text-slate-400 py-3 rounded-xl font-black">Verificando cobertura…</button>`;
+      const cob = await rutaCicloCobertura(clientesHoy);
       if (!el('rc-cta')) return; // el usuario ya navegó a otro lado
-      if (yaHecha) {
-        el('rc-cta').innerHTML = `<button disabled class="w-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 py-3 rounded-xl font-black">
-          <i class="fas fa-check mr-1"></i> Ya la hiciste hoy
+
+      const total = clientesHoy.length;
+      const hechos = cob.atendidosHoyIds.size;
+      const pendientesPrevios = [...cob.pendientesSemanaPasadaIds].filter(id => !cob.atendidosHoyIds.has(id));
+      const pct = total ? Math.round((hechos / total) * 100) : 0;
+
+      const progEl = el('rc-progreso');
+      if (progEl) {
+        progEl.innerHTML = `
+          <div class="mt-3">
+            <div class="flex justify-between text-[11px] font-black text-slate-500 dark:text-slate-400 mb-1">
+              <span>${hechos} / ${total} atendidos hoy</span>
+              <span>${pct}%</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              <div class="h-full bg-emerald-500" style="width:${pct}%"></div>
+            </div>
+          </div>
+          ${pendientesPrevios.length ? `
+          <div class="mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
+            <p class="text-xs font-black text-amber-700 dark:text-amber-400"><i class="fas fa-triangle-exclamation mr-1"></i> ${pendientesPrevios.length} pendiente${pendientesPrevios.length === 1 ? '' : 's'} de la vez pasada</p>
+            <p class="text-[11px] text-amber-600 dark:text-amber-500 mt-0.5">Van primero cuando arranques la ruta.</p>
+          </div>` : ''}
+        `;
+      }
+
+      // Se guarda para que rutaCicloArmarRuta() lo use sin volver a consultar.
+      state.rutaCiclo.atendidosHoy = cob.atendidosHoyIds;
+      state.rutaCiclo.pendientesPrevios = new Set(pendientesPrevios);
+
+      if (!el('rc-cta')) return;
+      if (total > 0 && hechos >= total) {
+        el('rc-cta').innerHTML = `<button onclick="rutaCicloArmarRuta()" class="w-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 py-3 rounded-xl font-black">
+          <i class="fas fa-check mr-1"></i> Completaste este día (${total}/${total})
+        </button>`;
+      } else if (hechos > 0) {
+        el('rc-cta').innerHTML = `<button onclick="rutaCicloArmarRuta()" class="w-full bg-amber-500 hover:bg-amber-400 text-white py-3 rounded-xl font-black shadow-lg shadow-amber-500/30">
+          <i class="fas fa-location-arrow mr-1"></i> Seguir ruta (${hechos}/${total})
         </button>`;
       } else {
         el('rc-cta').innerHTML = `<button onclick="rutaCicloArmarRuta()" class="w-full bg-amber-500 hover:bg-amber-400 text-white py-3 rounded-xl font-black shadow-lg shadow-amber-500/30">
@@ -2673,19 +2709,48 @@ function maybeShowTardeModal_(backendData) {
       }
     }
 
-    async function rutaCicloYaHechaHoy(zonas) {
+    // Cobertura real por cliente (tabla visitas) — nunca depende de "Finalizar".
+    // "no_llegue" NO cuenta como atendido: si el vendedor no llegó, ese cliente
+    // se reclama como prioridad la próxima vez que toque este día del ciclo.
+    async function rutaCicloCobertura(clientes) {
+      const ids = clientes.map(c => String(c.id));
+      const out = { atendidosHoyIds: new Set(), pendientesSemanaPasadaIds: new Set() };
+      if (!ids.length) return out;
+
       try {
-        const hoy = todayKey_();
-        const vendedor = encodeURIComponent(state.user.vendedor);
-        const url = `https://gjeyvbidomxzofcdycya.supabase.co/rest/v1/jornadas?vendedor=eq.${vendedor}&inicio_fecha=eq.${hoy}&estado=eq.FINALIZADA&select=zonas`;
-        const resp = await fetch(url, { headers: { apikey: 'sb_publishable_CjdA8GwtCljm_PzT8pqk3g_QIhTmUHT', Authorization: 'Bearer sb_publishable_CjdA8GwtCljm_PzT8pqk3g_QIhTmUHT' } });
-        const rows = await resp.json();
-        const norm = new Set(zonas.map(normKey));
-        return (rows || []).some(r => (r.zonas || []).some(z => norm.has(normKey(z))));
+        const hoyLocal = new Date(); hoyLocal.setHours(0, 0, 0, 0);
+        const desde14 = new Date(hoyLocal); desde14.setDate(desde14.getDate() - 14);
+
+        const resp = await api('visitas_por_clientes', {
+          vendedor: state.user.vendedor, clienteIds: ids, desde: desde14.toISOString()
+        }, 20000);
+        const rows = (resp && resp.exito) ? (resp.visitas || []) : [];
+
+        const cuentaComoAtendido = (r) => r.tipo === 'venta' || r.tipo === 'visita';
+        let hayHistoriaPrevia = false;
+        const atendidosVentanaPrevia = new Set();
+
+        rows.forEach(r => {
+          const cid = String(r.cliente_id);
+          const ts = new Date(r.created_at);
+          if (ts >= hoyLocal) {
+            if (cuentaComoAtendido(r)) out.atendidosHoyIds.add(cid);
+          } else {
+            hayHistoriaPrevia = true;
+            if (cuentaComoAtendido(r)) atendidosVentanaPrevia.add(cid);
+          }
+        });
+
+        // Solo reclamamos pendientes si de verdad hubo una ocurrencia anterior
+        // (si no, la primera vez que se arma el ciclo marcaría a todos como
+        // "pendientes de la vez pasada" sin que exista tal vez pasada).
+        if (hayHistoriaPrevia) {
+          ids.forEach(id => { if (!atendidosVentanaPrevia.has(id)) out.pendientesSemanaPasadaIds.add(id); });
+        }
       } catch (e) {
-        console.error('rutaCicloYaHechaHoy error:', e);
-        return false;
+        console.error('rutaCicloCobertura error:', e);
       }
+      return out;
     }
 
     function rutaCicloArmarRuta() {
@@ -2693,6 +2758,24 @@ function maybeShowTardeModal_(backendData) {
       if (!zonas.length) return;
       state.sel = new Set(zonas);
       startRoute();
+
+      // Prioriza los pendientes de la vez pasada arriba de la lista y marca
+      // como ya-hechos (sin pedirle que los repita) a los que ya atendió hoy
+      // por cualquier vía, aunque nunca haya tocado "Finalizar".
+      const atendidosHoy = state.rutaCiclo.atendidosHoy;
+      const pendientesPrevios = state.rutaCiclo.pendientesPrevios;
+      if (atendidosHoy && atendidosHoy.size) {
+        atendidosHoy.forEach(id => state.route.done.add(id));
+      }
+      if (pendientesPrevios && pendientesPrevios.size && Array.isArray(state.route.active)) {
+        state.route.active.sort((a, b) => {
+          const pa = pendientesPrevios.has(String(a.id)) ? 0 : 1;
+          const pb = pendientesPrevios.has(String(b.id)) ? 0 : 1;
+          return pa - pb;
+        });
+      }
+      renderRoute();
+      saveRouteState_();
     }
 
     // =========================
