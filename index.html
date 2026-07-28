@@ -2668,6 +2668,9 @@ function maybeShowTardeModal_(backendData) {
       const pendientesPrevios = [...cob.pendientesSemanaPasadaIds].filter(id => !cob.atendidosHoyIds.has(id));
       const pct = total ? Math.round((hechos / total) * 100) : 0;
 
+      const nombrePorId = new Map(clientesHoy.map(c => [String(c.id), displayName(c)]));
+      const pendientesNombres = pendientesPrevios.map(id => ({ id, nombre: nombrePorId.get(id) || `Cliente #${id}` }));
+
       const progEl = el('rc-progreso');
       if (progEl) {
         progEl.innerHTML = `
@@ -2680,10 +2683,15 @@ function maybeShowTardeModal_(backendData) {
               <div class="h-full bg-emerald-500" style="width:${pct}%"></div>
             </div>
           </div>
-          ${pendientesPrevios.length ? `
+          ${pendientesNombres.length ? `
           <div class="mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
-            <p class="text-xs font-black text-amber-700 dark:text-amber-400"><i class="fas fa-triangle-exclamation mr-1"></i> ${pendientesPrevios.length} pendiente${pendientesPrevios.length === 1 ? '' : 's'} de la vez pasada</p>
-            <p class="text-[11px] text-amber-600 dark:text-amber-500 mt-0.5">Van primero cuando arranques la ruta.</p>
+            <p class="text-xs font-black text-amber-700 dark:text-amber-400"><i class="fas fa-triangle-exclamation mr-1"></i> ${pendientesNombres.length} pendiente${pendientesNombres.length === 1 ? '' : 's'} de la vez pasada</p>
+            <ul class="mt-2 space-y-1">
+              ${pendientesNombres.map(p => `<li class="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <span class="w-1 h-1 rounded-full bg-amber-500 flex-none"></span>${escapeHtml(p.nombre)}
+              </li>`).join('')}
+            </ul>
+            <p class="text-[11px] text-amber-600 dark:text-amber-500 mt-2">Van primero cuando arranques la ruta.</p>
           </div>` : ''}
         `;
       }
