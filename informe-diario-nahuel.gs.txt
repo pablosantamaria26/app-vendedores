@@ -1,0 +1,297 @@
+/*****************************************************
+ * 📋 INFORME DIARIO — Cartera de vendedor (app-vendedores)
+ * -----------------------------------------------------
+ * Todos los días a las 18:00 (hora Argentina) manda un mail
+ * con lo que el vendedor registró en su ruta: ventas, visitas
+ * sin compra (con motivo agrupado), "no llegué" y pendientes
+ * reales (clientes de la zona que trabajó hoy sin ningún
+ * registro).
+ *
+ * Fuente de datos: tabla `visitas` de Supabase — se llena sola
+ * apenas el vendedor toca "Venta OK" o carga un motivo en la
+ * app, sin depender de que cierre ninguna jornada.
+ *
+ * SETUP (una sola vez, en el editor de Apps Script):
+ *   1. Pegar este código en un proyecto nuevo (script.new).
+ *   2. Ejecutar la función `crearTriggerDiario` una vez desde
+ *      el editor (▶ Ejecutar) y autorizar los permisos que pida
+ *      (enviar mail + acceso a internet).
+ *   3. Listo — desde ahí el trigger corre solo todos los días.
+ *
+ * Para probarlo ya mismo sin esperar a las 18:00, ejecutar
+ * `enviarInformeDiario` directamente.
+ *****************************************************/
+
+const SB_URL = "https://gjeyvbidomxzofcdycya.supabase.co";
+const SB_KEY = "sb_publishable_CjdA8GwtCljm_PzT8pqk3g_QIhTmUHT";
+const VENDEDOR = "NAHUEL";
+const EMAIL_DESTINO = "santamariapablodaniel@gmail.com";
+const TZ = "America/Argentina/Buenos_Aires";
+
+/*****************************************************
+ * Helper genérico de lectura a Supabase (REST)
+ *****************************************************/
+function sbGet(pathAndQuery) {
+  const resp = UrlFetchApp.fetch(`${SB_URL}/rest/v1/${pathAndQuery}`, {
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+    muteHttpExceptions: true,
+  });
+  try {
+    return JSON.parse(resp.getContentText() || "[]");
+  } catch (e) {
+    Logger.log("sbGet error: " + resp.getContentText());
+    return [];
+  }
+}
+
+function normZona_(s) {
+  return String(s || "").trim().toLowerCase();
+}
+
+/*****************************************************
+ * Arma y manda el informe del día
+ *****************************************************/
+function enviarInformeDiario() {
+  const hoyKey = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd");
+  const hoyLabel = Utilities.formatDate(new Date(), TZ, "EEEE dd/MM/yyyy");
+
+  // 1) Jornadas de hoy → qué zonas trabajó
+  const jornadas = sbGet(
+    `jornadas?vendedor=eq.${VENDEDOR}&inicio_fecha=eq.${hoyKey}&select=zonas,turno,estado`
+  );
+  const zonasHoy = [...new Set(jornadas.flatMap((j) => j.zonas || []))].filter(
+    (z) => normZona_(z) !== "puerta_fria"
+  );
+
+  // 2) Cartera completa del vendedor (para nombres + cálculo de pendientes)
+  const cartera = sbGet(
+    `clientes?vendedor=eq.${VENDEDOR}&select=id,nombre,apellido,localidad,activo`
+  );
+  const clientePorId = {};
+  cartera.forEach((c) => (clientePorId[String(c.id)] = c));
+
+  // 3) Visitas de hoy (venta / visita / no_llegue), con nombre resuelto
+  const visitasRaw = sbGet(
+    `visitas?vendedor=eq.${VENDEDOR}&created_at=gte.${hoyKey}T00:00:00&select=cliente_id,tipo,nota,created_at&order=created_at.asc`
+  );
+  const visitas = visitasRaw.map((v) => {
+    const cli = clientePorId[String(v.cliente_id)];
+    return {
+      ...v,
+      nombre: cli ? nombreCompleto_(cli) : `Cliente #${v.cliente_id}`,
+      localidad: cli ? cli.localidad : "",
+    };
+  });
+
+  const ventas = visitas.filter((v) => v.tipo === "venta");
+  const sinCompra = visitas.filter((v) => v.tipo === "visita");
+  const noLlegue = visitas.filter((v) => v.tipo === "no_llegue");
+
+  // 4) Pendientes reales: clientes de las zonas trabajadas hoy sin NINGÚN
+  //    registro hoy (ni venta, ni visita, ni no_llegue)
+  const idsConRegistroHoy = new Set(visitas.map((v) => String(v.cliente_id)));
+  let pendientes = [];
+  if (zonasHoy.length) {
+    const zonasNorm = new Set(zonasHoy.map(normZona_));
+    pendientes = cartera.filter(
+      (c) =>
+        zonasNorm.has(normZona_(c.localidad)) &&
+        !idsConRegistroHoy.has(String(c.id))
+    );
+  }
+
+  // 5) Resumen agrupado de motivos (solo "visita sin compra" — no_llegue va aparte)
+  const motivos = {};
+  sinCompra.forEach((v) => {
+    const grupo = (v.nota || "Sin motivo especificado").split(" · ")[0].trim() || "Sin motivo especificado";
+    motivos[grupo] = (motivos[grupo] || 0) + 1;
+  });
+  const motivosOrdenados = Object.entries(motivos).sort((a, b) => b[1] - a[1]);
+
+  const html = construirHtml_({
+    hoyLabel,
+    zonasHoy,
+    ventas,
+    sinCompra,
+    noLlegue,
+    pendientes,
+    motivosOrdenados,
+    huboActividad: jornadas.length > 0 || visitas.length > 0,
+  });
+
+  MailApp.sendEmail({
+    to: EMAIL_DESTINO,
+    subject: `📋 Informe diario ${VENDEDOR} — ${Utilities.formatDate(new Date(), TZ, "dd/MM")} — ${ventas.length} ventas, ${pendientes.length} pendientes`,
+    htmlBody: html,
+  });
+}
+
+function nombreCompleto_(c) {
+  const partes = [c.nombre, c.apellido].filter(Boolean).join(" ").trim();
+  return partes || `Cliente #${c.id}`;
+}
+
+/*****************************************************
+ * Template HTML — tablas + estilos inline (compatibilidad Gmail)
+ *****************************************************/
+function construirHtml_(d) {
+  const COLORS = {
+    bg: "#f1f5f9",
+    card: "#ffffff",
+    text: "#1e293b",
+    sub: "#64748b",
+    blue: "#2563eb",
+    blueDark: "#1e40af",
+    green: "#059669",
+    greenBg: "#d1fae5",
+    amber: "#d97706",
+    amberBg: "#fef3c7",
+    red: "#dc2626",
+    redBg: "#fee2e2",
+    border: "#e2e8f0",
+  };
+
+  const statCard = (label, value, color, bg) => `
+    <td style="padding:6px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${bg};border-radius:12px;">
+        <tr><td style="padding:16px 10px;text-align:center;">
+          <div style="font-size:28px;font-weight:800;color:${color};line-height:1;">${value}</div>
+          <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.05em;margin-top:6px;">${label}</div>
+        </td></tr>
+      </table>
+    </td>`;
+
+  const chip = (text) => `<span style="display:inline-block;background:#eef2ff;color:${COLORS.blueDark};font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;margin:2px 4px 2px 0;">${escapeHtml_(text)}</span>`;
+
+  const filaCliente = (nombre, sub, badge, badgeColor, badgeBg) => `
+    <tr>
+      <td style="padding:10px 14px;border-bottom:1px solid ${COLORS.border};">
+        <div style="font-weight:700;font-size:14px;color:${COLORS.text};">${escapeHtml_(nombre)}</div>
+        ${sub ? `<div style="font-size:12px;color:${COLORS.sub};margin-top:2px;">${escapeHtml_(sub)}</div>` : ""}
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid ${COLORS.border};text-align:right;white-space:nowrap;">
+        <span style="display:inline-block;background:${badgeBg};color:${badgeColor};font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;">${escapeHtml_(badge)}</span>
+      </td>
+    </tr>`;
+
+  const seccion = (titulo, colorTitulo, filasHtml, vacioTexto) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.card};border-radius:14px;border:1px solid ${COLORS.border};margin-top:16px;overflow:hidden;">
+      <tr><td style="padding:14px 16px 4px;">
+        <div style="font-size:13px;font-weight:800;color:${colorTitulo};text-transform:uppercase;letter-spacing:.04em;">${titulo}</div>
+      </td></tr>
+      <tr><td>
+        ${filasHtml || `<div style="padding:16px;color:${COLORS.sub};font-size:13px;font-style:italic;">${vacioTexto}</div>`}
+      </td></tr>
+    </table>`;
+
+  const ventasHtml = d.ventas
+    .map((v) => filaCliente(v.nombre, v.localidad, "✅ Venta OK", COLORS.green, COLORS.greenBg))
+    .join("");
+
+  const sinCompraHtml = d.sinCompra
+    .map((v) => filaCliente(v.nombre, v.nota || "Sin motivo", "Sin compra", COLORS.amber, COLORS.amberBg))
+    .join("");
+
+  const noLlegueHtml = d.noLlegue
+    .map((v) => filaCliente(v.nombre, v.localidad, "No llegó", COLORS.red, COLORS.redBg))
+    .join("");
+
+  const pendientesHtml = d.pendientes
+    .map((c) => filaCliente(nombreCompleto_(c), c.localidad, "Pendiente", COLORS.sub, "#f1f5f9"))
+    .join("");
+
+  const motivosHtml = d.motivosOrdenados.length
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${d.motivosOrdenados
+          .map(
+            ([motivo, count]) => `
+          <tr>
+            <td style="padding:8px 16px;border-bottom:1px solid ${COLORS.border};font-size:13px;color:${COLORS.text};font-weight:600;">${escapeHtml_(motivo)}</td>
+            <td style="padding:8px 16px;border-bottom:1px solid ${COLORS.border};text-align:right;">
+              <span style="display:inline-block;background:${COLORS.amberBg};color:${COLORS.amber};font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;">${count}</span>
+            </td>
+          </tr>`
+          )
+          .join("")}
+      </table>`
+    : "";
+
+  return `
+<div style="background:${COLORS.bg};padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;">
+    <tr><td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,${COLORS.blue},${COLORS.blueDark});background-color:${COLORS.blue};border-radius:16px 16px 0 0;">
+        <tr><td style="padding:24px 20px;">
+          <div style="font-size:12px;font-weight:800;color:#c7d2fe;text-transform:uppercase;letter-spacing:.08em;">Mercado Limpio · Informe diario</div>
+          <div style="font-size:22px;font-weight:800;color:#ffffff;margin-top:4px;">${VENDEDOR} — ${d.hoyLabel}</div>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td style="background:${COLORS.card};padding:16px 12px 4px;border-left:1px solid ${COLORS.border};border-right:1px solid ${COLORS.border};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        ${statCard("Ventas", d.ventas.length, COLORS.green, COLORS.greenBg)}
+        ${statCard("Sin compra", d.sinCompra.length, COLORS.amber, COLORS.amberBg)}
+        ${statCard("No llegó", d.noLlegue.length, COLORS.red, COLORS.redBg)}
+        ${statCard("Pendientes", d.pendientes.length, COLORS.sub, "#f1f5f9")}
+      </tr></table>
+    </td></tr>
+
+    <tr><td style="background:${COLORS.card};padding:4px 16px 16px;border-left:1px solid ${COLORS.border};border-right:1px solid ${COLORS.border};border-radius:0 0 16px 16px;">
+      ${
+        d.zonasHoy.length
+          ? `<div style="margin-top:8px;">${d.zonasHoy.map(chip).join("")}</div>`
+          : `<div style="margin-top:8px;font-size:13px;color:${COLORS.sub};">Sin zonas registradas hoy.</div>`
+      }
+    </td></tr>
+
+    ${
+      !d.huboActividad
+        ? `<tr><td style="padding:16px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff8dd;border:1px solid #fde68a;border-radius:14px;">
+              <tr><td style="padding:16px;text-align:center;font-size:14px;color:#92400e;font-weight:600;">
+                ⚠️ Nahuel no registró ninguna actividad hoy en la app.
+              </td></tr>
+            </table>
+          </td></tr>`
+        : ""
+    }
+
+    <tr><td>${seccion("✅ Ventas de hoy", COLORS.green, ventasHtml, "No hubo ventas registradas hoy.")}</td></tr>
+    <tr><td>${seccion("⚠️ Visitó pero no compró", COLORS.amber, sinCompraHtml, "Nadie en esta categoría hoy.")}</td></tr>
+    ${d.motivosOrdenados.length ? `<tr><td>${seccion("📊 Resumen de motivos (no compra)", COLORS.amber, motivosHtml, "")}</td></tr>` : ""}
+    <tr><td>${seccion("🚫 No llegó a visitar", COLORS.red, noLlegueHtml, "No hay registros de \"no llegué\" hoy.")}</td></tr>
+    <tr><td>${seccion("⏳ Pendientes de visitar hoy", COLORS.sub, pendientesHtml, d.zonasHoy.length ? "Visitó a todos los clientes de la zona de hoy. 🎉" : "No hay zona registrada hoy para calcular pendientes.")}</td></tr>
+
+    <tr><td style="padding:20px 8px 0;text-align:center;">
+      <div style="font-size:11px;color:${COLORS.sub};">Generado automáticamente todos los días a las 18:00 · Mercado Limpio</div>
+    </td></tr>
+  </table>
+</div>`;
+}
+
+function escapeHtml_(str) {
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/*****************************************************
+ * Instalar el trigger diario (ejecutar UNA sola vez a mano)
+ *****************************************************/
+function crearTriggerDiario() {
+  ScriptApp.getProjectTriggers().forEach((t) => {
+    if (t.getHandlerFunction() === "enviarInformeDiario") ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger("enviarInformeDiario")
+    .timeBased()
+    .atHour(18)
+    .nearMinute(0)
+    .everyDays(1)
+    .inTimezone(TZ)
+    .create();
+  Logger.log("Trigger diario creado: todos los días 18:00 " + TZ);
+}
