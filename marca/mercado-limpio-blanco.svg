@@ -1,0 +1,24 @@
+<svg width="800" height="250" viewBox="0 0 800 250" xmlns="http://www.w3.org/2000/svg">
+  <!-- "Mercado" — liviana, arriba -->
+  <text x="6" y="70" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="300"
+        fill="#ffffff" letter-spacing="1">Mercado</text>
+
+  <!-- "LIMPI" + balde como O -->
+  <text x="6" y="158" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="700"
+        fill="#ffffff" letter-spacing="2">LIMPI</text>
+
+  <!-- Balde ocupando el lugar de la O (cap-height ~69px, baseline y=158) -->
+  <g transform="translate(287,89)">
+    <!-- asa -->
+    <path d="M16 11 C 16 -9, 62 -9, 62 11" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+    <!-- aro superior -->
+    <ellipse cx="39" cy="13" rx="37" ry="9.5" fill="none" stroke="#ffffff" stroke-width="7"/>
+    <!-- cuerpo: tapered, base redondeada -->
+    <path d="M3 14 L75 14 L66 58 C64.8 65.2 58.5 69.5 51 69.5 L27 69.5 C19.5 69.5 13.2 65.2 12 58 L3 14 Z"
+          fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+  </g>
+
+  <!-- "Distribuidora" — liviana, espaciada -->
+  <text x="8" y="212" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="300"
+        fill="#ffffff" letter-spacing="3.5">Distribuidora</text>
+</svg>
