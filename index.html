@@ -220,10 +220,25 @@
       <h1 class="text-3xl font-black mb-2 text-slate-900 dark:text-white">MERCADO<span class="text-blue-500">LIMPIO</span></h1>
       <p class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mb-10">Cartera de Clientes</p>
 
-      <input id="login-user" type="text" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-3 text-center font-bold uppercase placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:border-blue-500 outline-none" placeholder="USUARIO" autocomplete="username" />
-      <input id="login-pass" type="password" inputmode="numeric" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-6 text-center font-bold uppercase placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-white focus:border-blue-500 outline-none" placeholder="PIN" autocomplete="current-password" />
+      <!-- Paso 1: elegí tu nombre -->
+      <div id="login-step-name">
+        <p class="text-slate-400 dark:text-slate-500 text-[11px] font-black uppercase tracking-widest mb-3">¿Quién sos?</p>
+        <div id="login-vend-list" class="space-y-2"></div>
+        <p id="login-vend-loading" class="text-slate-400 text-xs font-bold py-4">
+          <i class="fas fa-spinner fa-spin"></i> Cargando…
+        </p>
+      </div>
 
-      <button id="btn-login" onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
+      <!-- Paso 2: PIN (una sola vez en este celular) -->
+      <div id="login-step-pin" class="hidden">
+        <button type="button" onclick="loginBackToNames()" class="text-slate-400 hover:text-blue-500 text-xs font-bold mb-4 inline-flex items-center gap-1">
+          <i class="fas fa-arrow-left"></i> Cambiar
+        </button>
+        <p class="text-slate-900 dark:text-white font-black text-lg mb-1">Hola, <span id="login-vend-nombre"></span></p>
+        <p class="text-slate-400 dark:text-slate-500 text-[11px] font-bold mb-4">Ingresá tu PIN una vez y queda guardado en este celular</p>
+        <input id="login-pass" type="password" inputmode="numeric" maxlength="6" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 mb-4 text-center font-black text-2xl tracking-[0.5em] text-slate-900 dark:text-white focus:border-blue-500 outline-none" placeholder="••••" autocomplete="current-password" />
+        <button id="btn-login" onclick="handleLogin()" class="btn-press w-full bg-blue-600 p-4 rounded-xl font-bold shadow-lg shadow-blue-900/40 text-white">INGRESAR</button>
+      </div>
     </div>
   </section>
 
@@ -925,6 +940,13 @@
       { id:'pf_9',  empresa:'ABB', dir:'Av. 12 de Octubre 1445',  loc:'Florencio Varela', full:'Av. 12 de Octubre 1445, Florencio Varela, Buenos Aires',  lat:-34.8116417, lng:-58.2633901, dist_dep:11.54 },
     ];
 
+    // Vendedores que NO ven la "Captación de Clientes" / Puerta Fría
+    const PUERTA_FRIA_OCULTA_PARA = new Set(['MAXIMILIANO']);
+    function puedeVerPuertaFria_() {
+      const v = String(state.user?.vendedor || '').trim().toUpperCase();
+      return !PUERTA_FRIA_OCULTA_PARA.has(v);
+    }
+
     // ===== HOJA DE RUTA: ciclo fijo de 2 semanas por vendedor =====
     // Calendario de qué zona toca cada día. Los CLIENTES nunca se hardcodean
     // acá: la ruta se arma en vivo contra state.db.clientes (cartera real),
@@ -1139,7 +1161,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { passive: true });
 
   // Enter para login
-  el('login-user')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') el('login-pass')?.focus(); });
   el('login-pass')?.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') handleLogin(); });
 
   // chat enter
@@ -1168,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // daily boundary
   ensureDailyBoundaryReset_();
 
-  if (state.user) init(); else switchView('view-login');
+  if (state.user) init(); else { switchView('view-login'); loadLoginVendedores(); }
 });
 
 
@@ -1561,12 +1582,64 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 
+    // ── LOGIN: elegí tu nombre → PIN una sola vez (queda en el celular) ──
+    let _loginVend = null; // { username, nombre }
+
+    async function loadLoginVendedores() {
+      const box = el('login-vend-list');
+      if (!box) return;
+      el('login-vend-loading')?.classList.remove('hidden');
+      try {
+        const r = await fetch(WORKER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accion: 'listar_vendedores' })
+        });
+        const j = await r.json();
+        const OCULTAR = new Set(['TODOS', 'ADMIN']);
+        const vs = (j.vendedores || [])
+          .filter(v => v && v.activo)
+          .filter(v => !OCULTAR.has(String(v.nombre || '').toUpperCase()) && !OCULTAR.has(String(v.username || '').toUpperCase()))
+          .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
+        el('login-vend-loading')?.classList.add('hidden');
+        if (!vs.length) {
+          box.innerHTML = `<p class="text-slate-400 text-xs font-bold py-2">No hay vendedores. <button type="button" onclick="loadLoginVendedores()" class="underline text-blue-500">Reintentar</button></p>`;
+          return;
+        }
+        box.innerHTML = vs.map(v => {
+          const u = encodeURIComponent(v.username || '');
+          const n = encodeURIComponent(v.nombre || '');
+          return `<button type="button" onclick="loginPickVend('${u}','${n}')" class="btn-press w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 font-black text-slate-900 dark:text-white active:border-blue-500 active:bg-blue-50 dark:active:bg-slate-700">${v.nombre}</button>`;
+        }).join('');
+      } catch (e) {
+        el('login-vend-loading')?.classList.add('hidden');
+        box.innerHTML = `<p class="text-slate-400 text-xs font-bold py-2">Sin conexión. <button type="button" onclick="loadLoginVendedores()" class="underline text-blue-500 font-bold">Reintentar</button></p>`;
+      }
+    }
+
+    function loginPickVend(u, n) {
+      _loginVend = { username: decodeURIComponent(u), nombre: decodeURIComponent(n) };
+      const lbl = el('login-vend-nombre');
+      if (lbl) lbl.textContent = _loginVend.nombre;
+      el('login-step-name')?.classList.add('hidden');
+      el('login-step-pin')?.classList.remove('hidden');
+      const p = el('login-pass');
+      if (p) { p.value = ''; setTimeout(() => p.focus(), 80); }
+    }
+
+    function loginBackToNames() {
+      _loginVend = null;
+      el('login-step-pin')?.classList.add('hidden');
+      el('login-step-name')?.classList.remove('hidden');
+    }
+
     async function handleLogin() {
-      const u = el('login-user')?.value?.trim(), p = el('login-pass')?.value?.trim();
-      if (!u || !p) return toast('Faltan datos', 'error');
+      const p = el('login-pass')?.value?.trim();
+      if (!_loginVend) { loginBackToNames(); return toast('Elegí tu nombre', 'error'); }
+      if (!p) return toast('Ingresá tu PIN', 'error');
       el('loader')?.classList.remove('hidden');
       try {
-        const d = await api('login', { user: u, pass: p }, 25000);
+        const d = await api('login', { user: _loginVend.username, pass: p }, 25000);
         state.user = d;
         localStorage.setItem('ml_user', JSON.stringify(d));
         init();
@@ -1991,6 +2064,7 @@ function maybeShowTardeModal_(backendData) {
       });
 
       // ===== PUERTA FRÍA card (siempre al final del grid) =====
+      if (puedeVerPuertaFria_()) {
       const pfDiv = document.createElement('div');
       pfDiv.id = 'card-pf-zone';
       pfDiv.dataset.zoneKey = 'PUERTA_FRIA';
@@ -2022,6 +2096,7 @@ function maybeShowTardeModal_(backendData) {
         <div class="sel-border absolute inset-0 border-2 border-orange-500 rounded-2xl hidden pointer-events-none"></div>
       `;
       g.appendChild(pfDiv);
+      }
     }
 
     function toggleSelPF(div) {
@@ -2477,7 +2552,7 @@ function maybeShowTardeModal_(backendData) {
       state.route.active = all.filter(c => selected.has(normKey(c.localidad)));
 
       // Inyectar puntos de puerta fría si fue seleccionada
-      if (state.sel.has('PUERTA_FRIA')) {
+      if (state.sel.has('PUERTA_FRIA') && puedeVerPuertaFria_()) {
         const pfProspectos = PUERTA_FRIA_PUNTOS.map(p => ({
           id: p.id,
           nombre: p.empresa || p.dir,
