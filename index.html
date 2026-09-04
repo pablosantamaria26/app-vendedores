@@ -941,7 +941,7 @@
     ];
 
     // Vendedores que NO ven la "Captación de Clientes" / Puerta Fría
-    const PUERTA_FRIA_OCULTA_PARA = new Set(['MAXIMILIANO']);
+    const PUERTA_FRIA_OCULTA_PARA = new Set(['MARIANO']);
     function puedeVerPuertaFria_() {
       const v = String(state.user?.vendedor || '').trim().toUpperCase();
       return !PUERTA_FRIA_OCULTA_PARA.has(v);
