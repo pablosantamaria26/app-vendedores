@@ -508,3 +508,21 @@ function crearTriggerDiario() {
     .create();
   Logger.log("Trigger creado: todos los días 08:30 " + TZ + " (omite sábado y domingo).");
 }
+
+/*****************************************************
+ * Pausar el envío diario (NO borra nada del informe,
+ * solo saca el disparador — correr una vez y listo).
+ * Para reactivarlo: volver a correr crearTriggerDiario().
+ *****************************************************/
+function pausarInformeDiario() {
+  var borrados = 0;
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === "enviarInformeDiario") {
+      ScriptApp.deleteTrigger(t);
+      borrados++;
+    }
+  });
+  Logger.log(borrados > 0
+    ? "Informe diario NAHUEL pausado (" + borrados + " trigger eliminado). Para reactivar: correr crearTriggerDiario()."
+    : "No había ningún trigger activo — ya estaba pausado.");
+}
